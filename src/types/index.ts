@@ -9,6 +9,12 @@ export type Tag = {
   title: string;
 };
 
+// Matches the shape stored in events.organizers (JSON array)
+export type Host = {
+  name?: string;
+  link?: string;
+};
+
 export type Event = Tables<"events"> & {
   tags?: Tag[];
 };

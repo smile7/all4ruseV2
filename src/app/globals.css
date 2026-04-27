@@ -170,3 +170,17 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+
+/* ── Theme-variant visibility helpers ───────────────────────────────────────
+   Plain .dark descendant selectors outside @layer always win over Tailwind
+   utility classes (which live in @layer utilities). Same approach that fixed
+   the tag-pill hydration issue.                                              */
+.theme-logo-light { display: block; }
+.theme-logo-dark  { display: none;  }
+.theme-icon-sun   { display: none;  }
+.theme-icon-moon  { display: block; }
+
+.dark .theme-logo-light { display: none;  }
+.dark .theme-logo-dark  { display: block; }
+.dark .theme-icon-sun   { display: block; }
+.dark .theme-icon-moon  { display: none;  }

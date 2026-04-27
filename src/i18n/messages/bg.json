@@ -2,7 +2,7 @@
   "HomePage": {
     "createEvent": "Създай Събитие",
     "pageTitle": "Събития в Русе",
-    "pageDescription": "Всички културни и некултурни събития в Русе и околността",
+    "pageDescription": "всички културни и некултурни събития в Русе и околността",
     "createProfileMsg": "Направи си профил, за да създадеш събитие!",
     "filters": "Филтри",
     "noEvents": "Няма намерени събития.",
@@ -10,6 +10,7 @@
     "toDate": "До дата",
     "searchTitle": "Търси по заглавие...",
     "searchButton": "Търси",
+    "searchButtonText": "Какво търсиш?",
     "clearFilters": "Изчисти",
     "pickDate": "Избери дата",
     "title": "Заглавие",
@@ -23,6 +24,7 @@
     "copyLink": "Копирай линк",
     "openNewTab": "Отвори в нов таб",
     "loginSignup": "Вход / Регистрация",
+    "loginButton": "Влез",
     "logout": "Изход",
     "account": "Профил",
     "address": "Адрес",
@@ -35,10 +37,12 @@
     "pastEvent": "Минало събитие",
     "english": "Английски",
     "bulgarian": "Български",
+    "navEvents": "Събития",
+    "navCreate": "Добави",
     "menuEvents": "Предстоящи Събития",
     "menuPastEvents": "Минали Събития",
     "menuCurrentEvents": "Събития в момента",
-    "menuWhyAll4Ruse": "Защо all4ruse?",
+    "menuWhyAll4Ruse": "За all4ruse",
     "menuWhyAll4RuseTitle": "За нас",
     "host": "Организатор",
     "place": "Място",
@@ -165,7 +169,7 @@
   "CurrentEvents": {
     "createEvent": "Създай Събитие",
     "pageTitle": "Текущи събития в Русе",
-    "pageDescription": "Всички текущи културни и некултурни събития в Русе и околността"
+    "pageDescription": "всички текущи културни и некултурни събития в Русе и околността"
   },
   "Profile": {
     "personal": "Данни",

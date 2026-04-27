@@ -1,35 +1,33 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useTheme } from "next-themes";
-
 import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 
 import { Button } from "~/components/ui/button";
 
-function ThemeToggleInner() {
+export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+
+  function toggle() {
+    // Fall back to reading the DOM class in case resolvedTheme hasn't resolved yet
+    const isDark =
+      resolvedTheme === "dark" ||
+      (resolvedTheme === undefined &&
+        typeof document !== "undefined" &&
+        document.documentElement.classList.contains("dark"));
+    setTheme(isDark ? "light" : "dark");
+  }
 
   return (
     <Button
       variant="ghost"
       size="icon"
       className="size-9"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      onClick={toggle}
+      aria-label="Toggle theme"
     >
-      {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+      <Sun className="theme-icon-sun size-4" />
+      <Moon className="theme-icon-moon size-4" />
     </Button>
   );
 }
-
-// ssr: false — the server has no knowledge of the user's theme preference,
-// so any server-rendered output would mismatch the client and cause a hydration error.
-// Skipping SSR for this single button is the correct trade-off.
-const ThemeToggle = dynamic(() => Promise.resolve(ThemeToggleInner), {
-  ssr: false,
-  loading: () => <Button variant="ghost" size="icon" className="size-9" disabled aria-hidden />,
-});
-
-export { ThemeToggle };

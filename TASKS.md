@@ -35,18 +35,25 @@
   - No `event_translations` DB table — translate event descriptions on-demand via Google Translate API (key already in `.env.local`). Same approach as the old app. Revisit for caching in Phase 9 if needed.
 
 ## Phase 5 — Public experience
-- [ ] Upcoming / current / past events listing pages with SSR
-- [ ] Client-side filtering by tag, date, search (TanStack Query + initialData bridge)
-- [ ] Event detail page (SSG + ISR, full content, SEO metadata)
+- [x] Data layer — `eventsApi` (getActiveEvents, getPastEvents, getEventBySlug) + `tagsApi.getTags`
+- [x] Design structure task 1 — create pages with dummy content (`Typography.P` lorem ipsum) for: create event, saved events, profile, cookies, privacy, GDPR, why-all4ruse, single event, past events, my events
+- [x] Design structure task 2 — implement header and document final design decisions in `Header.tsx`
+- [x] Design structure task 3 — implement footer (`Footer.tsx`) + mobile bottom nav (`MobileBottomNav.tsx`) + locale layout wiring
+- [ ] PWA foundation — `app/manifest.ts`, app icons, apple meta tags (installable, no service worker yet)
+- [ ] EventCard component with "Live now" badge and View Transition name
+- [ ] Active events page (home, SSR, initialData → EventsList + EventFilters with tag chips)
+- [ ] Past events page (same pattern, reversed order, 15-day window)
+- [ ] Event detail page (SSG + ISR, full content, SEO metadata, View Transition hero)
 - [ ] Why All4Ruse page
 - [ ] Legal pages (cookies, GDPR, privacy)
 
 ## Phase 6 — Auth + user pages
-- [ ] Login, signup, signup-success, forgot-password, update-password pages
-- [ ] Supabase OAuth callback route
+- [ ] Full auth flow: login, signup, email confirmation, callback route, forgot/update password
+- [ ] Header + MobileBottomNav full auth wiring (avatar dropdown, logout)
 - [ ] Profile page (view + edit)
 - [ ] My events page
 - [ ] Create event page (auth-guarded)
+- [ ] Account security and deletion flow (change password + delete account with explicit confirmation)
 
 ## Phase 7 — Admin
 - [ ] Admin layout with role check
@@ -61,6 +68,7 @@
 - [ ] Mobile responsiveness review
 - [ ] Accessibility review (keyboard nav, contrast, ARIA)
 - [ ] i18n audit — all UI strings through t(), all 4 languages complete
+- [ ] PWA service worker + offline fallback (next-pwa, cache strategies, offline page)
 
 ## Phase 9 — Future scope
 - [ ] Event content auto-translation via Google Translate API
@@ -68,3 +76,4 @@
 - [ ] Premium and featured listings
 - [ ] Sponsorship placements
 - [ ] Ticket-related flows
+- [ ] Push notifications — Web Push API subscription + Supabase Edge Function for delivery + user notification preferences in profile (by tag, by event reminder)
