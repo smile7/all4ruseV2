@@ -33,7 +33,7 @@ export function Header() {
         <button
           type="button"
           aria-label={t("filters")}
-          className="bg-muted text-muted-foreground hover:bg-muted/80 flex w-full items-center justify-center gap-2 rounded-full p-3 text-xs font-medium uppercase tracking-wider transition-colors"
+          className="bg-muted text-muted-foreground hover:bg-muted/80 flex w-full items-center justify-center gap-2 rounded-full p-3 text-xs font-medium tracking-wider uppercase transition-colors"
         >
           <Search className="text-primary size-4 shrink-0" />
           <span>{t("searchButtonText")}</span>
@@ -52,7 +52,7 @@ export function Header() {
           <button
             type="button"
             aria-label={t("filters")}
-            className="bg-muted text-muted-foreground hover:bg-muted/80 flex w-full max-w-sm items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-medium uppercase tracking-wider transition-colors"
+            className="bg-muted text-muted-foreground hover:bg-muted/80 flex w-full max-w-sm items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-medium tracking-wider uppercase transition-colors"
           >
             <Search className="text-primary size-4 shrink-0" />
             <span>{t("searchButtonText")}</span>

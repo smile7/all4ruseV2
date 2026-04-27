@@ -6,6 +6,7 @@ ARCHITECTURE.md
 IMPLEMENTATION_PLAN.md
 TASKS.md
 PROJECT_BRIEF.md
+.github/copilot-instructions.md
 
 # Next.js build output
 .next/

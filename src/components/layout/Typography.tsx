@@ -5,8 +5,8 @@ export function H1(props: React.HTMLAttributes<HTMLHeadingElement>) {
     <h1
       {...props}
       className={cn(
-        "scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl",
-        props.className
+        "scroll-m-20 text-4xl font-extrabold tracking-tight",
+        props.className,
       )}
     />
   );
@@ -18,7 +18,7 @@ export function H2(props: React.HTMLAttributes<HTMLHeadingElement>) {
       {...props}
       className={cn(
         "scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0",
-        props.className
+        props.className,
       )}
     />
   );
@@ -30,7 +30,7 @@ export function H3(props: React.HTMLAttributes<HTMLHeadingElement>) {
       {...props}
       className={cn(
         "scroll-m-20 text-2xl font-semibold tracking-tight",
-        props.className
+        props.className,
       )}
     />
   );
@@ -51,8 +51,8 @@ export function Small(props: React.HTMLAttributes<HTMLElement>) {
     <small
       {...props}
       className={cn(
-        "text-sm leading-none font-medium text-muted-foreground",
-        props.className
+        "text-muted-foreground text-sm leading-none font-medium",
+        props.className,
       )}
     />
   );

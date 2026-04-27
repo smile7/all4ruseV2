@@ -1,3 +1,368 @@
-export default function SingleEventPage() {
-  return <div>EventPage</div>;
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
+
+import {
+  Bookmark,
+  Calendar,
+  CalendarPlus,
+  Clock,
+  ExternalLink,
+  Mail,
+  MapPin,
+  Phone,
+  Share2,
+  Ticket,
+  Users,
+} from "lucide-react";
+
+import {
+  EventDetailRow,
+  EventHeroGallery,
+  EventImagesGallery,
+  Typography,
+} from "~/components/layout";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent } from "~/components/ui/card";
+import type { Locale } from "~/constants";
+import { eventsApi } from "~/lib/api";
+import {
+  buildGCalUrl,
+  formatFullDate,
+  formatTime,
+  getEventImageUrl,
+  getTagLabel,
+  isLiveNow,
+} from "~/lib/event-utils";
+import { createSupabaseServerClient } from "~/lib/supabase/server";
+import type { Host } from "~/types";
+
+export const revalidate = 60;
+
+type Props = {
+  params: Promise<{ slug: string; locale: string }>;
+};
+
+export async function generateStaticParams() {
+  try {
+    const client = await createSupabaseServerClient();
+    const slugs = await eventsApi.getAllSlugs(client);
+    return slugs.map((slug) => ({ slug }));
+  } catch {
+    return [];
+  }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  try {
+    const client = await createSupabaseServerClient();
+    const event = await eventsApi.getEventBySlug(client, slug);
+    if (!event) return { title: "Събитието не е намерено" };
+
+    const description = (event.description ?? "")
+      .replace(/<[^>]*>/g, "")
+      .slice(0, 160);
+    const imageUrl = getEventImageUrl(event.image);
+
+    return {
+      title: event.title,
+      description,
+      openGraph: {
+        title: event.title,
+        description,
+        images: imageUrl ? [{ url: imageUrl }] : [],
+        type: "website",
+      },
+    };
+  } catch {
+    return { title: "Събитие" };
+  }
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default async function EventDetailPage({ params }: Props) {
+  const { slug } = await params;
+  const locale = (await getLocale()) as Locale;
+  const t = await getTranslations("SingleEvent");
+
+  const client = await createSupabaseServerClient();
+  const event = await eventsApi.getEventBySlug(client, slug);
+  if (!event) notFound();
+
+  const imageUrl = getEventImageUrl(event.image);
+  const live = isLiveNow(event.startDate, event.endDate);
+  const startTime = formatTime(event.startTime);
+  const endTime = formatTime(event.endTime);
+  const fullDate = formatFullDate(event.startDate, locale);
+  const isMultiDay = event.startDate !== event.endDate;
+  const fullEndDate = isMultiDay ? formatFullDate(event.endDate, locale) : null;
+
+  const hosts = (
+    Array.isArray(event.organizers) ? event.organizers : []
+  ) as Host[];
+
+  const galleryImages = Array.isArray(event.images)
+    ? (event.images as unknown[])
+        .filter((img): img is string => typeof img === "string")
+        .map(getEventImageUrl)
+    : [];
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
+  const eventUrl = `${siteUrl}/${locale}/${slug}`;
+  const gcalUrl = buildGCalUrl(event);
+  const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(eventUrl)}`;
+
+  return (
+    <div className="pb-12">
+      {/* ── Hero ──────────────────────────────────────────────────────── */}
+      <EventHeroGallery
+        imageUrl={imageUrl}
+        eventId={String(event.id)}
+        title={event.title}
+        live={live}
+        cancelled={event.isEventCancelled ?? false}
+        soldOut={event.isSoldOut ?? false}
+        premium={event.isEventPremium ?? false}
+        cancelledLabel={t("cancelled")}
+        soldOutLabel={t("soldOut")}
+        premiumLabel={t("premium")}
+      />
+
+      {/* ── Content ───────────────────────────────────────────────────── */}
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <Typography.H1 className="mt-10 mb-5 text-center">
+          {event.title}
+        </Typography.H1>
+
+        {(event.tags?.length ?? 0) > 0 && (
+          <div className="mb-12 flex flex-wrap justify-center gap-2">
+            {event.tags!.map((tag) => (
+              <span
+                key={tag.id}
+                className="bg-primary/10 text-primary rounded-full px-4 py-1.5 text-sm font-semibold tracking-wide uppercase"
+              >
+                #{getTagLabel(tag.title, locale)}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-5 lg:flex lg:items-start lg:gap-12">
+          {/* ── Left column ───────────────────────────────────────────── */}
+          <div className="flex flex-1 flex-col gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              {/* Date */}
+              <EventDetailRow
+                icon={<Calendar className="size-4" />}
+                label={t("date")}
+              >
+                <p className="text-sm font-semibold capitalize">{fullDate}</p>
+                {fullEndDate && (
+                  <p className="text-muted-foreground text-sm">
+                    → {fullEndDate}
+                  </p>
+                )}
+              </EventDetailRow>
+
+              {/* Time */}
+              {startTime && (
+                <EventDetailRow
+                  icon={<Clock className="size-4" />}
+                  label={t("time")}
+                >
+                  <p className="text-sm font-semibold">
+                    {startTime}
+                    {endTime ? ` – ${endTime}` : ""}
+                  </p>
+                </EventDetailRow>
+              )}
+
+              {/* Location */}
+              {(event.address || event.town || event.place) && (
+                <EventDetailRow
+                  icon={<MapPin className="size-4" />}
+                  label={t("place")}
+                >
+                  {event.place && (
+                    <p className="text-sm font-semibold">{event.place}</p>
+                  )}
+                  {event.address && (
+                    <p className="text-muted-foreground text-sm">
+                      {event.address}
+                    </p>
+                  )}
+                  {event.town && (
+                    <p className="text-muted-foreground text-sm">
+                      {event.town}
+                    </p>
+                  )}
+                </EventDetailRow>
+              )}
+
+              {/* Price */}
+              {event.price !== null &&
+                event.price !== undefined &&
+                event.price !== "" && (
+                  <EventDetailRow
+                    icon={<Ticket className="size-4" />}
+                    label={t("price")}
+                  >
+                    <p className="text-sm font-semibold">
+                      {event.price === "0" || event.price === "0.00"
+                        ? t("free")
+                        : `${event.price} ${t("euros")}`}
+                    </p>
+                  </EventDetailRow>
+                )}
+
+              {/* Hosts */}
+              {hosts.length > 0 && (
+                <EventDetailRow
+                  icon={<Users className="size-4" />}
+                  label={t("hosts")}
+                >
+                  <div className="flex flex-col gap-0.5">
+                    {hosts.map((o, i) =>
+                      o.link ? (
+                        <a
+                          key={i}
+                          href={o.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-semibold underline-offset-2 hover:underline"
+                        >
+                          {o.name}
+                        </a>
+                      ) : (
+                        <p key={i} className="text-sm font-semibold">
+                          {o.name}
+                        </p>
+                      ),
+                    )}
+                  </div>
+                </EventDetailRow>
+              )}
+
+              {/* Phone */}
+              {event.phoneNumber && (
+                <EventDetailRow
+                  icon={<Phone className="size-4" />}
+                  label={t("contactPhone")}
+                >
+                  <a
+                    href={`tel:${event.phoneNumber}`}
+                    className="text-sm font-semibold hover:underline"
+                  >
+                    {event.phoneNumber}
+                  </a>
+                </EventDetailRow>
+              )}
+
+              {/* Email */}
+              {event.email && (
+                <EventDetailRow
+                  icon={<Mail className="size-4" />}
+                  label={t("email")}
+                >
+                  <a
+                    href={`mailto:${event.email}`}
+                    className="text-sm font-semibold hover:underline"
+                  >
+                    {event.email}
+                  </a>
+                </EventDetailRow>
+              )}
+            </div>
+
+            {/* Description card */}
+            {event.description && (
+              <Card>
+                <CardContent className="p-6">
+                  <div
+                    className="prose prose-sm dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{ __html: event.description }}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Gallery card */}
+            {galleryImages.length > 0 && (
+              <Card>
+                <CardContent className="px-6 pt-0 pb-6">
+                  <EventImagesGallery images={galleryImages} />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* ── Actions sidebar ────────────────────────────────────────── */}
+          {/*
+            Desktop: sticky sidebar to the right of meta.
+            Mobile:  stacked below meta, before description.
+            top value accounts for sticky header height (~56px mobile / ~64px desktop).
+          */}
+          <div className="mt-6 flex flex-col gap-2 lg:sticky lg:top-20 lg:mt-0 lg:w-52 lg:shrink-0">
+            {event.ticketsLink && (
+              <Button
+                variant="outline"
+                asChild
+                className="w-full justify-center gap-2"
+              >
+                <a
+                  href={event.ticketsLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Ticket className="size-4 shrink-0" />
+                  {t("buyTickets")}
+                </a>
+              </Button>
+            )}
+            {event.fbLink && (
+              <Button
+                variant="outline"
+                asChild
+                className="w-full justify-center gap-2"
+              >
+                <a
+                  href={event.fbLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="size-4 shrink-0" />
+                  {t("facebook")}
+                </a>
+              </Button>
+            )}
+
+            <Button variant="outline" className="w-full justify-center gap-2">
+              <Bookmark className="size-4 shrink-0" />
+              {t("save")}
+            </Button>
+
+            <Button
+              variant="outline"
+              asChild
+              className="w-full justify-center gap-2"
+            >
+              <a href={gcalUrl} target="_blank" rel="noopener noreferrer">
+                <CalendarPlus className="size-4 shrink-0" />
+                {t("addToCalendar")}
+              </a>
+            </Button>
+
+            <Button asChild className="w-full justify-center gap-2">
+              <a href={fbShareUrl} target="_blank" rel="noopener noreferrer">
+                <Share2 className="size-4 shrink-0" />
+                {t("shareOnFacebook")}
+              </a>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

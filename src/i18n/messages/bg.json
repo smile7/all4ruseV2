@@ -164,7 +164,17 @@
     "euros": "евро",
     "hosts": "Организатори",
     "translate": "Преведи на",
-    "chooseLanguage": "Избери език"
+    "chooseLanguage": "Избери език",
+    "back": "Назад",
+    "buyTickets": "Купи билети",
+    "cancelled": "Отменено",
+    "soldOut": "Разпродадено",
+    "premium": "Премиум",
+    "place": "Място",
+    "save": "Запази",
+    "addToCalendar": "Добави в календар",
+    "shareOnFacebook": "Сподели",
+    "email": "Имейл"
   },
   "CurrentEvents": {
     "createEvent": "Създай Събитие",
