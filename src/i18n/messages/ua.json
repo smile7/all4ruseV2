@@ -164,7 +164,17 @@
     "euros": "євро",
     "hosts": "Організатори",
     "translate": "Перевести на",
-    "chooseLanguage": "Оберіть мову"
+    "chooseLanguage": "Оберіть мову",
+    "back": "Назад",
+    "buyTickets": "Купити квитки",
+    "cancelled": "Скасовано",
+    "soldOut": "Розпродано",
+    "premium": "Преміум",
+    "place": "Місце",
+    "save": "Зберегти",
+    "addToCalendar": "Додати до календаря",
+    "shareOnFacebook": "Поділитися",
+    "email": "Електронна пошта"
   },
   "CurrentEvents": {
     "createEvent": "Створити подію",

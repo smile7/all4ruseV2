@@ -28,15 +28,11 @@ export function EventCard({ event }: Props) {
   const live = isLiveNow(event.startDate, event.endDate);
   const imageUrl = getEventImageUrl(event.image);
   const host = getFirstHostName(event.organizers);
-  const href = event.slug ? `/events/${event.slug}` : "/";
+  const href = event.slug ? `/${event.slug}` : "/";
 
   return (
-    <Link
-      href={href}
-      className="group block h-full focus-visible:outline-none"
-    >
-      <article className="bg-card text-card-foreground flex h-full flex-col overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg group-focus-visible:ring-2 group-focus-visible:ring-ring">
-
+    <Link href={href} className="group block h-full focus-visible:outline-none">
+      <article className="bg-card text-card-foreground group-focus-visible:ring-ring flex h-full flex-col overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg group-focus-visible:ring-2">
         {/* ── Image ──────────────────────────────────────────────────────── */}
         <div
           className="relative aspect-video overflow-hidden"
@@ -63,19 +59,19 @@ export function EventCard({ event }: Props) {
           />
 
           {/* Date + time badge — top left */}
-          <div className="absolute left-2.5 top-2.5 z-20 min-w-14 rounded-xl bg-background/92 px-2.5 py-2 text-center shadow backdrop-blur-sm">
-            <p className="text-xl font-bold leading-none">{day}</p>
-            <p className="text-muted-foreground mt-1 text-xs uppercase leading-none tracking-widest">
+          <div className="bg-background/92 absolute top-2.5 left-2.5 z-20 min-w-14 rounded-xl px-2.5 py-2 text-center shadow backdrop-blur-sm">
+            <p className="text-xl leading-none font-bold">{day}</p>
+            <p className="text-muted-foreground mt-1 text-xs leading-none tracking-widest uppercase">
               {month}
             </p>
-            <p className="mt-1.5 text-sm font-semibold leading-none tabular-nums">
+            <p className="mt-1.5 text-sm leading-none font-semibold tabular-nums">
               {event.startTime.slice(0, 5)}
             </p>
           </div>
 
           {/* Live now badge — top right */}
           {live && (
-            <div className="absolute right-2.5 top-2.5 z-20 flex items-center gap-1.5 rounded-full bg-background/92 px-3 py-1.5 text-xs font-semibold shadow backdrop-blur-sm">
+            <div className="bg-background/92 absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow backdrop-blur-sm">
               <span className="relative flex size-2 shrink-0">
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
                 <span className="relative inline-flex size-2 rounded-full bg-green-500" />
@@ -87,7 +83,7 @@ export function EventCard({ event }: Props) {
           {/* Cancelled overlay */}
           {event.isEventCancelled && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
-              <span className="rounded-full bg-destructive px-3 py-1 text-xs font-semibold text-destructive-foreground">
+              <span className="bg-destructive text-destructive-foreground rounded-full px-3 py-1 text-xs font-semibold">
                 Отменено
               </span>
             </div>
@@ -95,7 +91,7 @@ export function EventCard({ event }: Props) {
         </div>
 
         {/* ── Content ────────────────────────────────────────────────────── */}
-        <div className="flex flex-1 flex-col gap-3 py-6 px-3">
+        <div className="flex flex-1 flex-col gap-3 px-3 py-6">
           <h3 className="line-clamp-2 min-h-11 text-left leading-snug">
             {event.title}
           </h3>
@@ -115,7 +111,7 @@ export function EventCard({ event }: Props) {
                 {event.tags!.slice(0, 3).map((tag) => (
                   <span
                     key={tag.id}
-                    className="bg-primary/10 text-primary shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide"
+                    className="bg-primary/10 text-primary shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-wide uppercase"
                   >
                     #{getTagLabel(tag.title, locale)}
                   </span>

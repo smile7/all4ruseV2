@@ -4,8 +4,18 @@ import type { Host } from "~/types";
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
 const BG_MONTHS_SHORT = [
-  "яну", "фев", "мар", "апр", "май", "юни",
-  "юли", "авг", "сеп", "окт", "ное", "дек",
+  "яну",
+  "фев",
+  "мар",
+  "апр",
+  "май",
+  "юни",
+  "юли",
+  "авг",
+  "сеп",
+  "окт",
+  "ное",
+  "дек",
 ] as const;
 
 /**
@@ -19,12 +29,45 @@ export function parseLocalDate(dateStr: string): Date {
 }
 
 /** Returns `{ day, month }` for the date badge displayed on an EventCard. */
-export function formatDateBadge(dateStr: string): { day: string; month: string } {
+export function formatDateBadge(dateStr: string): {
+  day: string;
+  month: string;
+} {
   const date = parseLocalDate(dateStr);
   return {
     day: String(date.getDate()),
     month: BG_MONTHS_SHORT[date.getMonth()]!,
   };
+}
+
+/**
+ * Returns a full localised date string for the event detail page.
+ * e.g. "събота, 25 февруари 2026" (bg) / "Saturday, 25 February 2026" (en)
+ */
+export function formatFullDate(dateStr: string, locale: string): string {
+  const localeMap: Record<string, string> = {
+    bg: "bg-BG",
+    en: "en-GB",
+    ua: "uk-UA",
+    ro: "ro-RO",
+  };
+  const intlLocale = localeMap[locale] ?? "bg-BG";
+  const date = parseLocalDate(dateStr);
+  return new Intl.DateTimeFormat(intlLocale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+/**
+ * Formats a HH:MM:SS time string to HH:MM.
+ * Returns null if the value is empty/null.
+ */
+export function formatTime(timeStr: string | null | undefined): string | null {
+  if (!timeStr) return null;
+  return timeStr.slice(0, 5);
 }
 
 /** True when today falls within [startDate, end of endDate]. */
@@ -142,4 +185,34 @@ export function getTagLabel(title: string, locale: string): string {
  */
 export function getTagHue(id: number): number {
   return Math.round((id * 137.508) % 360);
+}
+
+// ─── Other helpers ─────────────────────────────────────────────────────────
+
+export function buildGCalUrl(event: {
+  title: string;
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string | null;
+  place: string | null;
+  address: string;
+  town: string;
+}): string {
+  const d0 = event.startDate.replace(/-/g, "");
+  const d1 = event.endDate.replace(/-/g, "");
+  const t0 = event.startTime.replace(/:/g, "").slice(0, 6).padEnd(6, "0");
+  const t1 = event.endTime
+    ? event.endTime.replace(/:/g, "").slice(0, 6).padEnd(6, "0")
+    : t0;
+  const location = [event.place, event.address, event.town]
+    .filter(Boolean)
+    .join(", ");
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: event.title,
+    dates: `${d0}T${t0}/${d1}T${t1}`,
+    location,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }

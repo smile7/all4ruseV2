@@ -65,7 +65,14 @@ async function applyFilters(
   query: ReturnType<typeof baseQuery>,
   params: Partial<GetEventsParams>,
 ) {
-  const { tagId, search, startDate, endDate, page = 1, pageSize = EVENTS_PAGE_SIZE } = params;
+  const {
+    tagId,
+    search,
+    startDate,
+    endDate,
+    page = 1,
+    pageSize = EVENTS_PAGE_SIZE,
+  } = params;
 
   if (search) {
     query = query.ilike("title", `%${search}%`);
@@ -141,7 +148,10 @@ async function getPastEvents(
   return (data ?? []).map(mapEvent);
 }
 
-async function getEventBySlug(client: Client, slug: string): Promise<Event | null> {
+async function getEventBySlug(
+  client: Client,
+  slug: string,
+): Promise<Event | null> {
   const { data, error } = await client
     .from("events")
     .select("*, event_tags(tags(id, title))")
@@ -156,8 +166,23 @@ async function getEventBySlug(client: Client, slug: string): Promise<Event | nul
   return data ? mapEvent(data) : null;
 }
 
+// Returns all active event slugs — used by generateStaticParams on the detail page.
+async function getAllSlugs(client: Client): Promise<string[]> {
+  const { data, error } = await client
+    .from("events")
+    .select("slug")
+    .eq("isEventActive", true)
+    .not("slug", "is", null);
+
+  if (error) return [];
+  return (data ?? [])
+    .map((r) => r.slug)
+    .filter((s): s is string => typeof s === "string");
+}
+
 export const eventsApi = {
   getActiveEvents,
   getPastEvents,
   getEventBySlug,
+  getAllSlugs,
 };

@@ -164,7 +164,17 @@
     "euros": "euros",
     "hosts": "Hosts",
     "translate": "Translate to",
-    "chooseLanguage": "Choose language"
+    "chooseLanguage": "Choose language",
+    "back": "Back",
+    "buyTickets": "Buy tickets",
+    "cancelled": "Cancelled",
+    "soldOut": "Sold out",
+    "premium": "Premium",
+    "place": "Venue",
+    "save": "Save",
+    "addToCalendar": "Add to Calendar",
+    "shareOnFacebook": "Share on Facebook",
+    "email": "Email"
   },
   "CurrentEvents": {
     "createEvent": "Create an Event",

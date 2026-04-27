@@ -1,3 +1,6 @@
+export * from "./EventDetailRow";
+export * from "./EventHeroGallery";
+export * from "./EventImagesGallery";
 export * from "./Footer";
 export * from "./Header";
 export * from "./LocaleSwitcher";

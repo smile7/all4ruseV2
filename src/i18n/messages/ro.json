@@ -164,7 +164,17 @@
     "euros": "euro",
     "hosts": "Gazde",
     "translate": "Tradu în",
-    "chooseLanguage": "Alege limba"
+    "chooseLanguage": "Alege limba",
+    "back": "Înapoi",
+    "buyTickets": "Cumpără bilete",
+    "cancelled": "Anulat",
+    "soldOut": "Epuizat",
+    "premium": "Premium",
+    "place": "Locație",
+    "save": "Salvează",
+    "addToCalendar": "Adaugă în calendar",
+    "shareOnFacebook": "Distribuie",
+    "email": "Email"
   },
   "CurrentEvents": {
     "createEvent": "Creează un eveniment",
