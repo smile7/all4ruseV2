@@ -118,9 +118,10 @@ export default async function EventDetailPage({ params }: Props) {
   const mapsQuery = [event.place, event.address, event.town]
     .filter(Boolean)
     .join(", ");
-  const mapsEmbedUrl = mapsApiKey && mapsQuery
-    ? `https://www.google.com/maps/embed/v1/place?key=${mapsApiKey}&q=${encodeURIComponent(mapsQuery)}&zoom=15`
-    : null;
+  const mapsEmbedUrl =
+    mapsApiKey && mapsQuery
+      ? `https://www.google.com/maps/embed/v1/place?key=${mapsApiKey}&q=${encodeURIComponent(mapsQuery)}&zoom=15`
+      : null;
 
   return (
     <div className="pb-12">
