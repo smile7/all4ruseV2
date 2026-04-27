@@ -26,7 +26,7 @@ export default function RootLayout({
       className={comfortaa.variable}
       suppressHydrationWarning
     >
-      <body className="min-h-screen antialiased">
+      <body className="min-h-screen antialiased" suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>
