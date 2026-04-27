@@ -114,6 +114,14 @@ export default async function EventDetailPage({ params }: Props) {
   const gcalUrl = buildGCalUrl(event);
   const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(eventUrl)}`;
 
+  const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const mapsQuery = [event.place, event.address, event.town]
+    .filter(Boolean)
+    .join(", ");
+  const mapsEmbedUrl = mapsApiKey && mapsQuery
+    ? `https://www.google.com/maps/embed/v1/place?key=${mapsApiKey}&q=${encodeURIComponent(mapsQuery)}&zoom=15`
+    : null;
+
   return (
     <div className="pb-12">
       {/* ── Hero ──────────────────────────────────────────────────────── */}
@@ -360,6 +368,20 @@ export default async function EventDetailPage({ params }: Props) {
                 {t("shareOnFacebook")}
               </a>
             </Button>
+
+            {mapsEmbedUrl && (
+              <div className="mt-2 overflow-hidden rounded-lg border">
+                <iframe
+                  src={mapsEmbedUrl}
+                  title="Event location"
+                  width="100%"
+                  height="200"
+                  className="block"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
