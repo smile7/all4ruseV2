@@ -24,7 +24,7 @@ import {
 } from "~/components/layout";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
-import type { Locale } from "~/constants";
+import { type Locale, LOCALES } from "~/constants";
 import { eventsApi } from "~/lib/api";
 import {
   buildGCalUrl,
@@ -47,7 +47,7 @@ export async function generateStaticParams() {
   try {
     const client = await createSupabaseServerClient();
     const slugs = await eventsApi.getAllSlugs(client);
-    return slugs.map((slug) => ({ slug }));
+    return LOCALES.flatMap((locale) => slugs.map((slug) => ({ locale, slug })));
   } catch {
     return [];
   }
