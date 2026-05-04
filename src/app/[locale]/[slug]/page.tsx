@@ -83,10 +83,11 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, locale } = await params;
   const safeLocale = locale as Locale;
+  const t = await getTranslations({ locale, namespace: "CreateEvent" });
   try {
     const client = createSupabasePublicServerClient();
     const event = await eventsApi.getEventBySlug(client, slug);
-    if (!event) return { title: "Събитието не е намерено" };
+    if (!event) return { title: t("eventNotFound") };
 
     const formattedTitle = formatEventTitle(event.title);
 
@@ -111,7 +112,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         url: eventUrl,
         siteName: "All4Ruse",
         images: imageUrl ? [{ url: imageUrl }] : [],
-        type: "website",
+        type: "article",
         locale: openGraphLocaleByRouteLocale[safeLocale],
         alternateLocale: LOCALES.filter(
           (language) => language !== safeLocale,
@@ -125,7 +126,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     };
   } catch {
-    return { title: "Събитие" };
+    return { title: t("error") };
   }
 }
 
@@ -245,289 +246,282 @@ export default async function EventDetailPage({ params }: Props) {
         }}
       />
 
-      <div className="overflow-x-clip pb-12">
-        <div className="flex flex-col gap-10">
-          {/* ── Hero ──────────────────────────────────────────────────────── */}
-          <EventHeroGallery
-            imageUrl={imageUrl}
-            eventId={String(event.id)}
-            title={formattedTitle}
-            live={live}
-            cancelled={event.isEventCancelled ?? false}
-            soldOut={event.isSoldOut ?? false}
-            premium={event.isEventPremium ?? false}
-            cancelledLabel={t("cancelled")}
-            soldOutLabel={t("soldOut")}
-            premiumLabel={t("premium")}
-          />
+      <div className="overflow-x-clip pb-20">
+        {/* ── Hero — full bleed mobile, contained + rounded on desktop ── */}
+        <EventHeroGallery
+          imageUrl={imageUrl}
+          eventId={String(event.id)}
+          title={formattedTitle}
+          live={live}
+          cancelled={event.isEventCancelled ?? false}
+          soldOut={event.isSoldOut ?? false}
+          premium={event.isEventPremium ?? false}
+          cancelledLabel={t("cancelled")}
+          soldOutLabel={t("soldOut")}
+          premiumLabel={t("premium")}
+        />
 
-          {/* ── Content ───────────────────────────────────────────────────── */}
-          <div className="mx-auto flex max-w-5xl flex-col gap-10 px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-5">
-              <Typography.H1 className="text-center text-3xl wrap-break-word">
-                {formattedTitle}
-              </Typography.H1>
+        {/* ── Page body ─────────────────────────────────────────────────── */}
+        <div className="mx-auto max-w-5xl px-4 pt-5 pb-4 sm:px-6 sm:pt-7 lg:px-8">
 
-              {(event.tags?.length ?? 0) > 0 && (
-                <div className="flex flex-wrap justify-center gap-2">
-                  {event.tags!.map((tag) => (
-                    <span
-                      key={tag.id}
-                      className="bg-primary/10 text-primary rounded-full px-4 py-1.5 text-sm font-semibold tracking-wide uppercase"
-                    >
-                      #{getTagLabel(tag.title, safeLocale)}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-12">
-              {/* ── Left column ───────────────────────────────────────────── */}
-              <div className="flex flex-1 flex-col gap-6">
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  {/* Date */}
-                  <EventDetailRow
-                    icon={<Calendar className="size-4" />}
-                    label={t("date")}
+          {/* Title + tags */}
+          <div className="mb-6 sm:mb-8">
+            <h1 className="mb-3 text-center text-2xl font-bold tracking-tight sm:text-3xl wrap-break-word">
+              {formattedTitle}
+            </h1>
+            {(event.tags?.length ?? 0) > 0 && (
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {event.tags!.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase"
                   >
-                    <p className="text-sm font-semibold capitalize">
-                      {fullDate}
+                    #{getTagLabel(tag.title, safeLocale)}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Two-column on desktop: main content + sticky sidebar */}
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
+
+            {/* ── Main / left column ──────────────────────────────────── */}
+            <div className="min-w-0 flex-1 flex flex-col gap-5 sm:gap-6">
+
+            <Card>
+              <CardContent className="p-4 sm:px-6 sm:pb-6">
+              {/* Info detail rows */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/* Date */}
+                <EventDetailRow icon={<Calendar className="size-4" />} label={t("date")}>
+                  <p className="text-sm font-semibold capitalize">{fullDate}</p>
+                  {fullEndDate && (
+                    <p className="text-muted-foreground text-sm">→ {fullEndDate}</p>
+                  )}
+                </EventDetailRow>
+
+                {/* Time */}
+                {startTime && (
+                  <EventDetailRow icon={<Clock className="size-4" />} label={t("time")}>
+                    <p className="text-sm font-semibold">
+                      {startTime}{endTime ? ` – ${endTime}` : ""}
                     </p>
-                    {fullEndDate && (
-                      <p className="text-muted-foreground text-sm">
-                        → {fullEndDate}
-                      </p>
-                    )}
                   </EventDetailRow>
-
-                  {/* Time */}
-                  {startTime && (
-                    <EventDetailRow
-                      icon={<Clock className="size-4" />}
-                      label={t("time")}
-                    >
-                      <p className="text-sm font-semibold">
-                        {startTime}
-                        {endTime ? ` – ${endTime}` : ""}
-                      </p>
-                    </EventDetailRow>
-                  )}
-
-                  {/* Location */}
-                  {(event.address || event.town || event.place) && (
-                    <EventDetailRow
-                      icon={<MapPin className="size-4" />}
-                      label={t("place")}
-                    >
-                      {event.place && (
-                        <p className="text-sm font-semibold">{event.place}</p>
-                      )}
-                      {event.address && (
-                        <p className="text-foreground text-sm">
-                          {event.address}
-                        </p>
-                      )}
-                      {event.town && (
-                        <p className="text-foreground text-sm">{event.town}</p>
-                      )}
-                    </EventDetailRow>
-                  )}
-
-                  {/* Price */}
-                  {event.price !== null &&
-                    event.price !== undefined &&
-                    event.price !== "" && (
-                      <EventDetailRow
-                        icon={<Ticket className="size-4" />}
-                        label={t("price")}
-                      >
-                        <p className="text-sm font-semibold">
-                          {event.price === "0" || event.price === "0.00"
-                            ? t("free")
-                            : `${event.price} ${t("euros")}`}
-                        </p>
-                      </EventDetailRow>
-                    )}
-
-                  {/* Hosts */}
-                  {hosts.length > 0 && (
-                    <EventDetailRow
-                      icon={<Users className="size-4" />}
-                      label={t("hosts")}
-                    >
-                      <div className="flex flex-col gap-0.5">
-                        {hosts.map((o, i) =>
-                          o.link ? (
-                            <a
-                              key={i}
-                              href={o.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm font-semibold underline-offset-2 hover:underline"
-                            >
-                              {o.name}
-                            </a>
-                          ) : (
-                            <p key={i} className="text-sm font-semibold">
-                              {o.name}
-                            </p>
-                          ),
-                        )}
-                      </div>
-                    </EventDetailRow>
-                  )}
-
-                  {/* Phone */}
-                  {event.phoneNumber && (
-                    <EventDetailRow
-                      icon={<Phone className="size-4" />}
-                      label={t("contactPhone")}
-                    >
-                      <a
-                        href={`tel:${event.phoneNumber}`}
-                        className="text-sm font-semibold hover:underline"
-                      >
-                        {event.phoneNumber}
-                      </a>
-                    </EventDetailRow>
-                  )}
-
-                  {/* Email */}
-                  {event.email && (
-                    <EventDetailRow
-                      icon={<Mail className="size-4" />}
-                      label={t("email")}
-                    >
-                      <a
-                        href={`mailto:${event.email}`}
-                        className="text-sm font-semibold hover:underline"
-                      >
-                        {event.email}
-                      </a>
-                    </EventDetailRow>
-                  )}
-                </div>
-
-                {/* Description card */}
-                {event.description && (
-                  <Card>
-                    <CardContent className="overflow-x-clip py-4">
-                      <div
-                        className="prose prose-sm dark:prose-invert max-w-none wrap-break-word [&_iframe]:w-full [&_iframe]:max-w-full [&_img]:h-auto [&_img]:max-w-full [&_video]:h-auto [&_video]:max-w-full"
-                        dangerouslySetInnerHTML={{ __html: event.description }}
-                      />
-                    </CardContent>
-                  </Card>
                 )}
 
-                {/* Gallery card */}
-                {galleryImages.length > 0 && (
-                  <Card>
-                    <CardContent className="px-6 pt-0 pb-6">
-                      <EventImagesGallery images={galleryImages} />
-                    </CardContent>
-                  </Card>
+                {/* Location */}
+                {(event.address || event.town || event.place) && (
+                  <EventDetailRow icon={<MapPin className="size-4" />} label={t("place")}>
+                    {event.place && <p className="text-sm font-semibold">{event.place}</p>}
+                    {event.address && <p className="text-sm">{event.address}</p>}
+                    {event.town && <p className="text-sm">{event.town}</p>}
+                  </EventDetailRow>
+                )}
+
+                {/* Price */}
+                {event.price !== null && event.price !== undefined && event.price !== "" && (
+                  <EventDetailRow icon={<Ticket className="size-4" />} label={t("price")}>
+                    <p className="text-sm font-semibold">
+                      {event.price === "0" || event.price === "0.00"
+                        ? t("free")
+                        : `${event.price} ${t("euros")}`}
+                    </p>
+                  </EventDetailRow>
+                )}
+
+                {/* Hosts */}
+                {hosts.length > 0 && (
+                  <EventDetailRow icon={<Users className="size-4" />} label={t("hosts")}>
+                    <div className="flex flex-col gap-0.5">
+                      {hosts.map((o, i) =>
+                        o.link ? (
+                          <a
+                            key={i}
+                            href={o.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-semibold underline-offset-2 hover:underline"
+                          >
+                            {o.name}
+                          </a>
+                        ) : (
+                          <p key={i} className="text-sm font-semibold">{o.name}</p>
+                        ),
+                      )}
+                    </div>
+                  </EventDetailRow>
+                )}
+
+                {/* Phone */}
+                {event.phoneNumber && (
+                  <EventDetailRow icon={<Phone className="size-4" />} label={t("contactPhone")}>
+                    <a
+                      href={`tel:${event.phoneNumber}`}
+                      className="text-sm font-semibold hover:underline"
+                    >
+                      {event.phoneNumber}
+                    </a>
+                  </EventDetailRow>
+                )}
+
+                {/* Email */}
+                {event.email && (
+                  <EventDetailRow icon={<Mail className="size-4" />} label={t("email")}>
+                    <a
+                      href={`mailto:${event.email}`}
+                      className="text-sm font-semibold hover:underline"
+                    >
+                      {event.email}
+                    </a>
+                  </EventDetailRow>
                 )}
               </div>
-
-              {/* ── Actions sidebar ────────────────────────────────────────── */}
-              <div className="flex flex-col gap-4 lg:sticky lg:top-20 lg:w-52 lg:shrink-0">
+            </CardContent>
+          </Card>
+      
+              <div className="flex flex-col gap-3 lg:hidden">
                 {event.ticketsLink && (
-                  <Button
-                    variant="outline"
-                    asChild
-                    className="w-full justify-center gap-2"
-                  >
-                    <a
-                      href={event.ticketsLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                  <Button variant="outline" asChild className="w-full justify-center gap-2">
+                    <a href={event.ticketsLink} target="_blank" rel="noopener noreferrer">
                       <Ticket className="size-4 shrink-0" />
                       {t("buyTickets")}
                     </a>
                   </Button>
                 )}
                 {event.fbLink && (
-                  <Button
-                    variant="outline"
-                    asChild
-                    className="w-full justify-center gap-2"
-                  >
-                    <a
-                      href={event.fbLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                  <Button variant="outline" asChild className="w-full justify-center gap-2">
+                    <a href={event.fbLink} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="size-4 shrink-0" />
                       {t("facebook")}
                     </a>
                   </Button>
                 )}
-
-                <Button
-                  variant="outline"
-                  className="w-full justify-center gap-2"
-                >
-                  <Bookmark className="size-4 shrink-0" />
-                  {t("save")}
-                </Button>
-
-                <Button
-                  variant="outline"
-                  asChild
-                  className="w-full justify-center gap-2"
-                >
+                <Button variant="outline" asChild className="w-full justify-center gap-2">
                   <a href={gcalUrl} target="_blank" rel="noopener noreferrer">
                     <CalendarPlus className="size-4 shrink-0" />
                     {t("addToCalendar")}
                   </a>
                 </Button>
-
+                <Button variant="outline" className="w-full justify-center gap-2">
+                  <Bookmark className="size-4 shrink-0" />
+                  {t("save")}
+                </Button>
                 <Button asChild className="w-full justify-center gap-2">
-                  <a
-                    href={fbShareUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <a href={fbShareUrl} target="_blank" rel="noopener noreferrer">
                     <Share2 className="size-4 shrink-0" />
                     {t("shareOnFacebook")}
                   </a>
                 </Button>
-
-                {mapsEmbedUrl && (
-                  <div className="overflow-hidden rounded-lg border">
-                    <iframe
-                      src={mapsEmbedUrl}
-                      title="Event location"
-                      width="100%"
-                      height="200"
-                      className="block"
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                    />
-                  </div>
-                )}
               </div>
+
+              {/* Description */}
+              {event.description && (
+                <Card>
+                  <CardContent className="overflow-x-clip py-4">
+                    <div
+                      className="prose prose-sm dark:prose-invert max-w-none wrap-break-word [&_iframe]:w-full [&_iframe]:max-w-full [&_img]:h-auto [&_img]:max-w-full [&_video]:h-auto [&_video]:max-w-full"
+                      dangerouslySetInnerHTML={{ __html: event.description }}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ── Mobile-only: map after description ───────────────────── */}
+              {mapsEmbedUrl && (
+                <div className="overflow-hidden rounded-xl border lg:hidden">
+                  <iframe
+                    src={mapsEmbedUrl}
+                    title={t("place")}
+                    width="100%"
+                    height="180"
+                    className="block"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              )}
+
+              {/* Image gallery */}
+              {galleryImages.length > 0 && (
+                <Card>
+                  <CardContent className="p-4 sm:px-6 sm:pb-6">
+                    <Typography.H2>
+                      {t("gallery")}
+                    </Typography.H2>
+                    <EventImagesGallery images={galleryImages} />
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
-            {/* ── Related events — horizontal scroll row ── */}
-            {relatedEvents.length > 0 && (
-              <div className="flex flex-col gap-5">
-                <Typography.H3>{t("moreEvents")}</Typography.H3>
-                <div className="-mx-4 sm:-mx-6 lg:mx-0">
-                  <div className="flex gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:px-6 lg:px-0 [&::-webkit-scrollbar]:hidden">
-                    {relatedEvents.map((relatedEvent) => (
-                      <div key={relatedEvent.id} className="w-72 shrink-0">
-                        <EventCard event={relatedEvent} />
-                      </div>
-                    ))}
-                  </div>
+            {/* ── Desktop sidebar (hidden on mobile) ──────────────────── */}
+            <div className="hidden lg:sticky lg:top-20 lg:flex lg:w-52 lg:shrink-0 lg:flex-col lg:gap-3">
+              {event.ticketsLink && (
+                <Button variant="secondary" asChild className="w-full justify-center gap-2">
+                  <a href={event.ticketsLink} target="_blank" rel="noopener noreferrer">
+                    <Ticket className="size-4 shrink-0" />
+                    {t("buyTickets")}
+                  </a>
+                </Button>
+              )}
+              {event.fbLink && (
+                <Button variant="secondary" asChild className="w-full justify-center gap-2">
+                  <a href={event.fbLink} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="size-4 shrink-0" />
+                    {t("facebook")}
+                  </a>
+                </Button>
+              )}
+              <Button variant="secondary" className="w-full justify-center gap-2">
+                <Bookmark className="size-4 shrink-0" />
+                {t("save")}
+              </Button>
+              <Button variant="secondary" asChild className="w-full justify-center gap-2">
+                <a href={gcalUrl} target="_blank" rel="noopener noreferrer">
+                  <CalendarPlus className="size-4 shrink-0" />
+                  {t("addToCalendar")}
+                </a>
+              </Button>
+              <Button asChild className="w-full justify-center gap-2">
+                <a href={fbShareUrl} target="_blank" rel="noopener noreferrer">
+                  <Share2 className="size-4 shrink-0" />
+                  {t("shareOnFacebook")}
+                </a>
+              </Button>
+              {mapsEmbedUrl && (
+                <div className="mt-1 overflow-hidden rounded-lg border">
+                  <iframe
+                    src={mapsEmbedUrl}
+                    title={t("place")}
+                    width="100%"
+                    height="200"
+                    className="block"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Related events — horizontal scroll row ──────────────────── */}
+          {relatedEvents.length > 0 && (
+            <div className="mt-8 flex flex-col gap-4">
+              <h3 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                {t("moreEvents")}
+              </h3>
+              <div className="-mx-4 sm:-mx-6 lg:mx-0">
+                <div className="flex gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:px-6 lg:px-0 [&::-webkit-scrollbar]:hidden">
+                  {relatedEvents.map((relatedEvent) => (
+                    <div key={relatedEvent.id} className="w-64 shrink-0 sm:w-72">
+                      <EventCard event={relatedEvent} />
+                    </div>
+                  ))}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </>

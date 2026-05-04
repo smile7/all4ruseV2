@@ -1,9 +1,10 @@
 import Image from "next/image";
-import Link from "next/link";
+
+import { Link } from "~/i18n/navigation";
 
 export function Logo() {
   return (
-    <Link href="/" aria-label="All4Ruse — всички събития">
+    <Link href="/">
       <Image
         src="/all4ruse_black.png"
         alt="All4Ruse"

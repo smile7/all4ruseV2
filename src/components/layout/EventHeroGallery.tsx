@@ -36,7 +36,7 @@ export function EventHeroGallery({
 }: Props) {
   return (
     <div className="mx-auto mt-3 w-full md:mt-4 md:max-w-7xl md:px-6 lg:px-8">
-      <ViewTransition name={`event-image-${eventId}`} share="event-image">
+      <ViewTransition name={`event-image-${eventId}`}>
         <div className="bg-muted relative aspect-video w-full overflow-hidden md:max-h-95 md:rounded-md">
           {/* Blurred background — fills letterbox gaps */}
           <Image

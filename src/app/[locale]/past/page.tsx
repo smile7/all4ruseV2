@@ -1,13 +1,17 @@
 import { getTranslations } from "next-intl/server";
 
 import { EventsList } from "~/components/EventsList";
+import { Typography } from "~/components/layout";
 import { eventsApi } from "~/lib/api";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import type { Event } from "~/types";
 
 export async function generateMetadata() {
   const t = await getTranslations("PastEvents");
-  return { title: t("pageTitle") };
+  return {
+    title: t("pageTitle"),
+    description: t("pageDescription"),
+  };
 }
 
 export default async function PastEventsPage() {
@@ -22,8 +26,8 @@ export default async function PastEventsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="mb-6 text-xl font-semibold">{t("pageTitle")}</h1>
+    <div className="mx-auto w-full flex flex-col gap-2 text-center max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8">
+      <Typography.H1 className="text-center">{t("pageTitle")}</Typography.H1>
       <EventsList initialData={initialData} variant="past" />
     </div>
   );
