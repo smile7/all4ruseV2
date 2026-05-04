@@ -152,9 +152,8 @@ Footer requirements:
 
 ### 2.5 Event detail page
 
-- Build `src/app/[locale]/events/[slug]/page.tsx` — Server Component.
-- Add `generateStaticParams` to pre-generate known slugs at build time.
-- Add `export const revalidate = 60` for ISR.
+- Build `src/app/[locale]/[slug]/page.tsx` — Server Component.
+- Use request-time SSR for DB-backed slugs so newly added events work immediately after deploy.
 - Add `generateMetadata` — title = event title, description = first 160 chars, OG image = event image.
 - On the hero image, add `style={{ viewTransitionName: \`event-image-${event.id}\` }}` — matches EventCard. The browser animates the shared element automatically.
 - Layout: large hero image, title, date/time, address, price, tags, description, ticket link, Facebook link.

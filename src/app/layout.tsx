@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { ThemeProvider } from "next-themes";
+
+import { ThemeProvider } from "~/components/ThemeProvider";
 
 import "./globals.css";
 
@@ -8,11 +9,31 @@ const comfortaa = localFont({
   variable: "--font-comfortaa",
   display: "swap",
   src: [
-    { path: "../../public/fonts/Comfortaa-Light.ttf", weight: "300", style: "normal" },
-    { path: "../../public/fonts/Comfortaa-Regular.ttf", weight: "400", style: "normal" },
-    { path: "../../public/fonts/Comfortaa-Medium.ttf", weight: "500", style: "normal" },
-    { path: "../../public/fonts/Comfortaa-SemiBold.ttf", weight: "600", style: "normal" },
-    { path: "../../public/fonts/Comfortaa-Bold.ttf", weight: "700", style: "normal" },
+    {
+      path: "../../public/fonts/Comfortaa-Light.ttf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/Comfortaa-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/Comfortaa-Medium.ttf",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/Comfortaa-SemiBold.ttf",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/Comfortaa-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
   ],
 });
 
@@ -22,12 +43,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      className={comfortaa.variable}
-      suppressHydrationWarning
-    >
+    <html className={comfortaa.variable} suppressHydrationWarning>
       <body className="min-h-screen antialiased" suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider defaultTheme="system" enableSystem>
           {children}
         </ThemeProvider>
       </body>

@@ -10,20 +10,20 @@ The reference project (`learning-module-agent-ui`) is used for inspiration on co
 
 ## Stack
 
-| Concern | Choice |
-|---|---|
-| Framework | Next.js (App Router) |
-| Language | TypeScript strict |
-| Styling | Tailwind CSS v4 |
-| Components | shadcn/ui (add components as needed) |
-| Database + Auth | Supabase |
-| Server state | Server Components + Supabase (default) |
-| Interactive data / mutations | TanStack Query v5 (where needed) |
-| Forms | react-hook-form + zod |
-| Localization | next-intl |
-| Icons | lucide-react |
-| Toasts | sonner |
-| Dates | date-fns |
+| Concern                      | Choice                                 |
+| ---------------------------- | -------------------------------------- |
+| Framework                    | Next.js (App Router)                   |
+| Language                     | TypeScript strict                      |
+| Styling                      | Tailwind CSS v4                        |
+| Components                   | shadcn/ui (add components as needed)   |
+| Database + Auth              | Supabase                               |
+| Server state                 | Server Components + Supabase (default) |
+| Interactive data / mutations | TanStack Query v5 (where needed)       |
+| Forms                        | react-hook-form + zod                  |
+| Localization                 | next-intl                              |
+| Icons                        | lucide-react                           |
+| Toasts                       | sonner                                 |
+| Dates                        | date-fns                               |
 
 We add dependencies only when there is a clear need. Nothing is pre-installed "just in case."
 
@@ -33,30 +33,30 @@ We add dependencies only when there is a clear need. Nothing is pre-installed "j
 
 All pages live inside the `[locale]` segment so next-intl routing works out of the box. Visiting `all4ruse.com` redirects to `all4ruse.com/bg/` (Bulgarian default). The user can switch language from the header.
 
-| URL | Page | Notes |
-|---|---|---|
-| `/[locale]` | Upcoming events | Home page |
-| `/[locale]/current` | Current events | Events happening right now |
-| `/[locale]/past` | Past events | Archive |
-| `/[locale]/events/[slug]` | Event detail | SSG + ISR |
-| `/[locale]/why-all4ruse` | Why All4Ruse | Static content page |
-| `/[locale]/legal/cookies` | Cookies policy | Static |
-| `/[locale]/legal/gdpr` | GDPR | Static |
-| `/[locale]/legal/privacy` | Privacy policy | Static |
-| `/[locale]/auth/login` | Login | |
-| `/[locale]/auth/signup` | Sign up | |
-| `/[locale]/auth/signup-success` | Sign up success | |
-| `/[locale]/auth/forgot-password` | Forgot password | |
-| `/[locale]/auth/update-password` | Update password | Requires session |
-| `/[locale]/create-event` | Create event | Requires auth |
-| `/[locale]/profile` | Profile | Requires auth |
-| `/[locale]/my-events` | My events | Requires auth |
-| `/[locale]/admin` | Admin dashboard | Admin role only |
-| `/[locale]/admin/events` | Admin event list | Admin role only |
-| `/[locale]/admin/events/new` | Create event (admin) | Admin role only |
-| `/[locale]/admin/events/[id]` | Edit event | Admin role only |
-| `/[locale]/admin/tags` | Manage tags | Admin role only |
-| `/auth/callback` | OAuth callback | Outside `[locale]` — Supabase redirects here |
+| URL                              | Page                 | Notes                                        |
+| -------------------------------- | -------------------- | -------------------------------------------- |
+| `/[locale]`                      | Upcoming events      | Home page                                    |
+| `/[locale]/current`              | Current events       | Events happening right now                   |
+| `/[locale]/past`                 | Past events          | Archive                                      |
+| `/[locale]/[slug]`               | Event detail         | SSR                                          |
+| `/[locale]/why-all4ruse`         | Why All4Ruse         | Static content page                          |
+| `/[locale]/legal/cookies`        | Cookies policy       | Static                                       |
+| `/[locale]/legal/gdpr`           | GDPR                 | Static                                       |
+| `/[locale]/legal/privacy`        | Privacy policy       | Static                                       |
+| `/[locale]/auth/login`           | Login                |                                              |
+| `/[locale]/auth/signup`          | Sign up              |                                              |
+| `/[locale]/auth/signup-success`  | Sign up success      |                                              |
+| `/[locale]/auth/forgot-password` | Forgot password      |                                              |
+| `/[locale]/auth/update-password` | Update password      | Requires session                             |
+| `/[locale]/create-event`         | Create event         | Requires auth                                |
+| `/[locale]/profile`              | Profile              | Requires auth                                |
+| `/[locale]/my-events`            | My events            | Requires auth                                |
+| `/[locale]/admin`                | Admin dashboard      | Admin role only                              |
+| `/[locale]/admin/events`         | Admin event list     | Admin role only                              |
+| `/[locale]/admin/events/new`     | Create event (admin) | Admin role only                              |
+| `/[locale]/admin/events/[id]`    | Edit event           | Admin role only                              |
+| `/[locale]/admin/tags`           | Manage tags          | Admin role only                              |
+| `/auth/callback`                 | OAuth callback       | Outside `[locale]` — Supabase redirects here |
 
 Events are grouped and filtered by **tags** (a separate `tags` table joined via `event_tags`).
 
@@ -74,9 +74,8 @@ src/
 │   │   │   └── page.tsx             # Current events
 │   │   ├── past/
 │   │   │   └── page.tsx             # Past events
-│   │   ├── events/
-│   │   │   └── [slug]/
-│   │   │       └── page.tsx         # Event detail
+│   │   ├── [slug]/
+│   │   │   └── page.tsx             # Event detail
 │   │   ├── why-all4ruse/
 │   │   │   └── page.tsx
 │   │   ├── legal/
@@ -162,14 +161,14 @@ src/
 
 **Server Components are the default.** Data fetching happens on the server unless there is a concrete reason to move it to the client. This gives us SEO, fast first paint, and zero client-side loading spinners for content the user is just reading.
 
-| Page | Default Strategy | Primary Data fetching |
-|---|---|---|
-| Upcoming / current / past events | SSR | Server Component → Supabase server client |
-| Event detail `[slug]` | SSG + ISR (60 s revalidation) | Server Component → Supabase server client |
-| Why All4Ruse, legal pages | Static | No data fetching |
-| Profile, my events, create event | SSR | Server Component reads session + data |
-| Admin pages | SSR + client interactions | Server Component for initial load; TanStack Query for mutations |
-| Auth pages | Client-only | Supabase browser client directly |
+| Page                             | Default Strategy          | Primary Data fetching                                           |
+| -------------------------------- | ------------------------- | --------------------------------------------------------------- |
+| Upcoming / current / past events | SSR                       | Server Component → Supabase server client                       |
+| Event detail `[slug]`            | SSR                       | Server Component → Supabase public server client                |
+| Why All4Ruse, legal pages        | Static                    | No data fetching                                                |
+| Profile, my events, create event | SSR                       | Server Component reads session + data                           |
+| Admin pages                      | SSR + client interactions | Server Component for initial load; TanStack Query for mutations |
+| Auth pages                       | Client-only               | Supabase browser client directly                                |
 
 These are default route-level strategies. Individual client components or dynamic imports may still be used inside a route when interactivity or browser-only behavior is needed.
 
@@ -267,12 +266,19 @@ The Supabase client is passed as the first argument so the same functions work f
 // src/lib/api/events.ts
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "~/types/database";
-import type { Event, GetEventsParamsType, CreateEventSchemaType } from "~/types";
+import type {
+  Event,
+  GetEventsParamsType,
+  CreateEventSchemaType,
+} from "~/types";
 
 type Client = SupabaseClient<Database>;
 
 export const eventsApi = {
-  async getEvents(client: Client, params: GetEventsParamsType): Promise<Event[]> {
+  async getEvents(
+    client: Client,
+    params: GetEventsParamsType,
+  ): Promise<Event[]> {
     let query = client
       .from("events")
       .select("*, event_tags(tag_id, tags(*))")
@@ -300,7 +306,10 @@ export const eventsApi = {
     return data;
   },
 
-  async createEvent(client: Client, body: CreateEventSchemaType): Promise<Event> {
+  async createEvent(
+    client: Client,
+    body: CreateEventSchemaType,
+  ): Promise<Event> {
     const { data, error } = await client
       .from("events")
       .insert(body)
@@ -311,7 +320,11 @@ export const eventsApi = {
     return data;
   },
 
-  async updateEvent(client: Client, id: number, body: Partial<CreateEventSchemaType>): Promise<Event> {
+  async updateEvent(
+    client: Client,
+    id: number,
+    body: Partial<CreateEventSchemaType>,
+  ): Promise<Event> {
     const { data, error } = await client
       .from("events")
       .update(body)
@@ -358,12 +371,21 @@ Private query key factory at the top of the file, hooks below. One file per doma
 
 ```typescript
 // src/hooks/query/events.ts
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { eventsApi } from "~/lib/api";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
-import type { CreateEventSchemaType, Event, GetEventsParamsType } from "~/types";
+import type {
+  CreateEventSchemaType,
+  Event,
+  GetEventsParamsType,
+} from "~/types";
 
 const eventQueryKeys = {
   all: () => ["events"],
@@ -392,7 +414,8 @@ export function useCreateEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (body: CreateEventSchemaType) => eventsApi.createEvent(supabase, body),
+    mutationFn: (body: CreateEventSchemaType) =>
+      eventsApi.createEvent(supabase, body),
     onSuccess: () => {
       toast.success("Event created");
     },
@@ -412,6 +435,7 @@ Query hooks are only imported in Client Components that actually need them. Serv
 Supabase Auth with HTTP-only cookies via `@supabase/ssr`.
 
 Middleware is used pragmatically:
+
 - refresh the auth session
 - protect clearly private routes such as `/admin`
 - coordinate auth with locale routing if needed
@@ -434,7 +458,9 @@ export async function middleware(request: NextRequest) {
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
@@ -444,10 +470,12 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-const isAdminRoute = request.nextUrl.pathname.startsWith(`/${locale}/admin`) || request.nextUrl.pathname.startsWith("/admin");
-const {
-  data: { user },
-} = await supabase.auth.getUser();
+  const isAdminRoute =
+    request.nextUrl.pathname.startsWith(`/${locale}/admin`) ||
+    request.nextUrl.pathname.startsWith("/admin");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (isAdminRoute && !user) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
@@ -698,32 +726,32 @@ Theme is sourced from [tweakcn "dashboard"](https://tweakcn.com/themes/cmn1fszda
   :root {
     --background: oklch(0.9383 0.0042 236.4993);
     --foreground: oklch(0.3211 0 0);
-    --card: oklch(1.0000 0 0);
+    --card: oklch(1 0 0);
     --card-foreground: oklch(0.3211 0 0);
-    --popover: oklch(1.0000 0 0);
+    --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.3211 0 0);
-    --primary: oklch(0.6397 0.1720 36.4421);
-    --primary-foreground: oklch(1.0000 0 0);
-    --secondary: oklch(0.9670 0.0029 264.5419);
+    --primary: oklch(0.6397 0.172 36.4421);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.967 0.0029 264.5419);
     --secondary-foreground: oklch(0.4461 0.0263 256.8018);
     --muted: oklch(0.9846 0.0017 247.8389);
-    --muted-foreground: oklch(0.5510 0.0234 264.3637);
+    --muted-foreground: oklch(0.551 0.0234 264.3637);
     --accent: oklch(0.9119 0.0222 243.8174);
     --accent-foreground: oklch(0.3791 0.1378 265.5222);
     --destructive: oklch(0.6368 0.2078 25.3313);
-    --destructive-foreground: oklch(1.0000 0 0);
+    --destructive-foreground: oklch(1 0 0);
     --border: oklch(0.9022 0.0052 247.8822);
-    --input: oklch(0.9700 0.0029 264.5420);
-    --ring: oklch(0.6397 0.1720 36.4421);
+    --input: oklch(0.97 0.0029 264.542);
+    --ring: oklch(0.6397 0.172 36.4421);
     --radius: 0.75rem;
-    --sidebar: oklch(0.9030 0.0046 258.3257);
+    --sidebar: oklch(0.903 0.0046 258.3257);
     --sidebar-foreground: oklch(0.3211 0 0);
-    --sidebar-primary: oklch(0.6397 0.1720 36.4421);
-    --sidebar-primary-foreground: oklch(1.0000 0 0);
+    --sidebar-primary: oklch(0.6397 0.172 36.4421);
+    --sidebar-primary-foreground: oklch(1 0 0);
     --sidebar-accent: oklch(0.9119 0.0222 243.8174);
     --sidebar-accent-foreground: oklch(0.3791 0.1378 265.5222);
     --sidebar-border: oklch(0.9276 0.0058 264.5313);
-    --sidebar-ring: oklch(0.6397 0.1720 36.4421);
+    --sidebar-ring: oklch(0.6397 0.172 36.4421);
   }
 
   .dark {
@@ -731,36 +759,42 @@ Theme is sourced from [tweakcn "dashboard"](https://tweakcn.com/themes/cmn1fszda
     --foreground: oklch(0.9219 0 0);
     --card: oklch(0.3106 0.0301 268.6365);
     --card-foreground: oklch(0.9219 0 0);
-    --popover: oklch(0.2900 0.0249 268.3986);
+    --popover: oklch(0.29 0.0249 268.3986);
     --popover-foreground: oklch(0.9219 0 0);
-    --primary: oklch(0.6397 0.1720 36.4421);
-    --primary-foreground: oklch(1.0000 0 0);
+    --primary: oklch(0.6397 0.172 36.4421);
+    --primary-foreground: oklch(1 0 0);
     --secondary: oklch(0.3095 0.0266 266.7132);
     --secondary-foreground: oklch(0.9219 0 0);
     --muted: oklch(0.3095 0.0266 266.7132);
     --muted-foreground: oklch(0.7155 0 0);
-    --accent: oklch(0.3380 0.0589 267.5867);
+    --accent: oklch(0.338 0.0589 267.5867);
     --accent-foreground: oklch(0.8823 0.0571 254.1284);
     --destructive: oklch(0.6368 0.2078 25.3313);
-    --destructive-foreground: oklch(1.0000 0 0);
+    --destructive-foreground: oklch(1 0 0);
     --border: oklch(0.3843 0.0301 269.7337);
     --input: oklch(0.3843 0.0301 269.7337);
-    --ring: oklch(0.6397 0.1720 36.4421);
-    --sidebar: oklch(0.3100 0.0283 267.7408);
+    --ring: oklch(0.6397 0.172 36.4421);
+    --sidebar: oklch(0.31 0.0283 267.7408);
     --sidebar-foreground: oklch(0.9219 0 0);
-    --sidebar-primary: oklch(0.6397 0.1720 36.4421);
-    --sidebar-primary-foreground: oklch(1.0000 0 0);
-    --sidebar-accent: oklch(0.3380 0.0589 267.5867);
+    --sidebar-primary: oklch(0.6397 0.172 36.4421);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.338 0.0589 267.5867);
     --sidebar-accent-foreground: oklch(0.8823 0.0571 254.1284);
     --sidebar-border: oklch(0.3843 0.0301 269.7337);
-    --sidebar-ring: oklch(0.6397 0.1720 36.4421);
+    --sidebar-ring: oklch(0.6397 0.172 36.4421);
   }
 }
 
 @layer base {
-  * { @apply border-border outline-ring/50; }
-  body { @apply bg-background text-foreground font-sans; }
-  html { scroll-behavior: smooth; }
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
 }
 ```
 
@@ -771,6 +805,7 @@ Dark mode toggle follows the same `ThemeContext` pattern as the reference (store
 Next.js App Router supports the [View Transitions API](https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API) via `unstable_ViewTransition`. This is used to animate the event image expanding from the card into the detail page when the user navigates.
 
 The pattern is:
+
 - On `EventCard`, the event image gets `style={{ viewTransitionName: \`event-image-${event.id}\` }}`.
 - On the event detail page, the hero image gets the same `viewTransitionName`.
 - The browser morphs between the two automatically — no animation CSS needed for the basic expand effect.
@@ -849,12 +884,14 @@ These follow the reference project.
 **Path alias:** `~/` → `src/`. All imports use `~/`, never upward relative paths.
 
 **Import order** (enforced by `eslint-plugin-simple-import-sort`):
+
 1. React / Next.js
 2. Third-party packages
 3. Internal `~/` imports
 4. Relative imports (same module only)
 
 **Naming:**
+
 - Components and their files: `PascalCase`
 - Hooks: `use` prefix, `camelCase`
 - API objects: `camelCase` + `Api` suffix (e.g. `eventsApi`)
@@ -864,11 +901,13 @@ These follow the reference project.
 - Domain entity types: plain `PascalCase` (e.g. `Event`, `Tag`)
 
 **TypeScript:**
+
 - Strict mode. No `any`. Use `unknown` when needed.
 - `type` not `interface`.
 - Types from `z.infer` — never duplicated by hand.
 
 **Components:**
+
 - One named export per file.
 - Every component folder has an `index.ts` barrel.
 - No default exports except Next.js pages and layouts (framework requirement).

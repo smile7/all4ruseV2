@@ -19,7 +19,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     notFound();
   }
 
-  const messages = await getMessages();
+  const messages = await getMessages({ locale });
 
   return (
     <NextIntlClientProvider messages={messages}>
@@ -29,7 +29,9 @@ export default async function LocaleLayout({ children, params }: Props) {
           pb-16  — clears the mobile bottom nav bar (~56px + safe area)
           md:pb-10 — clears the fixed desktop footer (~40px)
         */}
-        <main className="min-h-[calc(100svh-3.5rem)] pb-16 md:pb-10 xl:px-30">{children}</main>
+        <main className="min-h-[calc(100svh-3.5rem)] pb-16 md:pb-10 xl:px-30">
+          {children}
+        </main>
         <Footer />
         <MobileBottomNav />
       </Providers>

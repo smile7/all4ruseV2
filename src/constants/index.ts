@@ -2,12 +2,13 @@ export const EVENTS_BUCKET = "event-images";
 export const EVENTS_PAGE_SIZE = 12;
 export const PAST_EVENTS_WINDOW_DAYS = 15;
 export const THEME_STORE_KEY = "theme";
-export const FALLBACK_IMAGE = "/no-image.png";
+export const FALLBACK_IMAGE = "/no_image_available.jpg";
 export const DEFAULT_AVATAR = "/cat.png";
 export const DEBOUNCE_MS = 400;
 export const EMPTY_DISPLAY = "—";
 
-export const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61586926929594";
+export const FACEBOOK_URL =
+  "https://www.facebook.com/profile.php?id=61586926929594";
 export const INSTAGRAM_URL = "https://www.instagram.com/all4ruse";
 export const TIKTOK_URL = "https://www.tiktok.com/@all4ruse";
 export const FACEBOOK_BRAND_COLOR = "#1877F2";
