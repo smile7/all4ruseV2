@@ -34,7 +34,7 @@ export function EventHeroGallery({
   premiumLabel,
 }: Props) {
   return (
-    <div className="mx-auto md:max-w-7xl md:px-6 lg:px-8">
+    <div className="mx-auto mt-3 md:mt-4 md:max-w-7xl md:px-6 lg:px-8">
       <LightGallery plugins={[lgZoom]} speed={400}>
         <a
           href={imageUrl}
