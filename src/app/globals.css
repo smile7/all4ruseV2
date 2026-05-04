@@ -206,38 +206,56 @@
 
 /* ── View Transitions ───────────────────────────────────────────────────────
    Next.js wraps <Link> navigations in document.startViewTransition() when
-   experimental.viewTransition: true is set. The browser then automatically
-   morphs any pair of elements that share the same view-transition-name.
+   experimental.viewTransition: true is set. The browser morphs any pair of
+   elements that share the same view-transition-name (set via React's
+   <ViewTransition name="…"> wrapper).
 
-   The default browser animation is a 150ms cross-fade — nearly invisible.
-   These overrides extend the shared-element (image card → hero) animation
-   to 500ms so the physical morph from the card position to the hero is
-   clearly visible. The root page cross-fade stays short so it feels snappy.
+   All non-root groups (event card → hero morphs) get a 450ms ease.
+   The root page cross-fade stays at 150ms so routing feels snappy.
 
-   prefers-reduced-motion: skip the whole thing for users who opt out.      */
+   via-blur: a strong mid-flight blur applied to every image pair during the
+   crossfade. It serves two purposes:
+     1. Hides pixel-interpolation artefacts while the element resizes.
+     2. Masks the loading gap — next/image may resolve a larger srcset entry
+        for the hero than what the card cached, so the new snapshot can be
+        briefly empty. The blur keeps that invisible.
+
+   prefers-reduced-motion: skip all animations for users who opt out.        */
 @media (prefers-reduced-motion: no-preference) {
-  /* Event image shared-element morph — card → hero */
-  ::view-transition-group(.event-image) {
-    animation-duration: 400ms;
+  /* All named shared-element groups — slow enough for the morph to read */
+  ::view-transition-group(*) {
+    animation-duration: 450ms;
     animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Slight blur mid-flight hides pixel interpolation artefacts during resize */
-  ::view-transition-image-pair(.event-image) {
+  /* Root page cross-fade — override back to brief */
+  ::view-transition-group(root) {
+    animation-duration: 150ms;
+    animation-timing-function: ease;
+  }
+
+  /* Mid-flight blur for all image pairs (event images) */
+  ::view-transition-image-pair(*) {
     animation-name: via-blur;
   }
 
-  /* Root page cross-fade — keep it brief */
+  /* Root cross-fade should not blur */
+  ::view-transition-image-pair(root) {
+    animation-name: none;
+  }
+
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation-duration: 150ms;
   }
 }
 
+/* Strong blur covers the full crossfade window so any loading gap is invisible */
 @keyframes via-blur {
-  30% {
-    filter: blur(3px);
-  }
+  0%   { filter: blur(0px); }
+  25%  { filter: blur(12px); }
+  65%  { filter: blur(12px); }
+  100% { filter: blur(0px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

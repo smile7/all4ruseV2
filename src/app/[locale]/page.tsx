@@ -8,7 +8,10 @@ import type { Event } from "~/types";
 
 export async function generateMetadata() {
   const t = await getTranslations("HomePage");
-  return { title: t("pageTitle") };
+  return {
+    title: t("pageTitle"),
+    description: t("pageDescription"),
+  };
 }
 
 export default async function HomePage() {

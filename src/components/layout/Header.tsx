@@ -1,4 +1,4 @@
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
 import { Search } from "lucide-react";
 
@@ -8,8 +8,8 @@ import { LocaleSwitcher } from "./LocaleSwitcher";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 
-export function Header() {
-  const t = useTranslations("HomePage");
+export async function Header() {
+  const t = await getTranslations("HomePage");
 
   return (
     <header className="border-border/60 bg-background/85 sticky top-0 z-40 w-full backdrop-blur-md">

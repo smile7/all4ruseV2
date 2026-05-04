@@ -2,7 +2,7 @@
 
 import { ViewTransition } from "react";
 import Image from "next/image";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { User } from "lucide-react";
 
@@ -25,6 +25,7 @@ type Props = {
 
 export function EventCard({ event }: Props) {
   const locale = useLocale();
+  const t = useTranslations("SingleEvent");
 
   const { day, month } = formatDateBadge(event.startDate);
   const live = isLiveNow(event.startDate, event.endDate);
@@ -36,7 +37,7 @@ export function EventCard({ event }: Props) {
   const article = (
     <article className="bg-card text-card-foreground group-focus-visible:ring-ring flex h-full flex-col overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg group-focus-visible:ring-2">
       {/* ── Image ──────────────────────────────────────────────────────── */}
-      <ViewTransition name={`event-image-${event.id}`} share="event-image">
+      <ViewTransition name={`event-image-${event.id}`}>
         <div className="relative aspect-video overflow-hidden">
           {/* Blurred background — fills letterbox gaps on portrait images */}
           <Image
@@ -84,7 +85,7 @@ export function EventCard({ event }: Props) {
           {event.isEventCancelled && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
               <span className="bg-destructive text-destructive-foreground rounded-full px-3 py-1 text-xs font-semibold">
-                Отменено
+                {t("cancelled")}
               </span>
             </div>
           )}

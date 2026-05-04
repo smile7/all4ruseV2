@@ -135,29 +135,29 @@ Footer requirements:
 - Render order: `<Header />` → `<main>{children}</main>` → `<Footer />` → `<MobileBottomNav />`.
 - `pb-16 md:pb-10` on `<main>` — clears mobile bottom nav (~56px) and fixed desktop footer (~40px).
 
-### 2.3 EventCard component
+### 2.3 EventCard component ✅
 
 - Create `src/components/EventCard/EventCard.tsx` — displays event image (`next/image`), title, host, tag badges. Server Component friendly (no hooks).
 - Show a badge with the date and hour top left on event. date should be in format "25 фев" and below it the hour (19:00).
 - Show a "Live now" badge (pulsing green dot) when `event.startDate <= today <= event.endDate` — computed from props, no extra fetch.
-- Add `style={{ viewTransitionName: \`event-image-${event.id}\` }}` to the image wrapper so the View Transitions API morphs it into the detail page hero.
+- Uses React 19 `<ViewTransition name={...} share="event-image">` on the image wrapper so the View Transitions API morphs it into the detail page hero.
 - Create `src/components/EventCard/index.ts` — barrel export.
 
-### 2.4 Events listing pages
+### 2.4 Events listing pages ✅
 
-- Build `src/app/[locale]/page.tsx` — Server Component. Call `eventsApi.getActiveEvents(serverClient, {})` and pass as `initialData` to `EventsList`. Page title: "Предстоящи събития в Русе".
-- Build `src/app/[locale]/past/page.tsx` — same pattern with `eventsApi.getPastEvents`. Page title: "Минали събития в Русе".
-- Create `src/components/EventsList/EventsList.tsx` — `"use client"`, receives `initialData`, renders grid of `EventCard`.
-- Write `src/hooks/query/events.ts` — `useActiveEvents(params, { initialData })` and `usePastEvents(params, { initialData })` using `keepPreviousData`.
+- `src/app/[locale]/page.tsx` — Server Component. Calls `eventsApi.getActiveEvents`, passes as `initialData` to `EventsList`.
+- `src/app/[locale]/past/page.tsx` — same pattern with `eventsApi.getPastEvents`.
+- `src/components/EventsList/EventsList.tsx` — `"use client"`, receives `initialData`, renders grid of `EventCard` via TanStack Query with `initialData`.
+- `src/hooks/query/events.ts` — `useActiveEvents` and `usePastEvents` with `keepPreviousData`.
 
-### 2.5 Event detail page
+### 2.5 Event detail page ✅
 
-- Build `src/app/[locale]/[slug]/page.tsx` — Server Component.
-- Use request-time SSR for DB-backed slugs so newly added events work immediately after deploy.
-- Add `generateMetadata` — title = event title, description = first 160 chars, OG image = event image.
-- On the hero image, add `style={{ viewTransitionName: \`event-image-${event.id}\` }}` — matches EventCard. The browser animates the shared element automatically.
-- Layout: large hero image, title, date/time, address, price, tags, description, ticket link, Facebook link.
-- Back button in mobile header navigates back to the listing.
+- `src/app/[locale]/[slug]/page.tsx` — async Server Component, `force-dynamic`.
+- `generateMetadata` — title, description (160-char strip), OG image, OG `article` type, hreflang alternates.
+- JSON-LD `Event` schema block embedded in the page.
+- React 19 `<ViewTransition>` on the hero image to match the card transition name.
+- Layout: hero gallery, title, date/time, address, price, tags, description, ticket link, Facebook link, related events.
+- `sitemap.ts` and `robots.ts` added under `src/app/` for crawler coverage.
 
 ### 2.6 Filters
 
