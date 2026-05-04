@@ -93,7 +93,7 @@ export function EventCard({ event }: Props) {
 
       {/* ── Content ────────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col gap-3 px-3 py-6">
-        <h3 className="line-clamp-2 min-h-11 text-left leading-snug">
+        <h3 className="line-clamp-2 min-h-11 text-left leading-snug [overflow-wrap:anywhere] break-words">
           {formattedTitle}
         </h3>
 
@@ -128,7 +128,11 @@ export function EventCard({ event }: Props) {
     return <div className="group h-full cursor-default">{article}</div>;
 
   return (
-    <Link href={href} className="group block h-full focus-visible:outline-none">
+    <Link
+      href={href}
+      scroll
+      className="group block h-full focus-visible:outline-none"
+    >
       {article}
     </Link>
   );

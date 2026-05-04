@@ -1,4 +1,5 @@
 export * from "./EventDetailRow";
+export * from "./EventDetailScrollReset";
 export * from "./EventHeroGallery";
 export * from "./EventImagesGallery";
 export * from "./Footer";
