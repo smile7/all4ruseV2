@@ -15,12 +15,12 @@
     "clearFilters": "Clear",
     "pickDate": "Pick a date",
     "guest": "Guest",
-    "favorites": "Favorites",
+    "saved": "Saved",
     "legal": "Legal",
     "termsOfUse": "Terms of Use",
     "privacyPolicy": "Privacy Policy",
     "cookiesPolicy": "Cookies Policy",
-    "removeFavorites": "Remove from Favorites",
+    "removeSaved": "Remove from Saved",
     "copyLink": "Copy Link",
     "openNewTab": "Open in New Tab",
     "loginSignup": "Login / Signup",
@@ -172,6 +172,7 @@
     "premium": "Premium",
     "place": "Venue",
     "save": "Save",
+    "moreEvents": "More events",
     "addToCalendar": "Add to Calendar",
     "shareOnFacebook": "Share on Facebook",
     "email": "Email"
@@ -247,8 +248,8 @@
     "onlyNecessary": "Only necessary",
     "acceptCookies": "Accept cookies",
     "cookiePreferences": "Manage cookies",
-    "addToFavorites": "Add to Favorites",
-    "removeFromFavorites": "Remove from Favorites",
+    "addToFavorites": "Add to Saved",
+    "removeFromFavorites": "Remove from Saved",
     "favoritesAvailability": "To save an event as a favorite, please allow cookie storage in your browser."
   },
   "NotFound": {

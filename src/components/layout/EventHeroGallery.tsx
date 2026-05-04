@@ -1,5 +1,6 @@
 "use client";
 
+import { ViewTransition } from "react";
 import Image from "next/image";
 
 import lgZoom from "lightgallery/plugins/zoom";
@@ -34,14 +35,10 @@ export function EventHeroGallery({
   premiumLabel,
 }: Props) {
   return (
-    <div className="mx-auto mt-3 md:mt-4 md:max-w-7xl md:px-6 lg:px-8">
-      <LightGallery plugins={[lgZoom]} speed={400}>
-        <a
-          href={imageUrl}
-          className="bg-muted relative block aspect-video w-full cursor-pointer overflow-hidden md:max-h-95 md:rounded-md"
-          style={{ viewTransitionName: `event-image-${eventId}` }}
-          aria-label={title}
-        >
+    <div className="mx-auto mt-3 w-full md:mt-4 md:max-w-7xl md:px-6 lg:px-8">
+      <ViewTransition name={`event-image-${eventId}`} share="event-image">
+        <div className="bg-muted relative aspect-video w-full overflow-hidden md:max-h-95 md:rounded-md">
+          {/* Blurred background — fills letterbox gaps */}
           <Image
             src={imageUrl}
             alt=""
@@ -51,6 +48,7 @@ export function EventHeroGallery({
             className="scale-110 object-cover blur-2xl brightness-75 saturate-150"
             sizes="(max-width: 768px) 100vw, 1280px"
           />
+          {/* Sharp image */}
           <Image
             src={imageUrl}
             alt={title}
@@ -88,8 +86,21 @@ export function EventHeroGallery({
               </span>
             )}
           </div>
-        </a>
-      </LightGallery>
+
+          {/* LightGallery — transparent absolute overlay, click opens full zoom */}
+          <LightGallery
+            plugins={[lgZoom]}
+            speed={400}
+            elementClassNames="absolute inset-0 z-40"
+          >
+            <a
+              href={imageUrl}
+              className="block h-full w-full cursor-zoom-in"
+              aria-label={title}
+            />
+          </LightGallery>
+        </div>
+      </ViewTransition>
     </div>
   );
 }

@@ -216,16 +216,27 @@
 
    prefers-reduced-motion: skip the whole thing for users who opt out.      */
 @media (prefers-reduced-motion: no-preference) {
-  /* Shared elements (event-image-{id}) — slow, smooth morph */
-  ::view-transition-group(*) {
-    animation-duration: 500ms;
+  /* Event image shared-element morph — card → hero */
+  ::view-transition-group(.event-image) {
+    animation-duration: 400ms;
     animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Slight blur mid-flight hides pixel interpolation artefacts during resize */
+  ::view-transition-image-pair(.event-image) {
+    animation-name: via-blur;
   }
 
   /* Root page cross-fade — keep it brief */
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation-duration: 150ms;
+  }
+}
+
+@keyframes via-blur {
+  30% {
+    filter: blur(3px);
   }
 }
 

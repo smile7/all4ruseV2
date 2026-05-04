@@ -1,7 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { format, subDays } from "date-fns";
 
-import { EVENTS_PAGE_SIZE, PAST_EVENTS_WINDOW_DAYS } from "~/constants";
+import {
+  EVENTS_PAGE_SIZE,
+  PAST_EVENTS_WINDOW_DAYS,
+  RELATED_EVENTS_COUNT,
+} from "~/constants";
 import type { Event, GetEventsParams, Tag } from "~/types";
 import type { Database } from "~/types/database";
 
@@ -166,6 +170,59 @@ async function getEventBySlug(
   return data ? mapEvent(data) : null;
 }
 
+async function getRelatedEvents(
+  client: Client,
+  eventId: number,
+  tagIds: number[],
+  limit = RELATED_EVENTS_COUNT,
+): Promise<Event[]> {
+  if (tagIds.length === 0) return [];
+
+  const { data: links, error: linksError } = await client
+    .from("event_tags")
+    .select("event_id, tag_id")
+    .in("tag_id", tagIds);
+
+  if (linksError) throw linksError;
+
+  const overlapCounts = new Map<number, number>();
+
+  for (const link of links ?? []) {
+    if (link.event_id === eventId) continue;
+    overlapCounts.set(
+      link.event_id,
+      (overlapCounts.get(link.event_id) ?? 0) + 1,
+    );
+  }
+
+  const relatedIds = Array.from(overlapCounts.keys());
+  if (relatedIds.length === 0) return [];
+
+  const q = baseQuery(client)
+    .gte("endDate", todayStr())
+    .in("id", relatedIds)
+    .order("startDate", { ascending: true })
+    .order("startTime", { ascending: true });
+
+  const { data, error } = await executeQuery(q);
+  if (error) throw error;
+
+  return (data ?? [])
+    .map(mapEvent)
+    .sort((left, right) => {
+      const overlapDiff =
+        (overlapCounts.get(right.id) ?? 0) - (overlapCounts.get(left.id) ?? 0);
+
+      if (overlapDiff !== 0) return overlapDiff;
+
+      const startDateDiff = left.startDate.localeCompare(right.startDate);
+      if (startDateDiff !== 0) return startDateDiff;
+
+      return left.startTime.localeCompare(right.startTime);
+    })
+    .slice(0, limit);
+}
+
 // Returns all active event slugs — used by generateStaticParams on the detail page.
 async function getAllSlugs(client: Client): Promise<string[]> {
   const { data, error } = await client
@@ -184,5 +241,6 @@ export const eventsApi = {
   getActiveEvents,
   getPastEvents,
   getEventBySlug,
+  getRelatedEvents,
   getAllSlugs,
 };

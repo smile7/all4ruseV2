@@ -15,12 +15,12 @@
     "pickDate": "Оберіть дату",
     "title": "Назва",
     "guest": "Гість",
-    "favorites": "Обране",
+    "favorites": "Записані",
     "legal": "Правова інформація",
     "termsOfUse": "Умови користування",
     "privacyPolicy": "Політика конфіденційності",
     "cookiesPolicy": "Політика використання cookie",
-    "removeFavorites": "Прибрати з обраного",
+    "removeFavorites": "Прибрати з записаних",
     "copyLink": "Скопіювати посилання",
     "openNewTab": "Відкрити в новій вкладці",
     "loginSignup": "Вхід / Реєстрація",
@@ -172,6 +172,7 @@
     "premium": "Преміум",
     "place": "Місце",
     "save": "Зберегти",
+    "moreEvents": "Більше подій",
     "addToCalendar": "Додати до календаря",
     "shareOnFacebook": "Поділитися",
     "email": "Електронна пошта"
@@ -247,9 +248,9 @@
     "onlyNecessary": "Лише необхідні",
     "acceptCookies": "Прийняти cookie",
     "cookiePreferences": "Керування cookie",
-    "addToFavorites": "Додати в обране",
-    "removeFromFavorites": "Прибрати з обраного",
-    "favoritesAvailability": "Щоб зберегти подію в обране, дозвольте зберігання cookie у своєму браузері."
+    "addToSaved": "Додати в записані",
+    "removeFromSaved": "Прибрати з записаних",
+    "savedAvailability": "Щоб зберегти подію в записані, дозвольте зберігання cookie у своєму браузері."
   },
   "NotFound": {
     "badge": "Сторінку не знайдено",
