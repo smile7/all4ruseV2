@@ -18,6 +18,8 @@ const BG_MONTHS_SHORT = [
   "дек",
 ] as const;
 
+const FACEBOOK_CDN_HOST_SUFFIX = ".fbcdn.net";
+
 /**
  * Parses a YYYY-MM-DD string without timezone shift.
  * Using `new Date("YYYY-MM-DD")` would parse as UTC midnight and shift
@@ -91,9 +93,38 @@ export function isLiveNow(startDate: string, endDate: string): boolean {
  * - absolute URL or public path (`/…`) → used as-is
  * - bare filename → Supabase Storage public URL
  */
+function isExpiredFacebookCdnImageUrl(imageUrl: string): boolean {
+  try {
+    const url = new URL(imageUrl);
+
+    if (!url.hostname.endsWith(FACEBOOK_CDN_HOST_SUFFIX)) {
+      return false;
+    }
+
+    const expiresAtHex = url.searchParams.get("oe");
+    if (!expiresAtHex) {
+      return false;
+    }
+
+    const expiresAt = Number.parseInt(expiresAtHex, 16);
+    if (!Number.isFinite(expiresAt)) {
+      return false;
+    }
+
+    return Date.now() >= expiresAt * 1000;
+  } catch {
+    return false;
+  }
+}
+
 export function getEventImageUrl(image: string | null): string {
   if (!image) return FALLBACK_IMAGE;
-  if (image.startsWith("http") || image.startsWith("/")) return image;
+  if (image.startsWith("/")) return image;
+
+  if (image.startsWith("http")) {
+    return isExpiredFacebookCdnImageUrl(image) ? FALLBACK_IMAGE : image;
+  }
+
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${EVENTS_BUCKET}/${image}`;
 }
 
