@@ -256,7 +256,7 @@ export default async function EventDetailPage({ params }: Props) {
 
         {/* ── Content ───────────────────────────────────────────────────── */}
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <Typography.H1 className="mt-10 mb-5 text-center [overflow-wrap:anywhere] break-words">
+          <Typography.H1 className="mt-10 mb-5 text-center text-3xl wrap-break-word">
             {formattedTitle}
           </Typography.H1>
 
