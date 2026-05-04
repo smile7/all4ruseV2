@@ -236,3 +236,19 @@
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ── LightGallery mobile viewport fix ───────────────────────────────────────
+   The viewer toolbar sits at the top of the fixed overlay. On mobile, portrait
+   images can end up starting behind that top area, so we reduce the usable
+   image viewport slightly and account for the safe area. */
+@media (max-width: 767px) {
+  .lg-toolbar,
+  .lg-counter {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .lg-outer .lg-inner {
+    top: calc(env(safe-area-inset-top) + 3.5rem);
+    bottom: calc(env(safe-area-inset-bottom) + 1rem);
+  }
+}

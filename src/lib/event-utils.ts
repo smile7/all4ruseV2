@@ -72,6 +72,20 @@ export function formatTime(timeStr: string | null | undefined): string | null {
   return timeStr.slice(0, 5);
 }
 
+/** Normalizes imported event titles to title case for consistent display. */
+export function formatEventTitle(title: string): string {
+  const normalized = title.trim();
+  if (!normalized) return title;
+
+  return normalized
+    .toLocaleLowerCase()
+    .replace(
+      /(^|[\s"'“„(\/-])(\p{L})/gu,
+      (_, prefix: string, letter: string) =>
+        `${prefix}${letter.toLocaleUpperCase()}`,
+    );
+}
+
 /** True when today falls within [startDate, end of endDate]. */
 export function isLiveNow(startDate: string, endDate: string): boolean {
   try {
@@ -241,7 +255,7 @@ export function buildGCalUrl(event: {
     .join(", ");
   const params = new URLSearchParams({
     action: "TEMPLATE",
-    text: event.title,
+    text: formatEventTitle(event.title),
     dates: `${d0}T${t0}/${d1}T${t1}`,
     location,
   });

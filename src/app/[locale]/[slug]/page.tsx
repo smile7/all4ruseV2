@@ -28,6 +28,7 @@ import { type Locale, LOCALES } from "~/constants";
 import { eventsApi } from "~/lib/api";
 import {
   buildGCalUrl,
+  formatEventTitle,
   formatFullDate,
   formatTime,
   getEventImageUrl,
@@ -85,14 +86,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const event = await eventsApi.getEventBySlug(client, slug);
     if (!event) return { title: "Събитието не е намерено" };
 
+    const formattedTitle = formatEventTitle(event.title);
+
     const description =
-      stripHtml(event.description ?? "").slice(0, 160) || event.title;
+      stripHtml(event.description ?? "").slice(0, 160) || formattedTitle;
     const imageUrl = getEventImageUrl(event.image);
     const eventPath = buildEventPath(locale, slug);
     const eventUrl = buildEventUrl(locale, slug);
 
     return {
-      title: event.title,
+      title: formattedTitle,
       description,
       alternates: {
         canonical: eventPath,
@@ -101,7 +104,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ),
       },
       openGraph: {
-        title: event.title,
+        title: formattedTitle,
         description,
         url: eventUrl,
         siteName: "All4Ruse",
@@ -114,7 +117,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
       twitter: {
         card: "summary_large_image",
-        title: event.title,
+        title: formattedTitle,
         description,
         images: imageUrl ? [imageUrl] : [],
       },
@@ -135,6 +138,7 @@ export default async function EventDetailPage({ params }: Props) {
   const event = await eventsApi.getEventBySlug(client, slug);
   if (!event) notFound();
 
+  const formattedTitle = formatEventTitle(event.title);
   const imageUrl = getEventImageUrl(event.image);
   const live = isLiveNow(event.startDate, event.endDate);
   const startTime = formatTime(event.startTime);
@@ -159,11 +163,11 @@ export default async function EventDetailPage({ params }: Props) {
   const gcalUrl = buildGCalUrl(event);
   const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(eventUrl)}`;
   const descriptionText =
-    stripHtml(event.description ?? "").slice(0, 300) || event.title;
+    stripHtml(event.description ?? "").slice(0, 300) || formattedTitle;
   const eventJsonLd = {
     "@context": "https://schema.org",
     "@type": "Event",
-    name: event.title,
+    name: formattedTitle,
     description: descriptionText,
     url: eventUrl,
     image: imageUrl ? [imageUrl] : undefined,
@@ -232,12 +236,12 @@ export default async function EventDetailPage({ params }: Props) {
         }}
       />
 
-      <div className="pb-12">
+      <div className="overflow-x-clip pb-12">
         {/* ── Hero ──────────────────────────────────────────────────────── */}
         <EventHeroGallery
           imageUrl={imageUrl}
           eventId={String(event.id)}
-          title={event.title}
+          title={formattedTitle}
           live={live}
           cancelled={event.isEventCancelled ?? false}
           soldOut={event.isSoldOut ?? false}
@@ -250,7 +254,7 @@ export default async function EventDetailPage({ params }: Props) {
         {/* ── Content ───────────────────────────────────────────────────── */}
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <Typography.H1 className="mt-10 mb-5 text-center">
-            {event.title}
+            {formattedTitle}
           </Typography.H1>
 
           {(event.tags?.length ?? 0) > 0 && (
@@ -306,14 +310,10 @@ export default async function EventDetailPage({ params }: Props) {
                       <p className="text-sm font-semibold">{event.place}</p>
                     )}
                     {event.address && (
-                      <p className="text-muted-foreground text-sm">
-                        {event.address}
-                      </p>
+                      <p className="text-foreground text-sm">{event.address}</p>
                     )}
                     {event.town && (
-                      <p className="text-muted-foreground text-sm">
-                        {event.town}
-                      </p>
+                      <p className="text-foreground text-sm">{event.town}</p>
                     )}
                   </EventDetailRow>
                 )}
@@ -396,9 +396,9 @@ export default async function EventDetailPage({ params }: Props) {
               {/* Description card */}
               {event.description && (
                 <Card>
-                  <CardContent className="p-6">
+                  <CardContent className="overflow-x-clip p-6">
                     <div
-                      className="prose prose-sm dark:prose-invert max-w-none"
+                      className="prose prose-sm dark:prose-invert max-w-none wrap-break-word [&_iframe]:w-full [&_iframe]:max-w-full [&_img]:h-auto [&_img]:max-w-full [&_video]:h-auto [&_video]:max-w-full"
                       dangerouslySetInnerHTML={{ __html: event.description }}
                     />
                   </CardContent>

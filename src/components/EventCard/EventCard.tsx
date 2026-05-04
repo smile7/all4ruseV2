@@ -8,6 +8,7 @@ import { User } from "lucide-react";
 import { Link } from "~/i18n/navigation";
 import {
   formatDateBadge,
+  formatEventTitle,
   getEventImageUrl,
   getFirstHostName,
   getTagLabel,
@@ -27,6 +28,7 @@ export function EventCard({ event }: Props) {
   const { day, month } = formatDateBadge(event.startDate);
   const live = isLiveNow(event.startDate, event.endDate);
   const imageUrl = getEventImageUrl(event.image);
+  const formattedTitle = formatEventTitle(event.title);
   const host = getFirstHostName(event.organizers);
   const href = event.slug ? `/${event.slug}` : null;
 
@@ -51,7 +53,7 @@ export function EventCard({ event }: Props) {
         {/* Full image — contained, never cropped */}
         <Image
           src={imageUrl}
-          alt={event.title}
+          alt={formattedTitle}
           fill
           className="z-10 object-contain"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -92,7 +94,7 @@ export function EventCard({ event }: Props) {
       {/* ── Content ────────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col gap-3 px-3 py-6">
         <h3 className="line-clamp-2 min-h-11 text-left leading-snug">
-          {event.title}
+          {formattedTitle}
         </h3>
 
         <div className="flex flex-col gap-4">
