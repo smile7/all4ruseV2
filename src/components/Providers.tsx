@@ -5,6 +5,8 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 
+import { FilterPanelProvider } from "~/contexts/FilterPanelContext";
+
 type Props = {
   children: React.ReactNode;
 };
@@ -23,7 +25,7 @@ export default function Providers({ children }: Props) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <FilterPanelProvider>{children}</FilterPanelProvider>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
