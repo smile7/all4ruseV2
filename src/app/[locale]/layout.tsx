@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 
-import { Footer, Header, MobileBottomNav } from "~/components/layout";
+import { FiltersMobileDrawer, Footer, Header, MobileBottomNav } from "~/components/layout";
 import Providers from "~/components/Providers";
 import type { Locale } from "~/constants";
 import { routing } from "~/i18n/routing";
@@ -25,6 +25,8 @@ export default async function LocaleLayout({ children, params }: Props) {
     <NextIntlClientProvider messages={messages}>
       <Providers>
         <Header />
+        {/* Mobile filter drawer — portal-renders to body, trigger is in Header */}
+        <FiltersMobileDrawer />
         {/*
           pb-16  — clears the mobile bottom nav bar (~56px + safe area)
           md:pb-10 — clears the fixed desktop footer (~40px)

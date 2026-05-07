@@ -26,10 +26,17 @@ export type EventTag = Tables<"event_tags">;
 // ─── Zod schemas ──────────────────────────────────────────────────────────────
 
 export const getEventsParamsSchema = z.object({
-  tagId: z.coerce.number().int().positive().optional(),
+  // Multi-tag filter: events must match ANY of the selected tag IDs.
+  tagIds: z.array(z.number().int().positive()).optional(),
   search: z.string().trim().optional(),
-  startDate: z.string().optional(), // ISO date string YYYY-MM-DD
-  endDate: z.string().optional(),
+  // Date range using overlap semantics:
+  //   event.endDate >= from  AND  event.startDate <= to
+  // This correctly includes multi-day events that span the selected range.
+  from: z.string().optional(), // ISO date YYYY-MM-DD
+  to: z.string().optional(),   // ISO date YYYY-MM-DD
+  isFree: z.boolean().optional(),
+  host: z.string().trim().optional(),
+  place: z.string().trim().optional(),
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(100).default(12),
 });

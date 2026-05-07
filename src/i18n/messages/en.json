@@ -64,6 +64,9 @@
     "duplicate": "Duplicate",
     "today": "Today",
     "tomorrow": "Tomorrow",
+    "thisWeekend": "Weekend",
+    "thisWeek": "This week",
+    "freeFilter": "Free events",
     "goHomePage": "Back to home page",
     "createNewEvent": "Create New Event",
     "duplicateExistingEvent": "Duplicate Existing Event"

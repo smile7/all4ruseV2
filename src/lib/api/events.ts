@@ -55,6 +55,21 @@ async function executeQuery(query: unknown): Promise<QueryResult> {
   return query as Promise<QueryResult>;
 }
 
+// Filters events by organizer name client-side.
+// The organizers column is a JSONB array [{name, link}] and the Supabase JS
+// client misinterprets `::text` casts as foreign-table joins, so we apply
+// this filter after the DB fetch instead.
+function filterByHost(events: Event[], host: string | undefined): Event[] {
+  if (!host) return events;
+  const needle = host.toLowerCase();
+  return events.filter((e) => {
+    if (!Array.isArray(e.organizers)) return false;
+    return (e.organizers as { name?: string }[]).some((o) =>
+      o?.name?.toLowerCase().includes(needle),
+    );
+  });
+}
+
 // Base query shared by all listing functions.
 // Selects all event fields plus tags joined through event_tags.
 function baseQuery(client: Client) {
@@ -70,10 +85,12 @@ async function applyFilters(
   params: Partial<GetEventsParams>,
 ) {
   const {
-    tagId,
+    tagIds,
     search,
-    startDate,
-    endDate,
+    from,
+    to,
+    isFree,
+    place,
     page = 1,
     pageSize = EVENTS_PAGE_SIZE,
   } = params;
@@ -81,26 +98,44 @@ async function applyFilters(
   if (search) {
     query = query.ilike("title", `%${search}%`);
   }
-  if (startDate) {
-    query = query.gte("startDate", startDate);
+
+  // Overlap semantics: event must intersect the [from, to] range.
+  // event.endDate >= from ensures the event hasn't ended before the range starts.
+  // event.startDate <= to ensures the event hasn't started after the range ends.
+  if (from) {
+    query = query.gte("endDate", from);
   }
-  if (endDate) {
-    query = query.lte("endDate", endDate);
+  if (to) {
+    query = query.lte("startDate", to);
   }
-  if (tagId) {
+
+  if (isFree) {
+    query = query.or("price.is.null,price.eq.0,price.eq.0.00");
+  }
+
+  // host is filtered in JS post-fetch (see filterByHost below).
+  // PostgREST's JS client misinterprets `organizers::text` (the `::` cast
+  // syntax) as a foreign-table join reference, causing a runtime error.
+
+  if (place) {
+    query = query.ilike("place", `%${place}%`);
+  }
+
+  if (tagIds && tagIds.length > 0) {
     // Many-to-many: fetch matching event IDs first, then filter.
+    // Deduplicate so an event tagged with multiple selected tags appears once.
     const { data: links } = await client
       .from("event_tags")
       .select("event_id")
-      .eq("tag_id", tagId);
+      .in("tag_id", tagIds);
 
-    const ids = links?.map((l) => l.event_id) ?? [];
-    if (ids.length === 0) return null; // No events have this tag
+    const ids = [...new Set(links?.map((l) => l.event_id) ?? [])];
+    if (ids.length === 0) return null;
     query = query.in("id", ids);
   }
 
-  const from = (page - 1) * pageSize;
-  query = query.range(from, from + pageSize - 1);
+  const rangeFrom = (page - 1) * pageSize;
+  query = query.range(rangeFrom, rangeFrom + pageSize - 1);
 
   return query;
 }
@@ -125,7 +160,7 @@ async function getActiveEvents(
 
   const { data, error } = await executeQuery(query);
   if (error) throw error;
-  return (data ?? []).map(mapEvent);
+  return filterByHost((data ?? []).map(mapEvent), params.host);
 }
 
 // Past events limited to the last PAST_EVENTS_WINDOW_DAYS days only.
@@ -149,7 +184,7 @@ async function getPastEvents(
 
   const { data, error } = await executeQuery(query);
   if (error) throw error;
-  return (data ?? []).map(mapEvent);
+  return filterByHost((data ?? []).map(mapEvent), params.host);
 }
 
 async function getEventBySlug(

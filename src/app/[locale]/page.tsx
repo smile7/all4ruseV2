@@ -1,10 +1,12 @@
+import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 
+import { EventsGridSkeleton } from "~/components/EventCard/EventCardSkeleton";
 import { EventsList } from "~/components/EventsList";
 import { Typography } from "~/components/layout";
 import { eventsApi } from "~/lib/api";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
-import type { Event } from "~/types";
+import type { Event, GetEventsParams } from "~/types";
 
 export async function generateMetadata() {
   const t = await getTranslations("HomePage");
@@ -14,22 +16,63 @@ export async function generateMetadata() {
   };
 }
 
-export default async function HomePage() {
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+function parseSearchParams(
+  raw: Record<string, string | string[] | undefined>,
+): Partial<GetEventsParams> {
+  const str = (key: string) => {
+    const v = raw[key];
+    return typeof v === "string" ? v.trim() : undefined;
+  };
+
+  const tagsRaw = str("tags");
+  const tagIds = tagsRaw
+    ?.split(",")
+    .map(Number)
+    .filter((n) => Number.isFinite(n) && n > 0);
+
+  return {
+    search: str("search") || undefined,
+    tagIds: tagIds?.length ? tagIds : undefined,
+    from: str("from") || undefined,
+    to: str("to") || undefined,
+    isFree: raw.isFree === "true" ? true : undefined,
+    host: str("host") || undefined,
+    place: str("place") || undefined,
+  };
+}
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const t = await getTranslations("HomePage");
+  const params = parseSearchParams(await searchParams);
 
   let initialData: Event[] = [];
   try {
     const client = await createSupabaseServerClient();
-    initialData = await eventsApi.getActiveEvents(client, {});
+    initialData = await eventsApi.getActiveEvents(client, params);
   } catch (err) {
     console.error("[HomePage] Failed to fetch active events:", err);
   }
 
   return (
-    <div className="mx-auto w-full flex flex-col gap-2 text-center max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-2 px-4 py-8 text-center sm:px-6 lg:px-8">
       <Typography.H1 className="text-center">{t("pageTitle")}</Typography.H1>
-      <Typography.P className="text-center text-muted-foreground">{t("pageDescription")}</Typography.P>
-      <EventsList initialData={initialData} variant="active" />
+      <Typography.P className="text-muted-foreground text-center">
+        {t("pageDescription")}
+      </Typography.P>
+
+      {/*
+        Suspense is required because EventsList internally calls useSearchParams().
+        The initialData from SSR ensures the first render shows content immediately.
+      */}
+      <Suspense fallback={<EventsGridSkeleton />}>
+        <EventsList initialData={initialData} variant="active" />
+      </Suspense>
     </div>
   );
 }

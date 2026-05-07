@@ -1,9 +1,9 @@
 import { getTranslations } from "next-intl/server";
 
-import { Search } from "lucide-react";
-
 import { Button } from "~/components/ui/button";
 
+import { HeaderDesktopFiltersPanel } from "./HeaderDesktopFiltersPanel";
+import { HeaderSearchButton } from "./HeaderSearchButton";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
@@ -12,7 +12,7 @@ export async function Header() {
   const t = await getTranslations("HomePage");
 
   return (
-    <header className="border-border/60 bg-background/85 sticky top-0 z-40 w-full backdrop-blur-md">
+    <header className="border-border/60 bg-secondary/85 sticky top-0 z-50 w-full backdrop-blur-md">
       {/* ── Mobile (<md) ──────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 px-3 py-2 md:hidden">
         {/* Row 1: lang+theme (left) | Logo (center) | login (right) */}
@@ -29,15 +29,8 @@ export async function Header() {
           </div>
         </div>
 
-        {/* Row 2: full-width filter bar */}
-        <button
-          type="button"
-          aria-label={t("filters")}
-          className="bg-muted text-muted-foreground hover:bg-muted/80 flex w-full items-center justify-center gap-2 rounded-full p-3 text-xs font-medium tracking-wider uppercase transition-colors"
-        >
-          <Search className="text-primary size-4 shrink-0" />
-          <span>{t("searchButtonText")}</span>
-        </button>
+        {/* Row 2: full-width filter trigger */}
+        <HeaderSearchButton variant="mobile" />
       </div>
 
       {/* ── Desktop (md+) — 3-column grid: left | center | right ──────── */}
@@ -49,14 +42,7 @@ export async function Header() {
 
         {/* Center — filter entry point, exactly centered */}
         <div className="flex items-center justify-center">
-          <button
-            type="button"
-            aria-label={t("filters")}
-            className="bg-muted text-muted-foreground hover:bg-muted/80 flex w-full max-w-sm items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-medium tracking-wider uppercase transition-colors"
-          >
-            <Search className="text-primary size-4 shrink-0" />
-            <span>{t("searchButtonText")}</span>
-          </button>
+          <HeaderDesktopFiltersPanel />
         </div>
 
         {/* Right — controls */}
@@ -68,6 +54,7 @@ export async function Header() {
           <Button size="sm">{t("loginButton")}</Button>
         </div>
       </div>
+
     </header>
   );
 }

@@ -382,7 +382,7 @@ export default async function EventDetailPage({ params }: Props) {
       
               <div className="flex flex-col gap-3 lg:hidden">
                 {event.ticketsLink && (
-                  <Button variant="outline" asChild className="w-full justify-center gap-2">
+                  <Button variant="secondary" asChild className="w-full justify-center gap-2">
                     <a href={event.ticketsLink} target="_blank" rel="noopener noreferrer">
                       <Ticket className="size-4 shrink-0" />
                       {t("buyTickets")}
@@ -390,20 +390,20 @@ export default async function EventDetailPage({ params }: Props) {
                   </Button>
                 )}
                 {event.fbLink && (
-                  <Button variant="outline" asChild className="w-full justify-center gap-2">
+                  <Button variant="secondary" asChild className="w-full justify-center gap-2">
                     <a href={event.fbLink} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="size-4 shrink-0" />
                       {t("facebook")}
                     </a>
                   </Button>
                 )}
-                <Button variant="outline" asChild className="w-full justify-center gap-2">
+                <Button variant="secondary" asChild className="w-full justify-center gap-2">
                   <a href={gcalUrl} target="_blank" rel="noopener noreferrer">
                     <CalendarPlus className="size-4 shrink-0" />
                     {t("addToCalendar")}
                   </a>
                 </Button>
-                <Button variant="outline" className="w-full justify-center gap-2">
+                <Button variant="secondary" className="w-full justify-center gap-2">
                   <Bookmark className="size-4 shrink-0" />
                   {t("save")}
                 </Button>
