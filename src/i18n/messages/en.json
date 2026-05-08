@@ -263,6 +263,13 @@
     "goHome": "Back to events"
   },
   "WhyUs": {
+    "pageTitle": "About all4ruse",
+    "pageDescription": "Who is behind all4ruse, why it exists, and how to get in touch — Ruse events in one place.",
+    "authorImageAlt": "Silvena — creator of all4ruse",
+    "emailAriaLabel": "Contact email: silvena at all4ruse dot com",
+    "instagramLabel": "Instagram",
+    "instagramHandle": "@all4ruse",
+    "facebookProfileLinkText": "all4ruse",
     "headerTagline": "all4ruse – your space for events in Ruse",
     "mainHeadline": "Don't miss the interesting events!",
     "mainSubheadline": "Join the community!",

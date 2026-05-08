@@ -263,7 +263,14 @@
     "goHome": "Обратно към събитията"
   },
   "WhyUs": {
-    "headerTagline": "all4ruse – твоето място за събития в Русе",
+    "pageTitle": "За all4ruse",
+    "pageDescription": "Кой стои зад all4ruse, защо съществува и как да се свържеш с нас — събития в Русе на едно място.",
+    "authorImageAlt": "Силвена — създател на all4ruse",
+    "emailAriaLabel": "Имейл за контакт: silvena at all4ruse dot com",
+    "instagramLabel": "Instagram",
+    "instagramHandle": "@all4ruse",
+    "facebookProfileLinkText": "all4ruse",
+    "headerTagline": "all4ruse – всички събития в Русе на едно място",
     "mainHeadline": "Не изпускай интересните събития!",
     "mainSubheadline": "Присъедини се към общността!",
     "aboutMeHeader": "За мен",

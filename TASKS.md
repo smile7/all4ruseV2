@@ -44,13 +44,13 @@
 - [x] Design structure task 1 — create pages with dummy content (`Typography.P` lorem ipsum) for: create event, saved events, profile, cookies, privacy, GDPR, why-all4ruse, single event, past events, my events
 - [x] Design structure task 2 — implement header and document final design decisions in `Header.tsx`
 - [x] Design structure task 3 — implement footer (`Footer.tsx`) + mobile bottom nav (`MobileBottomNav.tsx`) + locale layout wiring
-- [ ] PWA foundation — `app/manifest.ts`, app icons, apple meta tags (installable, no service worker yet)
+- [x] PWA foundation — `app/manifest.ts`, app icons, apple meta tags (installable, no service worker yet)
 - [x] EventCard component with "Live now" badge and View Transition name
 - [x] Active events page (home, SSR, initialData → EventsList + EventFilters with tag chips)
 - [x] Past events page (same pattern, reversed order, 15-day window)
 - [x] Event detail page (SSR, full content, SEO metadata, View Transition hero, JSON-LD)
-- [ ] Why All4Ruse page (stub only)
-- [ ] Legal pages (stubs only — cookies, GDPR, privacy)
+- [x] Why All4Ruse page
+- [x] Legal pages (cookies, GDPR, privacy, terms)
 
 ## Phase 6 — Auth + user pages
 

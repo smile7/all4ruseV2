@@ -263,6 +263,13 @@
     "goHome": "Назад до подій"
   },
   "WhyUs": {
+    "pageTitle": "Про all4ruse",
+    "pageDescription": "Хто стоїть за all4ruse, навіщо він існує і як зв'язатися — події Русе в одному місці.",
+    "authorImageAlt": "Сілвена — творчиня all4ruse",
+    "emailAriaLabel": "Контактний email: silvena at all4ruse dot com",
+    "instagramLabel": "Instagram",
+    "instagramHandle": "@all4ruse",
+    "facebookProfileLinkText": "all4ruse",
     "headerTagline": "all4ruse – твій простір для подій у Русе",
     "mainHeadline": "Не пропускай цікаві події!",
     "mainSubheadline": "Приєднуйся до спільноти!",
