@@ -250,6 +250,59 @@
   }
 }
 
+/* Why All4Ruse — staged section fade-in */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes why-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .why-fade-in {
+    animation: why-fade-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .why-fade-delay-0 {
+    animation-delay: 0ms;
+  }
+  .why-fade-delay-100 {
+    animation-delay: 100ms;
+  }
+  .why-fade-delay-200 {
+    animation-delay: 200ms;
+  }
+  .why-fade-delay-300 {
+    animation-delay: 300ms;
+  }
+  .why-fade-delay-400 {
+    animation-delay: 400ms;
+  }
+  .why-fade-delay-500 {
+    animation-delay: 500ms;
+  }
+  .why-fade-delay-600 {
+    animation-delay: 600ms;
+  }
+  .why-fade-delay-700 {
+    animation-delay: 700ms;
+  }
+  .why-fade-delay-800 {
+    animation-delay: 800ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .why-fade-in {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 /* Strong blur covers the full crossfade window so any loading gap is invisible */
 @keyframes via-blur {
   0%   { filter: blur(0px); }

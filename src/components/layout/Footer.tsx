@@ -42,6 +42,11 @@ export function Footer() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
+              <Link href="/legal/terms" className="w-full cursor-pointer">
+                {t("termsOfUse")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link href="/legal/privacy" className="w-full cursor-pointer">
                 {t("privacyPolicy")}
               </Link>

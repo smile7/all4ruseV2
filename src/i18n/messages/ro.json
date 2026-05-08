@@ -263,6 +263,13 @@
     "goHome": "Înapoi la evenimente"
   },
   "WhyUs": {
+    "pageTitle": "Despre all4ruse",
+    "pageDescription": "Cine este în spatele all4ruse, de ce există și cum ne poți contacta — evenimente din Ruse într-un singur loc.",
+    "authorImageAlt": "Silvena — creatoarea all4ruse",
+    "emailAriaLabel": "E-mail de contact: silvena at all4ruse dot com",
+    "instagramLabel": "Instagram",
+    "instagramHandle": "@all4ruse",
+    "facebookProfileLinkText": "all4ruse",
     "headerTagline": "all4ruse – spațiul tău pentru evenimente în Ruse",
     "mainHeadline": "Nu rata evenimentele interesante!",
     "mainSubheadline": "Alătură-te comunității!",

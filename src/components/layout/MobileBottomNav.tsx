@@ -3,7 +3,16 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { Bookmark, Calendar, Cookie, Info, MoreHorizontal, Plus, ShieldCheck } from "lucide-react";
+import {
+  Bookmark,
+  Calendar,
+  Cookie,
+  Info,
+  MoreHorizontal,
+  Plus,
+  Scale,
+  ShieldCheck,
+} from "lucide-react";
 
 import { FacebookIcon, InstagramIcon, TikTokIcon } from "~/components/icons/SocialIcons";
 import { Separator } from "~/components/ui/separator";
@@ -116,6 +125,11 @@ export function MobileBottomNav() {
             <p className="text-muted-foreground mb-1.5 px-1 text-xs font-medium uppercase tracking-wider">
               {t("legal")}
             </p>
+            <Link href="/legal/terms" onClick={() => setMoreOpen(false)}
+              className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors">
+              <Scale className="text-muted-foreground size-4 shrink-0" />
+              <span>{t("termsOfUse")}</span>
+            </Link>
             <Link href="/legal/privacy" onClick={() => setMoreOpen(false)}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors">
               <ShieldCheck className="text-muted-foreground size-4 shrink-0" />
