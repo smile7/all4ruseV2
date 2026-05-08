@@ -6,6 +6,7 @@ export * from "./EventImagesGallery";
 export * from "./FiltersMobileDrawer";
 export * from "./Footer";
 export * from "./Header";
+export * from "./HeaderAuthButton";
 export * from "./HeaderDesktopFiltersPanel";
 export * from "./HeaderSearchButton";
 export * from "./LocaleSwitcher";

@@ -1,7 +1,12 @@
 import { getTranslations } from "next-intl/server";
 
-import { Button } from "~/components/ui/button";
+import { Plus } from "lucide-react";
 
+import { Button } from "~/components/ui/button";
+import { Link } from "~/i18n/navigation";
+import { createSupabaseServerClient } from "~/lib/supabase/server";
+
+import { HeaderAuthButton } from "./HeaderAuthButton";
 import { HeaderDesktopFiltersPanel } from "./HeaderDesktopFiltersPanel";
 import { HeaderSearchButton } from "./HeaderSearchButton";
 import { LocaleSwitcher } from "./LocaleSwitcher";
@@ -10,12 +15,16 @@ import { ThemeToggle } from "./ThemeToggle";
 
 export async function Header() {
   const t = await getTranslations("HomePage");
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <header className="border-border/60 bg-secondary/85 sticky top-0 z-50 w-full backdrop-blur-md">
       {/* ── Mobile (<md) ──────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 px-3 py-2 md:hidden">
-        {/* Row 1: lang+theme (left) | Logo (center) | login (right) */}
+        {/* Row 1: lang+theme (left) | Logo (center) | add-event (right) */}
         <div className="grid grid-cols-3 items-center border-b pb-4">
           <div className="flex items-center justify-start gap-0.5">
             <LocaleSwitcher />
@@ -25,7 +34,11 @@ export async function Header() {
             <Logo />
           </div>
           <div className="flex items-center justify-end">
-            <Button size="sm">{t("loginButton")}</Button>
+            <Button size="sm" asChild aria-label={t("navCreate")}>
+              <Link href="/create-event">
+                <Plus className="size-4" />
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -50,11 +63,9 @@ export async function Header() {
           <LocaleSwitcher />
           <ThemeToggle />
           <div className="bg-border mx-1 h-5 w-px" aria-hidden />
-          {/* Auth wiring comes in task 3.6 */}
-          <Button size="sm">{t("loginButton")}</Button>
+          <HeaderAuthButton user={user} />
         </div>
       </div>
-
     </header>
   );
 }
