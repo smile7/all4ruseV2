@@ -159,14 +159,14 @@ Footer requirements:
 - Layout: hero gallery, title, date/time, address, price, tags, description, ticket link, Facebook link, related events.
 - `sitemap.ts` and `robots.ts` added under `src/app/` for crawler coverage.
 
-### 2.6 Filters
+### 2.6 Filters ✅
 
-### 2.7 Static content pages
+### 2.7 Static content pages ✅
 
 - Build `src/app/[locale]/why-all4ruse/page.tsx` — static, no data fetching.
-- Build `src/app/[locale]/legal/cookies/page.tsx`, `gdpr/page.tsx`, `privacy/page.tsx` — static. Add `generateMetadata` to each.
+- Build `src/app/[locale]/legal/cookies/page.tsx`, `gdpr/page.tsx`, `privacy/page.tsx`, `terms/page.tsx` — static. Add `generateMetadata` to each.
 
-### 2.8 PWA foundation — installable app
+### 2.8 PWA foundation — installable app ✅
 
 Make the app installable on iOS and Android via "Add to Home Screen". No service worker yet — just the manifest and meta tags.
 
