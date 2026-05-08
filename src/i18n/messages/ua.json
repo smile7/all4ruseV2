@@ -238,7 +238,15 @@
     "acceptTerms": "Я ознайомився й приймаю Умови користування.",
     "acceptTermsPrefix": "Я ознайомився й приймаю ",
     "acceptTermsLink": "Умови користування",
-    "acceptTermsRequired": "Щоб зареєструватися, потрібно прийняти Умови користування."
+    "acceptTermsRequired": "Щоб зареєструватися, потрібно прийняти Умови користування.",
+    "bio": "Коротке описання",
+    "phone": "Телефон",
+    "place": "Місцезнаходження",
+    "addressPhysical": "Фізична адреса",
+    "emailToShow": "Публічний email",
+    "nameToShow": "Публічне ім'я",
+    "socialLinks": "Соціальні мережі",
+    "contactInfo": "Контактна інформація"
   },
   "General": {
     "profileUpdatedSuccessfully": "Профіль успішно оновлено.",

@@ -238,7 +238,15 @@
     "acceptTerms": "Am citit și accept Termenii de utilizare.",
     "acceptTermsPrefix": "Am citit și accept ",
     "acceptTermsLink": "Termenii de utilizare",
-    "acceptTermsRequired": "Trebuie să accepți Termenii de utilizare pentru a te înregistra."
+    "acceptTermsRequired": "Trebuie să accepți Termenii de utilizare pentru a te înregistra.",
+    "bio": "Scurtă descriere",
+    "phone": "Telefon",
+    "place": "Locație",
+    "addressPhysical": "Adresă fizică",
+    "emailToShow": "Email public",
+    "nameToShow": "Nume afișat",
+    "socialLinks": "Rețele sociale",
+    "contactInfo": "Informații de contact"
   },
   "General": {
     "profileUpdatedSuccessfully": "Profil actualizat cu succes.",

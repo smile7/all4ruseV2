@@ -185,33 +185,34 @@ Make the app installable on iOS and Android via "Add to Home Screen". No service
 
 This phase covers the full authentication experience and user-facing account pages.
 
-### 3.1 Login page
+### 3.1 Login page ✅
 
-- Build `src/app/[locale]/auth/login/page.tsx` — `"use client"`, email + password form using react-hook-form + zod, calls `supabase.auth.signInWithPassword`. On success, redirect to `next` query param or `/`. On error, show inline message.
+- `src/app/[locale]/auth/login/page.tsx` — `"use client"`, email + password form, react-hook-form + zod, `supabase.auth.signInWithPassword`. Inline error messages mapped from Supabase error strings. Password visibility toggle via `PasswordInput` component. Redirects to `next` param or locale home on success.
 
-### 3.2 Signup page + email confirmation
+### 3.2 Signup page + email confirmation ✅
 
-- Build `src/app/[locale]/auth/signup/page.tsx` — email + password form, calls `supabase.auth.signUp`. On success, redirect to signup-success.
-- Ensure signup confirmation flow is fully wired: `emailRedirectTo` points to `src/app/auth/callback/route.ts`, and unconfirmed users see a clear "check your email" state.
+- `src/app/[locale]/auth/signup/page.tsx` — email + password + confirm + optional full name + terms checkbox. `supabase.auth.signUp` with `emailRedirectTo: /auth/callback`. Minimal fields — profile completion deferred to the profile page.
 
-### 3.3 Signup success page
+### 3.3 Signup success page ✅
 
-- Build `src/app/[locale]/auth/signup-success/page.tsx` — static confirmation message telling the user to check their email.
+- `src/app/[locale]/auth/signup-success/page.tsx` — static Server Component, MailCheck icon, "check your email" message.
 
-### 3.4 Auth callback route
+### 3.4 Auth callback route ✅
 
-- Build `src/app/auth/callback/route.ts` — exchanges code for session, redirects to `next` when present, falls back to locale home.
+- `src/app/auth/callback/route.ts` — PKCE code exchange (`supabase.auth.exchangeCodeForSession`). Redirects to `next` query param or default locale home. Handles both email confirmation and password reset flows.
 
-### 3.5 Password management pages
+### 3.5 Password management pages ✅
 
-- Build `src/app/[locale]/auth/forgot-password/page.tsx` — email form, calls `supabase.auth.resetPasswordForEmail`.
-- Build `src/app/[locale]/auth/update-password/page.tsx` — new password form, calls `supabase.auth.updateUser`. Requires session (redirect to login if no session).
+- `src/app/[locale]/auth/forgot-password/page.tsx` — email form, `supabase.auth.resetPasswordForEmail` with `redirectTo: /auth/callback?next=/[locale]/auth/update-password`. Inline "check your email" state after submit.
+- `src/app/[locale]/auth/update-password/page.tsx` — new + confirm password, `supabase.auth.updateUser`. Guards against no session on mount (redirects to login).
 
-### 3.6 Header + MobileBottomNav auth state — full wiring
+### 3.6 Header + MobileBottomNav auth state — full wiring ✅
 
-- Header: user avatar button with dropdown (My Events, Profile, Logout) when authenticated, "Вход" link when not.
-- `MobileBottomNav` Profile tab: avatar thumbnail when authenticated, generic person icon when guest.
-- Logout: call `supabase.auth.signOut()` in a small client action, then `router.refresh()` to re-render the server layout with cleared session.
+- Mobile header top-right: primary "+" button → `/create-event` (middleware handles unauthenticated redirect).
+- Desktop header: `HeaderAuthButton` client component — avatar dropdown (Create Event · Profile · My Events · Logout) when authenticated, "Влез" link when guest.
+- Bottom nav restructured to 4 tabs: Events · Saved · More · Profile. More sheet = social/legal/Why All4Ruse. Profile sheet = full auth state (login/signup buttons or user info + links + logout).
+- Logout: `supabase.auth.signOut()` + `router.refresh()` re-renders the Server Component header with cleared session.
+- `PasswordInput` component added at `src/components/ui/password-input.tsx` — reusable eye-toggle wrapper.
 
 ### 3.7 Profiles data layer
 

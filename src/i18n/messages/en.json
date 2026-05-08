@@ -238,7 +238,15 @@
     "acceptTerms": "I have read and accept the Terms of Use.",
     "acceptTermsPrefix": "I have read and accept the ",
     "acceptTermsLink": "Terms of Use",
-    "acceptTermsRequired": "You must accept the Terms of Use to register."
+    "acceptTermsRequired": "You must accept the Terms of Use to register.",
+    "bio": "Short bio",
+    "phone": "Phone",
+    "place": "Location",
+    "addressPhysical": "Physical address",
+    "emailToShow": "Public email",
+    "nameToShow": "Display name",
+    "socialLinks": "Social links",
+    "contactInfo": "Contact information"
   },
   "General": {
     "profileUpdatedSuccessfully": "Profile updated successfully.",

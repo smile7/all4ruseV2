@@ -238,7 +238,15 @@
     "acceptTerms": "Запознат съм и приемам Общите условия.",
     "acceptTermsPrefix": "Запознат съм и приемам ",
     "acceptTermsLink": "Общите условия",
-    "acceptTermsRequired": "Трябва да приемете Общите условия, за да се регистрирате."
+    "acceptTermsRequired": "Трябва да приемете Общите условия, за да се регистрирате.",
+    "bio": "Кратко описание",
+    "phone": "Телефон",
+    "place": "Местоположение",
+    "addressPhysical": "Физически адрес",
+    "emailToShow": "Публичен имейл",
+    "nameToShow": "Публично показвано иmе",
+    "socialLinks": "Социални мрежи",
+    "contactInfo": "Контактна информация"
   },
   "General": {
     "profileUpdatedSuccessfully": "Профилът е актуализиран успешно.",
