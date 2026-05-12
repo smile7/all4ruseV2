@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import {
+  plainTextFromHtml,
+  sanitizeEventDescription,
+} from "~/lib/event-description-html";
 import type { Tables } from "~/types/database";
 
 // ─── Domain types ─────────────────────────────────────────────────────────────
@@ -45,7 +49,13 @@ export type GetEventsParams = z.infer<typeof getEventsParamsSchema>;
 
 export const createEventSchema = z.object({
   title: z.string().min(3, "Заглавието е задължително"),
-  description: z.string().min(10, "Описанието е задължително"),
+  description: z
+    .string()
+    .refine(
+      (html) =>
+        plainTextFromHtml(sanitizeEventDescription(html)).length >= 10,
+      { message: "Описанието е задължително" },
+    ),
   startDate: z.string().min(1, "Начална дата е задължителна"),
   endDate: z.string().min(1, "Крайна дата е задължителна"),
   startTime: z.string().min(1, "Начален час е задължителен"),

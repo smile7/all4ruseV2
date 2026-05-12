@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useTranslations } from "next-intl";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Globe, Phone, User } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
@@ -74,10 +75,13 @@ export function ProfileForm({ profile, userEmail, userId }: Props) {
         {/* ── Personal information ──────────────────────────────────── */}
         <Card>
           <CardHeader>
-            <CardTitle>{t("personalInformation")}</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <User className="size-5 text-primary" />
+              {t("personalInformation")}
+            </CardTitle>
             <CardDescription>{t("personalInformationDescr")}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent variant="section">
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
@@ -140,9 +144,12 @@ export function ProfileForm({ profile, userEmail, userId }: Props) {
         {/* ── Contact information ───────────────────────────────────── */}
         <Card>
           <CardHeader>
-            <CardTitle>{t("contactInfo")}</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Phone className="size-5 text-primary" />
+              {t("contactInfo")}
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent variant="section">
             {/* Auth email — display only */}
             <FormItem>
               <FormLabel>{t("email")}</FormLabel>
@@ -214,9 +221,12 @@ export function ProfileForm({ profile, userEmail, userId }: Props) {
         {/* ── Social links ──────────────────────────────────────────── */}
         <Card>
           <CardHeader>
-            <CardTitle>{t("socialLinks")}</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Globe className="size-5 text-primary" />
+              {t("socialLinks")}
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent variant="section">
             <FormField
               control={form.control}
               name="website"
@@ -274,9 +284,11 @@ export function ProfileForm({ profile, userEmail, userId }: Props) {
           </CardContent>
         </Card>
 
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {t("edit")}
-        </Button>
+        <div className="flex justify-end pt-4">
+          <Button type="submit" disabled={form.formState.isSubmitting} size="lg" className="min-w-32">
+            {t("edit")}
+          </Button>
+        </div>
       </form>
     </Form>
   );

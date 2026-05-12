@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
+import { Typography } from "~/components/layout/Typography";
 import { profilesApi } from "~/lib/api";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
@@ -21,8 +22,10 @@ export default async function ProfilePage() {
   const t = await getTranslations("Profile");
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-semibold">{t("account")}</h1>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
+      <div className="mb-8">
+        <Typography.H1 className="tracking-tight">{t("accountSettings")}</Typography.H1>
+      </div>
       <ProfileForm
         profile={profile ?? null}
         userEmail={user.email ?? ""}

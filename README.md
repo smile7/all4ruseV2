@@ -42,6 +42,7 @@ This is the initial preferred stack and may be refined as the architecture is fi
 ## Initial focus
 
 The first phase of v2 is to define:
+
 - product requirements
 - architecture
 - project structure

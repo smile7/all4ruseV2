@@ -19,6 +19,17 @@ const nextConfig: NextConfig = {
         hostname: "**.fbcdn.net",
         pathname: "/**",
       },
+      // External events / WordPress uploads (e.g. imported scraped images)
+      {
+        protocol: "https",
+        hostname: "ruseonthedanube.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.ruseonthedanube.com",
+        pathname: "/**",
+      },
     ],
   },
 };
