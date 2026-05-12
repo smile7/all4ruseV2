@@ -14,6 +14,7 @@ type Props = {
   eventId: string;
   title: string;
   live: boolean;
+  liveLabel: string;
   cancelled: boolean;
   soldOut: boolean;
   premium: boolean;
@@ -27,6 +28,7 @@ export function EventHeroGallery({
   eventId,
   title,
   live,
+  liveLabel,
   cancelled,
   soldOut,
   premium,
@@ -67,7 +69,7 @@ export function EventHeroGallery({
                   <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
                   <span className="relative inline-flex size-2 rounded-full bg-green-500" />
                 </span>
-                Live
+                {liveLabel}
               </div>
             )}
             {cancelled && (

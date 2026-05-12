@@ -2,7 +2,17 @@
 
 import { useTranslations } from "next-intl";
 
-import { ChevronUp } from "lucide-react";
+import {
+  CalendarClock,
+  CalendarDays,
+  ChevronUp,
+  Cookie,
+  History,
+  Info,
+  Scale,
+  ScrollText,
+  ShieldCheck,
+} from "lucide-react";
 
 import { FacebookIcon, InstagramIcon, TikTokIcon } from "~/components/icons/SocialIcons";
 import {
@@ -36,28 +46,76 @@ export function Footer() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" side="top" className="min-w-44">
             <DropdownMenuItem asChild>
-              <Link href="/why-all4ruse" className="w-full cursor-pointer">
+              <Link
+                href="/"
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+              >
+                <CalendarDays className="text-muted-foreground size-4 shrink-0" />
+                {t("menuEvents")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                href="/current"
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+              >
+                <CalendarClock className="text-muted-foreground size-4 shrink-0" />
+                {t("menuCurrentEvents")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                href="/past"
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+              >
+                <History className="text-muted-foreground size-4 shrink-0" />
+                {t("menuPastEvents")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link
+                href="/why-all4ruse"
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+              >
+                <Info className="text-muted-foreground size-4 shrink-0" />
                 {t("menuWhyAll4Ruse")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/legal/terms" className="w-full cursor-pointer">
+              <Link
+                href="/legal/terms"
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+              >
+                <Scale className="text-muted-foreground size-4 shrink-0" />
                 {t("termsOfUse")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/legal/privacy" className="w-full cursor-pointer">
+              <Link
+                href="/legal/privacy"
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+              >
+                <ShieldCheck className="text-muted-foreground size-4 shrink-0" />
                 {t("privacyPolicy")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/legal/cookies" className="w-full cursor-pointer">
+              <Link
+                href="/legal/cookies"
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+              >
+                <Cookie className="text-muted-foreground size-4 shrink-0" />
                 {t("cookiesPolicy")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/legal/gdpr" className="w-full cursor-pointer">
+              <Link
+                href="/legal/gdpr"
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+              >
+                <ScrollText className="text-muted-foreground size-4 shrink-0" />
                 GDPR
               </Link>
             </DropdownMenuItem>

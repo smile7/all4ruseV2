@@ -7,6 +7,11 @@ import {
   RELATED_EVENTS_COUNT,
 } from "~/constants";
 import { buildEventSlugFromTitle } from "~/lib/event-slug";
+import {
+  isEventEnded,
+  isVisibleOnCurrentEventsList,
+  isVisibleOnHomeActiveList,
+} from "~/lib/event-utils";
 import type { Event, GetEventsParams, Tag } from "~/types";
 import type { Database } from "~/types/database";
 
@@ -174,8 +179,8 @@ async function applyFilters(
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-// Active events = current (started, not yet ended) + upcoming (not yet started).
-// Ordered soonest first so current events surface at the top naturally.
+// we drop rows once the end instant has passed, trim multi-day events to the first
+// calendar day on the home grid, then order is unchanged from the query.
 async function getActiveEvents(
   client: Client,
   params: Partial<GetEventsParams> = {},
@@ -192,12 +197,38 @@ async function getActiveEvents(
 
   const { data, error } = await executeQuery(query);
   if (error) throw error;
-  return filterByHost((data ?? []).map(mapEvent), params.host);
+  const now = new Date();
+  const visible = (data ?? [])
+    .map(mapEvent)
+    .filter((e) => isVisibleOnHomeActiveList(e, today, now));
+  return filterByHost(visible, params.host);
 }
 
-// Past events limited to the last PAST_EVENTS_WINDOW_DAYS days only.
-// Showing the full history is unnecessary and slows down the query.
-// Ordered most-recent first so freshly-ended events appear at the top.
+// Ongoing multi-day events after the first calendar day (see `isVisibleOnCurrentEventsList`).
+async function getCurrentEvents(
+  client: Client,
+  params: Partial<GetEventsParams> = {},
+): Promise<Event[]> {
+  const today = todayStr();
+  const q = baseQuery(client)
+    .gte("endDate", today)
+    .order("startDate", { ascending: true })
+    .order("startTime", { ascending: true });
+
+  const query = await applyFilters(client, q, params);
+  if (!query) return [];
+
+  const { data, error } = await executeQuery(query);
+  if (error) throw error;
+  const now = new Date();
+  const visible = (data ?? [])
+    .map(mapEvent)
+    .filter((e) => isVisibleOnCurrentEventsList(e, today, now));
+  return filterByHost(visible, params.host);
+}
+
+// Past events: include `endDate === today` only after the event end instant; events
+// still running today are excluded by `isEventEnded`.
 async function getPastEvents(
   client: Client,
   params: Partial<GetEventsParams> = {},
@@ -206,7 +237,7 @@ async function getPastEvents(
   const windowStart = daysAgoStr(PAST_EVENTS_WINDOW_DAYS);
 
   const q = baseQuery(client)
-    .lt("endDate", today)
+    .lte("endDate", today)
     .gte("endDate", windowStart)
     .order("endDate", { ascending: false })
     .order("startDate", { ascending: false });
@@ -216,7 +247,11 @@ async function getPastEvents(
 
   const { data, error } = await executeQuery(query);
   if (error) throw error;
-  return filterByHost((data ?? []).map(mapEvent), params.host);
+  const now = new Date();
+  const ended = (data ?? [])
+    .map(mapEvent)
+    .filter((e) => isEventEnded(e, now));
+  return filterByHost(ended, params.host);
 }
 
 async function getEventBySlug(
@@ -265,8 +300,9 @@ async function getRelatedEvents(
   const relatedIds = Array.from(overlapCounts.keys());
   if (relatedIds.length === 0) return [];
 
+  const today = todayStr();
   const q = baseQuery(client)
-    .gte("endDate", todayStr())
+    .gte("endDate", today)
     .in("id", relatedIds)
     .order("startDate", { ascending: true })
     .order("startTime", { ascending: true });
@@ -274,8 +310,11 @@ async function getRelatedEvents(
   const { data, error } = await executeQuery(q);
   if (error) throw error;
 
+  const now = new Date();
+
   return (data ?? [])
     .map(mapEvent)
+    .filter((e) => isVisibleOnHomeActiveList(e, today, now))
     .sort((left, right) => {
       const overlapDiff =
         (overlapCounts.get(right.id) ?? 0) - (overlapCounts.get(left.id) ?? 0);
@@ -478,6 +517,7 @@ async function deleteEvent(client: Client, eventId: number): Promise<void> {
 
 export const eventsApi = {
   getActiveEvents,
+  getCurrentEvents,
   getPastEvents,
   getEventBySlug,
   getEventById,

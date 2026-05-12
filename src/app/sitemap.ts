@@ -9,6 +9,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 const STATIC_PATHS = [
   { path: "", priority: 1.0, changeFrequency: "daily" as const },
   { path: "/past", priority: 0.7, changeFrequency: "daily" as const },
+  { path: "/current", priority: 0.7, changeFrequency: "daily" as const },
   { path: "/why-all4ruse", priority: 0.5, changeFrequency: "monthly" as const },
   { path: "/legal/terms", priority: 0.3, changeFrequency: "yearly" as const },
   { path: "/legal/privacy", priority: 0.3, changeFrequency: "yearly" as const },

@@ -370,8 +370,9 @@ export function EventForm({
 
       const tagIds = values.tagIds ?? [];
 
+      let saved: Event;
       if (mode === "edit" && initialData) {
-        await eventsApi.updateEvent(
+        saved = await eventsApi.updateEvent(
           supabase,
           initialData.id,
           eventData,
@@ -379,18 +380,24 @@ export function EventForm({
         );
         toast.success(t("eventUpdated"));
       } else {
-        const created = await eventsApi.createEvent(
+        saved = await eventsApi.createEvent(
           supabase,
           userId,
           eventData,
           tagIds,
         );
         toast.success(
-          created.isEventActive ? t("eventCreatedLive") : t("eventCreated"),
+          saved.isEventActive ? t("eventCreatedLive") : t("eventCreated"),
         );
       }
 
-      router.push("/my-events");
+      const slug =
+        typeof saved.slug === "string" ? saved.slug.trim() : "";
+      if (saved.isEventActive && slug !== "") {
+        router.push(`/${slug}`);
+      } else {
+        router.push("/");
+      }
     } catch {
       toast.error(t("error"));
     } finally {

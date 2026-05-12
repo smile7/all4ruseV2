@@ -9,7 +9,7 @@
 - [x] Define design direction (tweakcn "dashboard" theme tokens, shadcn/ui styling, Inter + Source Serif 4 + JetBrains Mono, View Transitions for key navigation)
 - [x] Define MVP scope
   - Pages rollout: all events -> upcoming/current/past -> single event -> why all4ruse -> auth pages -> profile -> create event -> edit/duplicate event -> delete event -> my events
-  - MVP feature scope (in addition to pages): searching and filtering (by tags, title, dates, host, place), locale routing (`/[locale]`), basic SEO metadata, role-based admin access for event management, theme changing, google calendar
+  - MVP feature scope (in addition to pages): searching and filtering (by tags, title, dates, host, place), locale routing (`/[locale]`), basic SEO metadata, saved events for logged-in users, theme changing, google calendar — **no in-app admin UI**; staff use Supabase Dashboard for content control
 
 ## Phase 2 — Technical setup
 
@@ -64,23 +64,25 @@
   - Desktop header: avatar dropdown (Create Event · Profile · My Events · Logout) when authenticated, "Влез" link when guest
   - Bottom nav: Events · Saved · More · Profile (two separate sheets — More = social/legal, Profile = auth state)
   - Logout: `supabase.auth.signOut()` + `router.refresh()` to re-render Server Components
-- [ ] Profiles data layer (`src/lib/api/profiles.ts` — `getProfile`, `updateProfile`, `updateProfileSchema`)
-- [ ] Profile page (view + edit all optional fields)
-- [ ] My events page (SSR, filter by `createdBy = user.id`)
-- [ ] Create event page (auth-guarded, `EventForm` with `createEventSchema`)
-- [ ] Account security and deletion flow (change password + delete account with explicit confirmation)
+- [x] Profiles data layer (`src/lib/api/profiles.ts` — `getProfile`, `updateProfile`, `updateProfileSchema`)
+- [x] Profile page (view + edit optional fields via `ProfileForm`)
+- [x] My events page (SSR, `eventsApi.getMyEvents`, upcoming/past sections)
+- [x] Create event page (auth-guarded, `EventForm`; create / edit / duplicate via `editId` · `duplicateId` query params)
+- [x] Account security and deletion flow (change password + delete account with typed DELETE; `Profile` page + `/api/account/delete`)
 
-## Phase 7 — Admin
+## Phase 7 - Saved events
 
-- [ ] Admin layout with role check
-- [ ] Admin event list with TanStack Query (create, edit, delete, toggle active/premium)
-- [ ] Event form (create + edit, shared)
-- [ ] Admin tags management page
+- [ ] When a person is logged in, he should be able to mark an events as saved. (save icon over the event card bottom right)
+- [ ] Each stored event id is kept in the database.
+- [ ] Create a page "Saved" where user sees all his saved events.
+- [ ] Order the events in Saved page by date.
+- [ ] Give option to remove an event from the list (or by clicking again the save icon over the event)
+- [ ] If an event is passed, do not show it.
 
 ## Phase 8 — Quality
 
 - [ ] SEO metadata on all public pages (generateMetadata)
-- [ ] JSON-LD structured data on event detail
+- [x] JSON-LD structured data on event detail (`[slug]` page — `Event` schema)
 - [ ] loading.tsx and error.tsx for key routes
 - [ ] Mobile responsiveness review
 - [ ] Accessibility review (keyboard nav, contrast, ARIA)

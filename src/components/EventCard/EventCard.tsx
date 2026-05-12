@@ -33,7 +33,7 @@ export function EventCard({ event, showManageActions = false }: Props) {
   const router = useRouter();
 
   const { day, month } = formatDateBadge(event.startDate);
-  const live = isLiveNow(event.startDate, event.endDate);
+  const live = isLiveNow(event);
   const imageUrl = getEventImageUrl(event.image);
   const formattedTitle = formatEventTitle(event.title);
   const host = getFirstHostName(event.organizers);
@@ -104,7 +104,7 @@ export function EventCard({ event, showManageActions = false }: Props) {
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
                 <span className="relative inline-flex size-2 rounded-full bg-green-500" />
               </span>
-              Live
+              {t("liveNow")}
             </div>
           ) : showManageActions && !event.isEventActive ? (
             <div className="bg-background/92 text-muted-foreground absolute top-2.5 right-2.5 z-20 rounded-full px-3 py-1.5 text-xs font-semibold shadow backdrop-blur-sm">

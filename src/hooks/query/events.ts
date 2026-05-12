@@ -33,3 +33,16 @@ export function usePastEvents(
     staleTime: 60_000,
   });
 }
+
+export function useCurrentEvents(
+  params: Partial<GetEventsParams> = {},
+  { initialData }: Options = {},
+) {
+  return useQuery({
+    queryKey: ["current-events", params],
+    queryFn: () => eventsApi.getCurrentEvents(getSupabaseBrowserClient(), params),
+    initialData,
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+  });
+}

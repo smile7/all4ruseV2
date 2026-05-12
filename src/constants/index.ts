@@ -1,4 +1,5 @@
 export const EVENTS_BUCKET = "event-images";
+export const AVATARS_BUCKET = "avatars";
 export const EVENTS_PAGE_SIZE = 12;
 export const PAST_EVENTS_WINDOW_DAYS = 15;
 export const THEME_STORE_KEY = "theme";

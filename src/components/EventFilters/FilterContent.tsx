@@ -91,7 +91,7 @@ function QuickDateButton({
       variant="ghost"
       className={cn(
         "border-input cursor-pointer border bg-secondary text-xs hover:bg-secondary/60",
-        // Mobile: fill grid cell (~25% row); span resets inherited whitespace-nowrap from Button
+        // Mobile: fill grid cell; desktop chip uses span for nowrap vs wrap
         "h-auto min-h-9 w-full p-2 text-center",
         // Desktop: single-line chip, natural width
         "md:h-9 md:w-auto md:shrink-0 md:px-3 md:py-0",

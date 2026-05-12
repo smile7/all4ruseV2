@@ -53,7 +53,7 @@ Get a running app with all tooling, routing, and plumbing in place before writin
 - Create `src/i18n/routing.ts` — define `locales: ["bg", "en", "uk", "ro"]` and `defaultLocale: "bg"`.
 - Create `src/i18n/request.ts` — the next-intl server config that loads the correct message file.
 - Create `src/i18n/messages/bg.json`, `en.json`, `uk.json`, `ro.json` with a minimal structure (just `common`, `nav` keys for now).
-- Create `src/middleware.ts` — combine next-intl locale routing with admin route protection (see ARCHITECTURE.md).
+- Create `src/middleware.ts` — combine next-intl locale routing with auth guards for protected routes (create-event, profile, etc.; see ARCHITECTURE.md). There is no `/admin` UI — operations staff use the Supabase Dashboard.
 
 ### 1.8 App shell
 
@@ -214,78 +214,66 @@ This phase covers the full authentication experience and user-facing account pag
 - Logout: `supabase.auth.signOut()` + `router.refresh()` re-renders the Server Component header with cleared session.
 - `PasswordInput` component added at `src/components/ui/password-input.tsx` — reusable eye-toggle wrapper.
 
-### 3.7 Profiles data layer
+### 3.7 Profiles data layer ✅
 
-- Write `src/lib/api/profiles.ts` — `profilesApi` with `getProfile(client, userId)`, `updateProfile(client, userId, data)`.
-- Add `updateProfileSchema` to `src/types/index.ts`.
+- `src/lib/api/profiles.ts` — `profilesApi` with `getProfile`, `updateProfile`.
+- `updateProfileSchema` / `UpdateProfileInput` in `src/types/index.ts`.
 
-### 3.8 Profile page
+### 3.8 Profile page ✅
 
-- Build `src/app/[locale]/profile/page.tsx` — SSR, read session and profile via server client. Render profile display + edit form (react-hook-form + zod). Redirect to login if no session.
+- `src/app/[locale]/profile/page.tsx` — SSR session + profile, `ProfileForm` (react-hook-form + zod). Redirect to login if no session.
 
-### 3.9 My events page
+### 3.9 My events page ✅
 
-- Build `src/app/[locale]/my-events/page.tsx` — SSR, filter events by `created_by = session.user.id`. Reuse `EventCard`. Redirect to login if no session.
+- `src/app/[locale]/my-events/page.tsx` — SSR, `eventsApi.getMyEvents`, splits upcoming vs past, `EventCard`. Redirect to login if no session.
 
-### 3.10 Create event page
+### 3.10 Create event page ✅
 
-- Build `src/app/[locale]/create-event/page.tsx` — auth-guarded (middleware already handles redirect to login).
-- Render `EventForm` with react-hook-form + zod using `createEventSchema`.
-- On submit, call `eventsApi.createEvent(browserClient, values)`, navigate to my-events on success.
+- `src/app/[locale]/create-event/page.tsx` — auth-guarded; `EventForm` with tags and profile defaults.
+- Modes: create, `editId` (edit), `duplicateId` (duplicate) via search params; loads event by id when editing/duplicating.
+- Submit/mutations live in `EventForm` (browser Supabase client + navigation on success).
 
-### 3.11 Account security + deletion
+### 3.11 Account security + deletion ✅
 
-- Build `src/app/[locale]/profile/security/page.tsx` (or a dedicated section in profile) with:
-  - Change password form (`supabase.auth.updateUser({ password })`)
-  - Re-auth confirmation step for sensitive actions (when required by provider/session age)
-- Build account deletion flow:
-  - Confirmation UI requiring typed confirmation text (e.g. "DELETE")
-  - Server-side endpoint/action that performs account cleanup and deletion in Supabase
-  - Final sign-out and redirect with a success state
-- Add safety constraints:
-  - Soft-delete profile/event ownership data first (or transfer policy), then delete auth user
-  - Explicit irreversible-action copy and double-confirmation in UI
+- Implemented at the bottom of the profile page: `ProfileAccountSecurity` (`change password` + delete account dialog).
+- Change password: `supabase.auth.updateUser({ password })` with new + confirm fields; link to forgot-password flow.
+- Account deletion: typed confirmation **`DELETE`**; `POST /api/account/delete` deletes the user’s events (same pattern as `eventsApi.deleteEvent`), then `auth.admin.deleteUser` via **`SUPABASE_SERVICE_ROLE_KEY`** (server-only in `src/lib/supabase/admin.ts`). Client signs out and redirects home.
+- **Env:** add `SUPABASE_SERVICE_ROLE_KEY` to the server environment (never expose to the client). DB should cascade `profiles` from `auth.users` (typical Supabase template); events must be removed first because they reference `profiles`.
 
 ---
 
-## Phase 4 — Admin
+## Phase 4 — Saved events
 
-### 4.1 Admin layout and role check
+Authenticated users can bookmark events; bookmarks persist in the database. **There is no in-app admin area** — listings, tags, moderation, and roles are managed in **Supabase** (Dashboard, SQL, RLS). This phase matches `TASKS.md` Phase 7.
 
-- Build `src/app/[locale]/admin/layout.tsx` — Server Component. Read session via server client. Check `profile.is_admin` (or whatever role field is used). If not admin, redirect to home. Render an admin sidebar shell.
+### 4.1 Data model + RLS
 
-### 4.2 Admin dashboard
+- Add a join table (e.g. `saved_events`: `user_id`, `event_id`, `created_at`) with `UNIQUE (user_id, event_id)`, FKs to `auth.users` / `events`, indexes for “my saves” queries.
+- RLS: a user can `SELECT` / `INSERT` / `DELETE` only rows where `user_id = auth.uid()`.
+- Run `npm run db:types` after the migration; extend domain types in `src/types/` if needed.
 
-- Build `src/app/[locale]/admin/page.tsx` — simple stats: total events, active events, total tags. Fetch counts via server client. Static-ish, no TanStack Query needed.
+### 4.2 API — `lib/api`
 
-### 4.3 TanStack Query hooks for admin
+- `savedEventsApi` (or equivalent) with: list saved event ids or full events for a user, `save(userId, eventId)`, `unsave(userId, eventId)`, and optionally `isSaved` for hydration.
+- Keep all Supabase calls in `src/lib/api/*` per project rules.
 
-- Extend `src/hooks/query/events.ts` — add `useAdminEvents(params)`, `useCreateEvent()`, `useUpdateEvent()`, `useDeleteEvent()`. Each mutation calls `invalidateQueries({ queryKey: eventQueryKeys.all() })` on settled.
-- Write `src/hooks/query/tags.ts` — `useTags()`, `useCreateTag()`, `useDeleteTag()`.
-- Write `src/hooks/query/index.ts` — re-export all.
+### 4.3 EventCard — save control
 
-### 4.4 Admin events list
+- When the viewer is logged in, show a save/bookmark control **bottom-right** on the card (icon toggles saved state).
+- Likely a small Client Component (button) composed with the existing `EventCard`, or a prop-slot pattern — avoid duplicating card layout.
+- Mirror the same control on the **event detail** page for consistency (optional but recommended).
 
-- Build `src/app/[locale]/admin/events/page.tsx` — `"use client"` wrapper around a table. Uses `useAdminEvents(params)` with `keepPreviousData`. Columns: title, dates, status (active/premium), actions (edit, delete, toggle active).
-- Add confirmation dialog before delete (shadcn `AlertDialog`).
-- Add a "New event" link to the admin events/new page.
+### 4.4 Saved page
 
-### 4.5 Event form component
+- Implement `src/app/[locale]/profile/saved-events/page.tsx` (already scaffolded): **auth required**, redirect guests to login.
+- Load saved events, **exclude past events** (`endDate` strictly before today in the app’s date semantics).
+- **Sort by upcoming date** (e.g. by `startDate` / `startTime` ascending).
+- Allow **remove** from the list (dedicated control and/or toggling the same save icon off).
 
-- Create `src/components/EventForm/EventForm.tsx` — `"use client"`, react-hook-form + zod, renders all fields from `createEventSchema`. Accepts `defaultValues`, `schema`, `isPending`, `onSubmit` as props. Works for both create and edit.
-- Create `src/components/EventForm/index.ts`.
+### 4.5 i18n + nav
 
-### 4.6 Admin create event page
-
-- Build `src/app/[locale]/admin/events/new/page.tsx` — renders `EventForm` with empty defaults. Passes `useCreateEvent().mutate` as `onSubmit`. On success, router.push to events list.
-
-### 4.7 Admin edit event page
-
-- Build `src/app/[locale]/admin/events/[id]/page.tsx` — Server Component fetches the event by id via server client and passes it as `defaultValues` to `EventForm`. Mutation uses `useUpdateEvent()`.
-
-### 4.8 Admin tags page
-
-- Build `src/app/[locale]/admin/tags/page.tsx` — lists all tags, inline add form (tag title input + submit), delete button per tag. Uses `useTags()`, `useCreateTag()`, `useDeleteTag()`.
+- Add message keys for save/unsave, empty state, page title; keep `bg` / `en` / `uk` / `ro` in sync.
+- Ensure bottom nav **Saved** tab and any header links point at this page.
 
 ---
 
@@ -294,7 +282,7 @@ This phase covers the full authentication experience and user-facing account pag
 ### 5.1 Complete Bulgarian message file
 
 - Audit every page and component for hardcoded Bulgarian or English strings.
-- Move all UI strings into `src/i18n/messages/bg.json` — organized by page/feature key (`nav`, `home`, `events`, `auth`, `profile`, `admin`, `common`, `errors`).
+- Move all UI strings into `src/i18n/messages/bg.json` — organized by page/feature key (`nav`, `home`, `events`, `auth`, `profile`, `saved`, `common`, `errors`).
 
 ### 5.2 Translate to other languages
 
@@ -312,13 +300,13 @@ This phase covers the full authentication experience and user-facing account pag
 - Verify event detail `generateMetadata` includes Open Graph image, title, description.
 - Add `<link rel="alternate" hreflang>` via next-intl's alternates support.
 
-### 5.5 JSON-LD structured data
+### 5.5 JSON-LD structured data ✅
 
-- Add a `<script type="application/ld+json">` block to `app/[locale]/events/[slug]/page.tsx` with the [Event schema](https://schema.org/Event) — name, startDate, endDate, location, image, url.
+- Implemented on `app/[locale]/[slug]/page.tsx` (see Phase 2.5). Remaining polish: keep schema fields in sync if event model changes; extend only if SEO needs more types.
 
 ### 5.6 Loading and error states
 
-- Add `loading.tsx` to `app/[locale]/` and `app/[locale]/admin/` — renders a skeleton.
+- Add `loading.tsx` to `app/[locale]/` — renders a skeleton (add nested `loading.tsx` only under routes that benefit from it).
 - Add `error.tsx` to `app/[locale]/` — friendly error message with retry.
 - Add a custom `not-found.tsx` for event detail (when slug does not match any event).
 
@@ -331,7 +319,7 @@ This phase covers the full authentication experience and user-facing account pag
 ### 5.8 Responsive review
 
 - Walk through every page on a 375 px viewport.
-- Fix layout issues in the event listing grid, event detail, and admin tables.
+- Fix layout issues in the event listing grid, event detail, and the Saved page.
 
 ### 5.9 Accessibility pass
 
@@ -358,6 +346,6 @@ Do this after all routes are stable so cache strategies don't keep changing.
 - **View Transitions** — enabled in `next.config.ts`. The image expand effect works by matching `viewTransitionName` between `EventCard` and the event detail hero. If the browser does not support View Transitions (Firefox without the flag), the navigation falls back to a normal page load silently.
 - **`npm run types`** — run after any major refactor or before committing. It catches type errors across the whole project without building.
 - **Supabase RLS policies** need to be in place before auth-guarded pages work correctly in production. Set them up alongside Phase 3.
-- **Event image uploads** (admin form) are not scoped above — this will need Supabase Storage and a file input in `EventForm`. Add as a task when reaching Phase 4.
+- **Event image uploads** via `EventForm` — wire Supabase Storage + file input in the existing user-facing form when ready; metadata stays manageable from Supabase if you prefer manual URLs in early iterations.
 - **Event content translation** (Google Translate) is deferred to Phase 9 / future scope as defined in TASKS.md.
-- **PWA push notifications** — Phase 9 scope. Requires: auth complete (Phase 3), stable routes (Phase 4+), and a push delivery backend (Supabase Edge Function + Web Push API). Implement after a user base exists to justify the complexity. User notification preferences (by tag, by event reminder) live in the `profiles` table.
+- **PWA push notifications** — Phase 9 scope. Requires: auth complete (Phase 3), saved events + routes stable (Phase 4+), and a push delivery backend (Supabase Edge Function + Web Push API). Implement after a user base exists to justify the complexity. User notification preferences (by tag, by event reminder) live in the `profiles` table.

@@ -27,6 +27,7 @@ export default async function ProfilePage() {
         <Typography.H1 className="tracking-tight">{t("accountSettings")}</Typography.H1>
       </div>
       <ProfileForm
+        key={`${user.id}:${profile?.updated_at ?? "none"}:${profile?.avatar_url ?? ""}`}
         profile={profile ?? null}
         userEmail={user.email ?? ""}
         userId={user.id}
