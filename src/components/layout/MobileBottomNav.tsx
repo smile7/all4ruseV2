@@ -7,13 +7,16 @@ import type { User } from "@supabase/supabase-js";
 import {
   Bookmark,
   Calendar,
+  CalendarClock,
   CalendarDays,
   Cookie,
+  History,
   Info,
   LogOut,
   MoreHorizontal,
   Plus,
   Scale,
+  ScrollText,
   ShieldCheck,
   User as UserIcon,
 } from "lucide-react";
@@ -203,6 +206,33 @@ export function MobileBottomNav() {
             <Separator className="mb-3" />
 
             <Link
+              href="/"
+              onClick={() => setMoreOpen(false)}
+              className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
+            >
+              <CalendarDays className="text-muted-foreground size-4 shrink-0" />
+              <span>{t("menuEvents")}</span>
+            </Link>
+            <Link
+              href="/current"
+              onClick={() => setMoreOpen(false)}
+              className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
+            >
+              <CalendarClock className="text-muted-foreground size-4 shrink-0" />
+              <span>{t("menuCurrentEvents")}</span>
+            </Link>
+            <Link
+              href="/past"
+              onClick={() => setMoreOpen(false)}
+              className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
+            >
+              <History className="text-muted-foreground size-4 shrink-0" />
+              <span>{t("menuPastEvents")}</span>
+            </Link>
+
+            <Separator className="my-3" />
+
+            <Link
               href="/why-all4ruse"
               onClick={() => setMoreOpen(false)}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
@@ -245,7 +275,7 @@ export function MobileBottomNav() {
               onClick={() => setMoreOpen(false)}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
-              <ShieldCheck className="text-muted-foreground size-4 shrink-0" />
+              <ScrollText className="text-muted-foreground size-4 shrink-0" />
               <span>GDPR</span>
             </Link>
 

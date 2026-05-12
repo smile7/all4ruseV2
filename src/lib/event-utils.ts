@@ -1,6 +1,13 @@
 import { EVENTS_BUCKET, FALLBACK_IMAGE } from "~/constants";
 import type { Host } from "~/types";
 
+export type EventSchedule = {
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string | null;
+};
+
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
 const BG_MONTHS_SHORT = [
@@ -86,14 +93,99 @@ export function formatEventTitle(title: string): string {
     );
 }
 
-/** True when today falls within [startDate, end of endDate]. */
-export function isLiveNow(startDate: string, endDate: string): boolean {
+function parseClockOnLocalDate(dateStr: string, timeStr: string): Date {
+  const d = parseLocalDate(dateStr);
+  const parts = timeStr.split(":").map(Number);
+  const hh = parts[0] ?? 0;
+  const mm = parts[1] ?? 0;
+  const ss = parts[2] ?? 0;
+  d.setHours(hh, mm, ss, 0);
+  return d;
+}
+
+/** Start instant in local time (defaults to midnight if `startTime` is empty). */
+export function getEventStartMs(event: EventSchedule): number {
+  const t = event.startTime?.trim();
+  if (!t) return parseLocalDate(event.startDate).getTime();
   try {
-    const today = new Date();
-    const start = parseLocalDate(startDate);
-    const end = parseLocalDate(endDate);
-    end.setHours(23, 59, 59, 999);
-    return today >= start && today <= end;
+    return parseClockOnLocalDate(event.startDate, t).getTime();
+  } catch {
+    return parseLocalDate(event.startDate).getTime();
+  }
+}
+
+/**
+ * End instant in local time. Missing `endTime` means end of `endDate` (23:59:59.999).
+ */
+export function getEventEndMs(event: EventSchedule): number {
+  const t = event.endTime?.trim();
+  try {
+    if (t) return parseClockOnLocalDate(event.endDate, t).getTime();
+    const d = parseLocalDate(event.endDate);
+    d.setHours(23, 59, 59, 999);
+    return d.getTime();
+  } catch {
+    const d = parseLocalDate(event.endDate);
+    d.setHours(23, 59, 59, 999);
+    return d.getTime();
+  }
+}
+
+export function isEventEnded(event: EventSchedule, now: Date = new Date()): boolean {
+  try {
+    return now.getTime() > getEventEndMs(event);
+  } catch {
+    return false;
+  }
+}
+
+/** True between start and end instants (inclusive of end). */
+export function isLiveNow(event: EventSchedule, now: Date = new Date()): boolean {
+  try {
+    const t = now.getTime();
+    return t >= getEventStartMs(event) && t <= getEventEndMs(event);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Home active grid: ended events excluded; multi-calendar-day events only on
+ * `startDate` (and still listed before they start). Middle/end days are omitted until the event is past.
+ */
+export function isVisibleOnHomeActiveList(
+  event: EventSchedule,
+  todayYmd: string,
+  now: Date = new Date(),
+): boolean {
+  try {
+    if (isEventEnded(event, now)) return false;
+    if (event.startDate < event.endDate) {
+      if (todayYmd < event.startDate) return true;
+      if (todayYmd === event.startDate) return true;
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Multi-day events from calendar day 2 through the last day, until the end instant.
+ * (Day 1 is listed on the home grid via `isVisibleOnHomeActiveList`.)
+ */
+export function isVisibleOnCurrentEventsList(
+  event: EventSchedule,
+  todayYmd: string,
+  now: Date = new Date(),
+): boolean {
+  try {
+    if (isEventEnded(event, now)) return false;
+    if (event.startDate >= event.endDate) return false;
+    if (todayYmd <= event.startDate) return false;
+    if (todayYmd > event.endDate) return false;
+    return true;
   } catch {
     return false;
   }
@@ -149,76 +241,6 @@ export function getFirstHostName(organizers: unknown): string | null {
   if (!Array.isArray(organizers) || organizers.length === 0) return null;
   const first = organizers[0] as Host;
   return first?.name ?? null;
-}
-
-// ─── Tag label helpers ────────────────────────────────────────────────────────
-
-// Lookup key is always the uppercased DB title — matches regardless of casing.
-// Add new entries here whenever new tags are added to the DB.
-const TAG_BG: Record<string, string> = {
-  COMEDY: "Комедия",
-  THEATRE: "Театър",
-  THEATER: "Театър",
-  ART: "Изкуство",
-  CONCERT: "Концерт",
-  CONCERTS: "Концерти",
-  SPORTS: "Спорт",
-  SPORT: "Спорт",
-  KIDS: "Деца",
-  CHILDREN: "Деца",
-  INFANTS: "Бебета",
-  ENGLISH: "Английски език",
-  HIKE: "Преход",
-  PARTY: "Парти",
-  THERAPY: "Терапия",
-  DANCES: "Танци",
-  DANCE: "Танци",
-  GASTRONOMY: "Гастрономия",
-  WINE: "Вино",
-  MUSIC: "Музика",
-  LEARNING: "Обучение",
-  EDUCATION: "Образование",
-  COMPETITION: "Състезание",
-  QUIZ: "Куиз",
-  CINEMA: "Кино",
-  FILM: "Филм",
-  FEST: "Фестивал",
-  FESTIVAL: "Фестивал",
-  WORKSHOP: "Работилница",
-  EXHIBITION: "Изложба",
-  FOOD: "Храна",
-  TECHNOLOGY: "Технологии",
-  VOLUNTEERING: "Благотворителност",
-  CHARITY: "Благотворителност",
-  FAIR: "Базар",
-  OUTDOOR: "На открито",
-  NETWORKING: "Социализация",
-  GAMES: "Настолни игри",
-  MARCHMUSICALDAYS: "Мартенски музикални дни",
-  OPERA: "Опера",
-  BOOKS: "Книги",
-  LITERATURE: "Литература",
-  PUPPETTHEATRE: "Куклен театър",
-  ROLEPLAYINGGAMES: "Ролеви игри",
-  ANIME: "Аниме",
-  JAZZ: "Джаз",
-  ROCK: "Рок",
-  CLASSICAL: "Класическа музика",
-  FAMILY: "Семейно",
-  PHOTOGRAPHY: "Фотография",
-  SCIENCE: "Наука",
-  COMEDY_SHOW: "Комедийно шоу",
-  MARKET: "Пазар",
-};
-
-/**
- * Returns the localised tag label.
- * - Lookup is case-insensitive (keys are normalised to uppercase).
- * - Only /bg gets Bulgarian — every other locale shows the DB title unchanged.
- */
-export function getTagLabel(title: string, locale: string): string {
-  if (locale === "bg") return TAG_BG[title.toUpperCase()] ?? title;
-  return title;
 }
 
 // ─── Tag color helpers ────────────────────────────────────────────────────────

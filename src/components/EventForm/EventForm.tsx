@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { useTranslations } from "next-intl";
+import { useMessages, useTranslations } from "next-intl";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -20,6 +20,10 @@ import {
 import { toast } from "sonner";
 import { z } from "zod";
 
+import {
+  useRegisterUnsavedChanges,
+  useUnsavedChangesNavigate,
+} from "~/components/layout/UnsavedChangesGuard";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -43,6 +47,7 @@ import { Input } from "~/components/ui/input";
 import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
 import { EVENTS_BUCKET } from "~/constants";
+import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { useRouter } from "~/i18n/navigation";
 import { eventsApi } from "~/lib/api/events";
 import {
@@ -135,6 +140,28 @@ type FormValues = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function uploadableImagesFingerprint(images: UploadableImage[]): string {
+  return images
+    .map((img) =>
+      [
+        img.storedPath ?? "",
+        img.file ? `new:${img.file.name}:${img.file.size}` : "",
+      ].join(":"),
+    )
+    .join("|");
+}
+
+function baselineFreeFromEvent(initialData?: Event | null): boolean {
+  if (!initialData) return false;
+  const p = initialData.price;
+  return !p || p === "" || p === "0" || p === "0.00";
+}
+
+function baselineMultiFromEvent(initialData?: Event | null): boolean {
+  if (!initialData) return false;
+  return initialData.startDate !== initialData.endDate;
+}
+
 function buildInitialImages(event: Event): UploadableImage[] {
   const paths: string[] = [];
 
@@ -220,7 +247,10 @@ export function EventForm({
   userId,
 }: Props) {
   const t = useTranslations("CreateEvent");
+  const messages = useMessages() as { EventTags?: Record<string, string> };
+  const eventTagLabels = messages.EventTags;
   const router = useRouter();
+  const navigateGuarded = useUnsavedChangesNavigate();
 
   const formSchema = makeFormSchema(t);
 
@@ -237,6 +267,22 @@ export function EventForm({
   const [images, setImages] = useState<UploadableImage[]>(() =>
     initialData ? buildInitialImages(initialData) : [],
   );
+
+  const baselineImagesFingerprintRef = useRef(
+    uploadableImagesFingerprint(
+      initialData ? buildInitialImages(initialData) : [],
+    ),
+  );
+  const baselineTogglesRef = useRef({
+    isFree: baselineFreeFromEvent(initialData),
+    isMultiDay: baselineMultiFromEvent(initialData),
+  });
+
+  const imagesDirty =
+    uploadableImagesFingerprint(images) !== baselineImagesFingerprintRef.current;
+  const togglesDirty =
+    isFree !== baselineTogglesRef.current.isFree ||
+    isMultiDay !== baselineTogglesRef.current.isMultiDay;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -268,6 +314,10 @@ export function EventForm({
       form.setValue("endDate", startDate);
     }
   }, [startDate, isMultiDay, form]);
+
+  useRegisterUnsavedChanges(
+    form.formState.isDirty || imagesDirty || togglesDirty,
+  );
 
   // ── Image upload ──────────────────────────────────────────────────────────
   async function uploadImage(file: File): Promise<string> {
@@ -320,8 +370,9 @@ export function EventForm({
 
       const tagIds = values.tagIds ?? [];
 
+      let saved: Event;
       if (mode === "edit" && initialData) {
-        await eventsApi.updateEvent(
+        saved = await eventsApi.updateEvent(
           supabase,
           initialData.id,
           eventData,
@@ -329,18 +380,24 @@ export function EventForm({
         );
         toast.success(t("eventUpdated"));
       } else {
-        const created = await eventsApi.createEvent(
+        saved = await eventsApi.createEvent(
           supabase,
           userId,
           eventData,
           tagIds,
         );
         toast.success(
-          created.isEventActive ? t("eventCreatedLive") : t("eventCreated"),
+          saved.isEventActive ? t("eventCreatedLive") : t("eventCreated"),
         );
       }
 
-      router.push("/my-events");
+      const slug =
+        typeof saved.slug === "string" ? saved.slug.trim() : "";
+      if (saved.isEventActive && slug !== "") {
+        router.push(`/${slug}`);
+      } else {
+        router.push("/");
+      }
     } catch {
       toast.error(t("error"));
     } finally {
@@ -795,7 +852,7 @@ export function EventForm({
                                   : "bg-muted/50 border-border text-muted-foreground hover:border-primary/50 hover:bg-muted hover:text-foreground"
                               }`}
                             >
-                              {tag.title}
+                              {localizedEventTagTitle(tag.title, eventTagLabels)}
                             </button>
                           );
                         })}
@@ -838,7 +895,7 @@ export function EventForm({
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() => navigateGuarded(() => router.back())}
               disabled={isSubmitting}
             >
               {t("cancel") || "Cancel"}

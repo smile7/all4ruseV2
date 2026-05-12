@@ -6,11 +6,11 @@ import { Calendar } from "lucide-react";
 
 import { EventCard } from "~/components/EventCard";
 import { EventsGridSkeleton } from "~/components/EventCard/EventCardSkeleton";
-import { useActiveEvents, usePastEvents } from "~/hooks/query/events";
+import { useActiveEvents, useCurrentEvents, usePastEvents } from "~/hooks/query/events";
 import { useFilters } from "~/hooks/useFilters";
 import type { Event } from "~/types";
 
-type Variant = "active" | "past";
+type Variant = "active" | "current" | "past";
 
 type Props = {
   initialData: Event[];
@@ -49,6 +49,12 @@ function ActiveEventsList({ initialData }: Omit<Props, "variant">) {
   return <EventsGrid events={events} />;
 }
 
+function CurrentEventsList({ initialData }: Omit<Props, "variant">) {
+  const { data: events = [], isLoading } = useCurrentEvents({}, { initialData });
+  if (isLoading && !events.length) return <EventsGridSkeleton />;
+  return <EventsGrid events={events} />;
+}
+
 function PastEventsList({ initialData }: Omit<Props, "variant">) {
   const { data: events = [], isLoading } = usePastEvents({}, { initialData });
   if (isLoading && !events.length) return <EventsGridSkeleton />;
@@ -70,6 +76,9 @@ function EventsGrid({ events }: { events: Event[] }) {
 export function EventsList({ initialData, variant }: Props) {
   if (variant === "active") {
     return <ActiveEventsList initialData={initialData} />;
+  }
+  if (variant === "current") {
+    return <CurrentEventsList initialData={initialData} />;
   }
   return <PastEventsList initialData={initialData} />;
 }

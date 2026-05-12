@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 
 import {
   Bookmark,
@@ -27,6 +27,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { type Locale, LOCALES } from "~/constants";
+import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { eventsApi } from "~/lib/api";
 import {
   EVENT_DESCRIPTION_BODY_CLASSES,
@@ -39,7 +40,6 @@ import {
   formatFullDate,
   formatTime,
   getEventImageUrl,
-  getTagLabel,
   isLiveNow,
 } from "~/lib/event-utils";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
@@ -137,6 +137,9 @@ export default async function EventDetailPage({ params }: Props) {
   const { slug, locale } = await params;
   const safeLocale = locale as Locale;
   const t = await getTranslations({ locale, namespace: "SingleEvent" });
+  const messages = await getMessages({ locale });
+  const eventTagLabels = (messages as { EventTags?: Record<string, string> })
+    .EventTags;
 
   const client = createSupabasePublicServerClient();
   const event = await eventsApi.getEventBySlug(client, slug);
@@ -144,7 +147,7 @@ export default async function EventDetailPage({ params }: Props) {
 
   const formattedTitle = formatEventTitle(event.title);
   const imageUrl = getEventImageUrl(event.image);
-  const live = isLiveNow(event.startDate, event.endDate);
+  const live = isLiveNow(event);
   const startTime = formatTime(event.startTime);
   const endTime = formatTime(event.endTime);
   const fullDate = formatFullDate(event.startDate, safeLocale);
@@ -257,6 +260,7 @@ export default async function EventDetailPage({ params }: Props) {
           eventId={String(event.id)}
           title={formattedTitle}
           live={live}
+          liveLabel={t("liveNow")}
           cancelled={event.isEventCancelled ?? false}
           soldOut={event.isSoldOut ?? false}
           premium={event.isEventPremium ?? false}
@@ -280,7 +284,7 @@ export default async function EventDetailPage({ params }: Props) {
                     key={tag.id}
                     className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase"
                   >
-                    #{getTagLabel(tag.title, safeLocale)}
+                    #{localizedEventTagTitle(tag.title ?? "", eventTagLabels)}
                   </span>
                 ))}
               </div>
@@ -383,10 +387,9 @@ export default async function EventDetailPage({ params }: Props) {
               </div>
             </CardContent>
           </Card>
-      
               <div className="flex flex-col gap-3 lg:hidden">
                 {event.ticketsLink && (
-                  <Button variant="secondary" asChild className="w-full justify-center gap-2">
+                  <Button variant="secondary" asChild className="w-full justify-start gap-2">
                     <a href={event.ticketsLink} target="_blank" rel="noopener noreferrer">
                       <Ticket className="size-4 shrink-0" />
                       {t("buyTickets")}
@@ -394,24 +397,24 @@ export default async function EventDetailPage({ params }: Props) {
                   </Button>
                 )}
                 {event.fbLink && (
-                  <Button variant="secondary" asChild className="w-full justify-center gap-2">
+                  <Button variant="secondary" asChild className="w-full justify-start gap-2">
                     <a href={event.fbLink} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="size-4 shrink-0" />
                       {t("facebook")}
                     </a>
                   </Button>
                 )}
-                <Button variant="secondary" asChild className="w-full justify-center gap-2">
+                <Button variant="secondary" asChild className="w-full justify-start gap-2">
                   <a href={gcalUrl} target="_blank" rel="noopener noreferrer">
                     <CalendarPlus className="size-4 shrink-0" />
                     {t("addToCalendar")}
                   </a>
                 </Button>
-                <Button variant="secondary" className="w-full justify-center gap-2">
+                <Button variant="secondary" className="w-full justify-start gap-2">
                   <Bookmark className="size-4 shrink-0" />
                   {t("save")}
                 </Button>
-                <Button asChild className="w-full justify-center gap-2">
+                <Button asChild className="w-full justify-start gap-2">
                   <a href={fbShareUrl} target="_blank" rel="noopener noreferrer">
                     <Share2 className="size-4 shrink-0" />
                     {t("shareOnFacebook")}
@@ -464,32 +467,32 @@ export default async function EventDetailPage({ params }: Props) {
             {/* ── Desktop sidebar (hidden on mobile) ──────────────────── */}
             <div className="hidden lg:sticky lg:top-20 lg:flex lg:w-52 lg:shrink-0 lg:flex-col lg:gap-3">
               {event.ticketsLink && (
-                <Button variant="secondary" asChild className="w-full justify-center gap-2">
-                  <a href={event.ticketsLink} target="_blank" rel="noopener noreferrer">
+                <Button variant="secondary" asChild className="w-full justify-start gap-2">
+                  <a href={event.ticketsLink} target="_blank" rel="noopener">
                     <Ticket className="size-4 shrink-0" />
                     {t("buyTickets")}
                   </a>
                 </Button>
               )}
               {event.fbLink && (
-                <Button variant="secondary" asChild className="w-full justify-center gap-2">
+                <Button variant="secondary" asChild className="w-full justify-start gap-2">
                   <a href={event.fbLink} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="size-4 shrink-0" />
                     {t("facebook")}
                   </a>
                 </Button>
               )}
-              <Button variant="secondary" className="w-full justify-center gap-2">
+              <Button variant="secondary" className="w-full justify-start gap-2">
                 <Bookmark className="size-4 shrink-0" />
                 {t("save")}
               </Button>
-              <Button variant="secondary" asChild className="w-full justify-center gap-2">
+              <Button variant="secondary" asChild className="w-full justify-start gap-2">
                 <a href={gcalUrl} target="_blank" rel="noopener noreferrer">
                   <CalendarPlus className="size-4 shrink-0" />
                   {t("addToCalendar")}
                 </a>
               </Button>
-              <Button asChild className="w-full justify-center gap-2">
+              <Button asChild className="w-full justify-start gap-2">
                 <a href={fbShareUrl} target="_blank" rel="noopener noreferrer">
                   <Share2 className="size-4 shrink-0" />
                   {t("shareOnFacebook")}
