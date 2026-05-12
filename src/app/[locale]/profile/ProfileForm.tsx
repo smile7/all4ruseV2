@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Globe, Phone, User } from "lucide-react";
 import { toast } from "sonner";
 
+import { useRegisterUnsavedChanges } from "~/components/layout/UnsavedChangesGuard";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import {
@@ -54,6 +55,8 @@ export function ProfileForm({ profile, userEmail, userId }: Props) {
     resolver: zodResolver(updateProfileSchema),
     defaultValues: toFormDefaults(profile),
   });
+
+  useRegisterUnsavedChanges(form.formState.isDirty);
 
   async function onSubmit(values: UpdateProfileInput) {
     const supabase = getSupabaseBrowserClient();

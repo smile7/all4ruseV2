@@ -274,6 +274,12 @@
     "socialLinks": "Rețele sociale",
     "contactInfo": "Informații de contact"
   },
+  "UnsavedChanges": {
+    "title": "Renunți la modificări?",
+    "description": "Ai modificări nesalvate. Ești sigur că vrei să părăsești această pagină?",
+    "leave": "Părăsește fără a salva",
+    "stay": "Rămâi pe această pagină"
+  },
   "General": {
     "profileUpdatedSuccessfully": "Profil actualizat cu succes.",
     "eventCreatedSuccessfully": "Eveniment creat cu succes și trimis spre aprobare administratorului.",
@@ -339,5 +345,43 @@
     "contactHeadline": "Contact",
     "contactInfo": "Dacă vrei să propui o idee nouă, să oferi feedback sau pur și simplu să spui „Îmi place ce faci”, îmi poți scrie la:",
     "lookingForwardToHearingFromYou": "Abia aștept să aflu ce ți-ar plăcea să vezi mai mult în Ruse – atât pe site, cât și în oraș."
+  },
+  "EventTags": {
+    "COMEDY": "Comedie",
+    "THEATRE": "Teatru",
+    "ART": "Artă",
+    "CONCERT": "Concert",
+    "SPORTS": "Sport",
+    "KIDS": "Copii",
+    "ENGLISH": "Limba engleză",
+    "HIKE": "Drumeție",
+    "PARTY": "Petrecere",
+    "THERAPY": "Terapie",
+    "DANCES": "Dans",
+    "GASTRONOMY": "Gastronomie",
+    "WINE": "Vin",
+    "MUSIC": "Muzică",
+    "LEARNING": "Învățare",
+    "COMPETITION": "Competiție",
+    "QUIZ": "Quiz",
+    "CINEMA": "Cinema",
+    "FEST": "Festival",
+    "WORKSHOP": "Atelier",
+    "EXHIBITION": "Expoziție",
+    "FOOD": "Mâncare",
+    "TECHNOLOGY": "Tehnologie",
+    "VOLUNTEERING": "Voluntariat",
+    "FAIR": "Târg",
+    "OUTDOOR": "În aer liber",
+    "NETWORKING": "Networking",
+    "INFANTS": "Bebeluși",
+    "GAMES": "Jocuri de masă",
+    "MARCHMUSICALDAYS": "Zilele muzicale din martie",
+    "OPERA": "Operă",
+    "BOOKS": "Cărți",
+    "PUPPETTHEATRE": "Teatru de păpuși",
+    "ROLEPLAYINGGAMES": "Jocuri de rol",
+    "ANIME": "Anime",
+    "LITERATURE": "Literatură"
   }
 }

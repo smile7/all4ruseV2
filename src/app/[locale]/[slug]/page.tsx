@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 
 import {
   Bookmark,
@@ -27,6 +27,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { type Locale, LOCALES } from "~/constants";
+import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { eventsApi } from "~/lib/api";
 import {
   EVENT_DESCRIPTION_BODY_CLASSES,
@@ -39,7 +40,6 @@ import {
   formatFullDate,
   formatTime,
   getEventImageUrl,
-  getTagLabel,
   isLiveNow,
 } from "~/lib/event-utils";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
@@ -137,6 +137,9 @@ export default async function EventDetailPage({ params }: Props) {
   const { slug, locale } = await params;
   const safeLocale = locale as Locale;
   const t = await getTranslations({ locale, namespace: "SingleEvent" });
+  const messages = await getMessages({ locale });
+  const eventTagLabels = (messages as { EventTags?: Record<string, string> })
+    .EventTags;
 
   const client = createSupabasePublicServerClient();
   const event = await eventsApi.getEventBySlug(client, slug);
@@ -280,7 +283,7 @@ export default async function EventDetailPage({ params }: Props) {
                     key={tag.id}
                     className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase"
                   >
-                    #{getTagLabel(tag.title, safeLocale)}
+                    #{localizedEventTagTitle(tag.title ?? "", eventTagLabels)}
                   </span>
                 ))}
               </div>

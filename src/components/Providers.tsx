@@ -5,6 +5,7 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 
+import { UnsavedChangesGuardProvider } from "~/components/layout/UnsavedChangesGuard";
 import { FilterPanelProvider } from "~/contexts/FilterPanelContext";
 
 type Props = {
@@ -25,7 +26,9 @@ export default function Providers({ children }: Props) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <FilterPanelProvider>{children}</FilterPanelProvider>
+      <FilterPanelProvider>
+        <UnsavedChangesGuardProvider>{children}</UnsavedChangesGuardProvider>
+      </FilterPanelProvider>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );

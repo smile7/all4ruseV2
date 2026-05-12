@@ -2,17 +2,17 @@
 
 import { ViewTransition } from "react";
 import Image from "next/image";
-import { useLocale, useTranslations } from "next-intl";
+import { useMessages, useTranslations } from "next-intl";
 
 import { CopyPlus, Pencil, User } from "lucide-react";
 
+import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { Link, useRouter } from "~/i18n/navigation";
 import {
   formatDateBadge,
   formatEventTitle,
   getEventImageUrl,
   getFirstHostName,
-  getTagLabel,
   isLiveNow,
 } from "~/lib/event-utils";
 import type { Event } from "~/types";
@@ -26,7 +26,8 @@ type Props = {
 };
 
 export function EventCard({ event, showManageActions = false }: Props) {
-  const locale = useLocale();
+  const messages = useMessages() as { EventTags?: Record<string, string> };
+  const eventTagLabels = messages.EventTags;
   const t = useTranslations("SingleEvent");
   const tHome = useTranslations("HomePage");
   const router = useRouter();
@@ -121,26 +122,32 @@ export function EventCard({ event, showManageActions = false }: Props) {
           )}
 
           {showManageActions && (
-            <div className="absolute inset-x-0 bottom-0 z-30 flex justify-end gap-1.5 p-2">
-              <button
-                type="button"
-                onClick={handleEdit}
-                aria-label={tHome("edit")}
-                className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/80"
-              >
-                <Pencil className="size-3 shrink-0" />
-                {tHome("edit")}
-              </button>
-              <button
-                type="button"
-                onClick={handleDuplicate}
-                aria-label={tHome("duplicate")}
-                className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/80"
-              >
-                <CopyPlus className="size-3 shrink-0" />
-                {tHome("duplicate")}
-              </button>
-            </div>
+            <>
+              <div
+                className="pointer-events-none absolute inset-0 z-15 bg-black/55 backdrop-blur-[1px]"
+                aria-hidden
+              />
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 p-4">
+                <button
+                  type="button"
+                  onClick={handleEdit}
+                  aria-label={tHome("edit")}
+                  className="flex w-full max-w-52 cursor-pointer items-center justify-center gap-2 rounded-xl bg-background/95 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg ring-1 ring-black/10 backdrop-blur-sm transition-colors hover:bg-background dark:ring-white/15"
+                >
+                  <Pencil className="size-4 shrink-0" />
+                  {tHome("edit")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDuplicate}
+                  aria-label={tHome("duplicate")}
+                  className="flex w-full max-w-52 cursor-pointer items-center justify-center gap-2 rounded-xl bg-background/95 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg ring-1 ring-black/10 backdrop-blur-sm transition-colors hover:bg-background dark:ring-white/15"
+                >
+                  <CopyPlus className="size-4 shrink-0" />
+                  {tHome("duplicate")}
+                </button>
+              </div>
+            </>
           )}
         </div>
       </ViewTransition>
@@ -166,7 +173,7 @@ export function EventCard({ event, showManageActions = false }: Props) {
                   key={tag.id}
                   className="bg-primary/10 text-primary shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-wide uppercase"
                 >
-                  #{getTagLabel(tag.title, locale)}
+                  #{localizedEventTagTitle(tag.title, eventTagLabels)}
                 </span>
               ))}
             </div>

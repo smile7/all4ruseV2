@@ -274,6 +274,12 @@
     "socialLinks": "Social links",
     "contactInfo": "Contact information"
   },
+  "UnsavedChanges": {
+    "title": "Discard changes?",
+    "description": "You have unsaved changes. Are you sure you want to leave this page?",
+    "leave": "Leave without saving",
+    "stay": "Stay on this page"
+  },
   "General": {
     "profileUpdatedSuccessfully": "Profile updated successfully.",
     "eventCreatedSuccessfully": "Event created successfully and is pending administrator approval.",
@@ -339,5 +345,43 @@
     "contactHeadline": "Contact",
     "contactInfo": "If you want to suggest a new idea, give criticism, or just say “Hi, I like what you are doing,” you can write to me at:",
     "lookingForwardToHearingFromYou": "I look forward to hearing what you would like to see more of in Ruse – both on the site and in the city."
+  },
+  "EventTags": {
+    "COMEDY": "Comedy",
+    "THEATRE": "Theatre",
+    "ART": "Art",
+    "CONCERT": "Concert",
+    "SPORTS": "Sports",
+    "KIDS": "Kids",
+    "ENGLISH": "English language",
+    "HIKE": "Hike",
+    "PARTY": "Party",
+    "THERAPY": "Therapy",
+    "DANCES": "Dance",
+    "GASTRONOMY": "Gastronomy",
+    "WINE": "Wine",
+    "MUSIC": "Music",
+    "LEARNING": "Learning",
+    "COMPETITION": "Competition",
+    "QUIZ": "Quiz",
+    "CINEMA": "Cinema",
+    "FEST": "Festival",
+    "WORKSHOP": "Workshop",
+    "EXHIBITION": "Exhibition",
+    "FOOD": "Food",
+    "TECHNOLOGY": "Technology",
+    "VOLUNTEERING": "Volunteering",
+    "FAIR": "Fair",
+    "OUTDOOR": "Outdoor",
+    "NETWORKING": "Networking",
+    "INFANTS": "Infants",
+    "GAMES": "Board games",
+    "MARCHMUSICALDAYS": "March Musical Days",
+    "OPERA": "Opera",
+    "BOOKS": "Books",
+    "PUPPETTHEATRE": "Puppet theatre",
+    "ROLEPLAYINGGAMES": "Role-playing games",
+    "ANIME": "Anime",
+    "LITERATURE": "Literature"
   }
 }

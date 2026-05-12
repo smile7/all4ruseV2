@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useEffect, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useMessages, useTranslations } from "next-intl";
 
 import { addDays, format } from "date-fns";
 import { Search, X } from "lucide-react";
@@ -15,7 +15,7 @@ import { DEBOUNCE_MS } from "~/constants";
 import { useTags } from "~/hooks/query/tags";
 import { useDebounce } from "~/hooks/useDebounce";
 import { useFilters } from "~/hooks/useFilters";
-import { getTagLabel } from "~/lib/event-utils";
+import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { cn } from "~/lib/utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -155,7 +155,8 @@ function ClearableInput({
 
 export function FilterContent() {
   const t = useTranslations("HomePage");
-  const locale = useLocale();
+  const messages = useMessages() as { EventTags?: Record<string, string> };
+  const eventTagLabels = messages.EventTags;
   const {
     filters,
     setFilters,
@@ -312,7 +313,9 @@ export function FilterContent() {
         <div className="flex flex-wrap gap-3 mt-4">
           {tags.map((tag) => {
             const isActive = filters.tagIds.includes(tag.id);
-            const label = formatTagLabel(getTagLabel(tag.title, locale));
+            const raw = tag.title?.trim() ?? "";
+            const resolved = localizedEventTagTitle(tag.title, eventTagLabels);
+            const label = resolved !== raw ? resolved : formatTagLabel(raw);
             return (
               <Button
                 key={tag.id}
