@@ -54,11 +54,20 @@
 
 ## Phase 6 — Auth + user pages
 
-- [ ] Full auth flow: login, signup, email confirmation, callback route, forgot/update password
-- [ ] Header + MobileBottomNav full auth wiring (avatar dropdown, logout)
-- [ ] Profile page (view + edit)
-- [ ] My events page
-- [ ] Create event page (auth-guarded)
+- [x] Full auth flow: login, signup, email confirmation, callback route, forgot/update password
+  - Login (`/auth/login`), signup (`/auth/signup`), signup-success, forgot-password, update-password
+  - Auth callback route at `src/app/auth/callback/route.ts` (PKCE code exchange)
+  - All error states mapped to translated messages; password visibility toggle on all password fields
+  - Supabase Auth via `@supabase/ssr` — no external auth library
+- [x] Header + MobileBottomNav full auth wiring
+  - Mobile header top-right: primary "+" button → `/create-event`
+  - Desktop header: avatar dropdown (Create Event · Profile · My Events · Logout) when authenticated, "Влез" link when guest
+  - Bottom nav: Events · Saved · More · Profile (two separate sheets — More = social/legal, Profile = auth state)
+  - Logout: `supabase.auth.signOut()` + `router.refresh()` to re-render Server Components
+- [ ] Profiles data layer (`src/lib/api/profiles.ts` — `getProfile`, `updateProfile`, `updateProfileSchema`)
+- [ ] Profile page (view + edit all optional fields)
+- [ ] My events page (SSR, filter by `createdBy = user.id`)
+- [ ] Create event page (auth-guarded, `EventForm` with `createEventSchema`)
 - [ ] Account security and deletion flow (change password + delete account with explicit confirmation)
 
 ## Phase 7 — Admin

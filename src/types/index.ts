@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import {
+  plainTextFromHtml,
+  sanitizeEventDescription,
+} from "~/lib/event-description-html";
 import type { Tables } from "~/types/database";
 
 // ─── Domain types ─────────────────────────────────────────────────────────────
@@ -45,7 +49,13 @@ export type GetEventsParams = z.infer<typeof getEventsParamsSchema>;
 
 export const createEventSchema = z.object({
   title: z.string().min(3, "Заглавието е задължително"),
-  description: z.string().min(10, "Описанието е задължително"),
+  description: z
+    .string()
+    .refine(
+      (html) =>
+        plainTextFromHtml(sanitizeEventDescription(html)).length >= 10,
+      { message: "Описанието е задължително" },
+    ),
   startDate: z.string().min(1, "Начална дата е задължителна"),
   endDate: z.string().min(1, "Крайна дата е задължителна"),
   startTime: z.string().min(1, "Начален час е задължителен"),
@@ -70,3 +80,22 @@ export const createEventSchema = z.object({
 export type CreateEventInput = z.infer<typeof createEventSchema>;
 
 export type UpdateEventInput = Partial<CreateEventInput>;
+
+// ─── Profile schema ────────────────────────────────────────────────────────────
+
+export const updateProfileSchema = z.object({
+  full_name: z.string().max(100).optional().or(z.literal("")),
+  username: z.string().max(50).optional().or(z.literal("")),
+  bio: z.string().max(500).optional().or(z.literal("")),
+  phone: z.string().max(30).optional().or(z.literal("")),
+  place: z.string().max(100).optional().or(z.literal("")),
+  address_physical: z.string().max(200).optional().or(z.literal("")),
+  email_to_show: z.string().email().optional().or(z.literal("")),
+  name_to_show: z.string().max(100).optional().or(z.literal("")),
+  website: z.string().url().optional().or(z.literal("")),
+  fb: z.string().url().optional().or(z.literal("")),
+  instagram: z.string().url().optional().or(z.literal("")),
+  tiktok: z.string().url().optional().or(z.literal("")),
+});
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

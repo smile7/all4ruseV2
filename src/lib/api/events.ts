@@ -6,6 +6,7 @@ import {
   PAST_EVENTS_WINDOW_DAYS,
   RELATED_EVENTS_COUNT,
 } from "~/constants";
+import { buildEventSlugFromTitle } from "~/lib/event-slug";
 import type { Event, GetEventsParams, Tag } from "~/types";
 import type { Database } from "~/types/database";
 
@@ -50,13 +51,44 @@ function mapEvent(row: any): Event {
   return { ...rest, tags: mapTags(event_tags) };
 }
 
+async function reloadEventWithTags(client: Client, eventId: number): Promise<Event> {
+  const { data, error } = await client
+    .from("events")
+    .select("*, event_tags(tags(id, title))")
+    .eq("id", eventId)
+    .single();
+  if (error) throw error;
+  return mapEvent(data);
+}
+
 // fix "await has no effect" in editors.
 async function executeQuery(query: unknown): Promise<QueryResult> {
   return query as Promise<QueryResult>;
 }
 
-// Filters events by organizer name client-side.
-// The organizers column is a JSONB array [{name, link}] and the Supabase JS
+async function isCreatorConfirmed(client: Client, userId: string): Promise<boolean> {
+  const { data, error } = await client
+    .from("profiles")
+    .select("is_confirmed")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.is_confirmed === true;
+}
+
+/** Sets `slug` from title + numeric id — unique URL for public detail pages. */
+async function assignSlugForPublishedEvent(
+  client: Client,
+  eventId: number,
+  title: string,
+): Promise<void> {
+  const slug = buildEventSlugFromTitle(title, eventId);
+  const { error } = await client.from("events").update({ slug }).eq("id", eventId);
+  if (error) throw error;
+}
+
+// Filters events by host name client-side.
+// The hosts column is a JSONB array [{name, link}] and the Supabase JS
 // client misinterprets `::text` casts as foreign-table joins, so we apply
 // this filter after the DB fetch instead.
 function filterByHost(events: Event[], host: string | undefined): Event[] {
@@ -258,6 +290,21 @@ async function getRelatedEvents(
     .slice(0, limit);
 }
 
+// Returns all events created by a specific user (both active and inactive).
+// Requires an authenticated Supabase client — RLS must allow
+// `SELECT WHERE "createdBy" = auth.uid()` on the events table.
+async function getMyEvents(client: Client, userId: string): Promise<Event[]> {
+  const { data, error } = await client
+    .from("events")
+    .select("*, event_tags(tags(id, title))")
+    .eq("createdBy", userId)
+    .order("startDate", { ascending: false })
+    .order("startTime", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map(mapEvent);
+}
+
 // Returns all active event slugs — used by generateStaticParams on the detail page.
 async function getAllSlugs(client: Client): Promise<string[]> {
   const { data, error } = await client
@@ -272,10 +319,172 @@ async function getAllSlugs(client: Client): Promise<string[]> {
     .filter((s): s is string => typeof s === "string");
 }
 
+// ─── Write types ──────────────────────────────────────────────────────────────
+
+type EventWriteInput = {
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime?: string | null;
+  address: string;
+  town: string;
+  place?: string | null;
+  price?: string | null;
+  ticketsLink?: string | null;
+  fbLink?: string | null;
+  phoneNumber?: string | null;
+  email?: string | null;
+  image?: string | null;
+  images?: string[] | null;
+  organizers?: { name: string; link?: string }[] | null;
+};
+
+// ─── Fetch by ID ──────────────────────────────────────────────────────────────
+
+// Fetches a single event by numeric ID, regardless of isEventActive.
+// Used by the create-event page in edit/duplicate mode.
+async function getEventById(
+  client: Client,
+  id: number,
+): Promise<Event | null> {
+  const { data, error } = await client
+    .from("events")
+    .select("*, event_tags(tags(id, title))")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") return null;
+    throw error;
+  }
+  return data ? mapEvent(data) : null;
+}
+
+// ─── Mutations ────────────────────────────────────────────────────────────────
+
+async function createEvent(
+  client: Client,
+  userId: string,
+  data: EventWriteInput,
+  tagIds: number[] = [],
+): Promise<Event> {
+  const trustedPublisher = await isCreatorConfirmed(client, userId);
+
+  const { data: inserted, error } = await client
+    .from("events")
+    .insert({
+      title: data.title,
+      description: data.description,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      startTime: data.startTime,
+      endTime: data.endTime ?? null,
+      address: data.address,
+      town: data.town,
+      place: data.place ?? null,
+      price: data.price ?? null,
+      ticketsLink: data.ticketsLink ?? null,
+      fbLink: data.fbLink ?? null,
+      phoneNumber: data.phoneNumber ?? null,
+      email: data.email ?? null,
+      image: data.image ?? null,
+      images: (data.images ?? null) as import("~/types/database").Json,
+      organizers: (data.organizers ?? null) as import("~/types/database").Json,
+      isEventActive: trustedPublisher,
+      isEventPremium: false,
+      isEventCancelled: false,
+      isSoldOut: false,
+      createdBy: userId,
+    })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+
+  if (tagIds.length > 0) {
+    await client
+      .from("event_tags")
+      .insert(tagIds.map((tag_id) => ({ event_id: inserted.id, tag_id })));
+  }
+
+  if (trustedPublisher) {
+    await assignSlugForPublishedEvent(client, inserted.id, data.title);
+  }
+
+  return reloadEventWithTags(client, inserted.id);
+}
+
+async function updateEvent(
+  client: Client,
+  eventId: number,
+  data: EventWriteInput,
+  tagIds: number[] = [],
+): Promise<Event> {
+  const { error } = await client
+    .from("events")
+    .update({
+      title: data.title,
+      description: data.description,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      startTime: data.startTime,
+      endTime: data.endTime ?? null,
+      address: data.address,
+      town: data.town,
+      place: data.place ?? null,
+      price: data.price ?? null,
+      ticketsLink: data.ticketsLink ?? null,
+      fbLink: data.fbLink ?? null,
+      phoneNumber: data.phoneNumber ?? null,
+      email: data.email ?? null,
+      image: data.image ?? null,
+      images: (data.images ?? null) as import("~/types/database").Json,
+      organizers: (data.organizers ?? null) as import("~/types/database").Json,
+    })
+    .eq("id", eventId)
+    .select("id")
+    .single();
+
+  if (error) throw error;
+
+  // Replace all tag associations
+  await client.from("event_tags").delete().eq("event_id", eventId);
+  if (tagIds.length > 0) {
+    await client
+      .from("event_tags")
+      .insert(tagIds.map((tag_id) => ({ event_id: eventId, tag_id })));
+  }
+
+  let result = await reloadEventWithTags(client, eventId);
+  const slugMissing =
+    result.slug == null || String(result.slug).trim() === "";
+
+  if (result.isEventActive === true && slugMissing) {
+    await assignSlugForPublishedEvent(client, result.id, result.title);
+    result = await reloadEventWithTags(client, eventId);
+  }
+
+  return result;
+}
+
+async function deleteEvent(client: Client, eventId: number): Promise<void> {
+  // Remove tag associations before deleting the event (FK constraint)
+  await client.from("event_tags").delete().eq("event_id", eventId);
+  const { error } = await client.from("events").delete().eq("id", eventId);
+  if (error) throw error;
+}
+
 export const eventsApi = {
   getActiveEvents,
   getPastEvents,
   getEventBySlug,
+  getEventById,
   getRelatedEvents,
   getAllSlugs,
+  getMyEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent,
 };

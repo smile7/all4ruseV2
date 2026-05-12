@@ -29,6 +29,11 @@ import { Card, CardContent } from "~/components/ui/card";
 import { type Locale, LOCALES } from "~/constants";
 import { eventsApi } from "~/lib/api";
 import {
+  EVENT_DESCRIPTION_BODY_CLASSES,
+  plainTextFromHtml,
+  sanitizeEventDescription,
+} from "~/lib/event-description-html";
+import {
   buildGCalUrl,
   formatEventTitle,
   formatFullDate,
@@ -50,13 +55,6 @@ const openGraphLocaleByRouteLocale: Record<Locale, string> = {
   ua: "uk_UA",
   ro: "ro_RO",
 };
-
-function stripHtml(html: string) {
-  return html
-    .replace(/<[^>]*>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 function buildEventPath(locale: string, slug: string) {
   return `/${locale}/${slug}`;
@@ -92,7 +90,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const formattedTitle = formatEventTitle(event.title);
 
     const description =
-      stripHtml(event.description ?? "").slice(0, 160) || formattedTitle;
+      plainTextFromHtml(sanitizeEventDescription(event.description ?? "")).slice(
+        0,
+        160,
+      ) || formattedTitle;
     const imageUrl = getEventImageUrl(event.image);
     const eventPath = buildEventPath(locale, slug);
     const eventUrl = buildEventUrl(locale, slug);
@@ -171,7 +172,10 @@ export default async function EventDetailPage({ params }: Props) {
   const gcalUrl = buildGCalUrl(event);
   const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(eventUrl)}`;
   const descriptionText =
-    stripHtml(event.description ?? "").slice(0, 300) || formattedTitle;
+    plainTextFromHtml(sanitizeEventDescription(event.description ?? "")).slice(
+      0,
+      300,
+    ) || formattedTitle;
   const eventJsonLd = {
     "@context": "https://schema.org",
     "@type": "Event",
@@ -420,8 +424,10 @@ export default async function EventDetailPage({ params }: Props) {
                 <Card>
                   <CardContent className="overflow-x-clip py-4">
                     <div
-                      className="prose prose-sm dark:prose-invert max-w-none wrap-break-word [&_iframe]:w-full [&_iframe]:max-w-full [&_img]:h-auto [&_img]:max-w-full [&_video]:h-auto [&_video]:max-w-full"
-                      dangerouslySetInnerHTML={{ __html: event.description }}
+                      className={EVENT_DESCRIPTION_BODY_CLASSES}
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeEventDescription(event.description),
+                      }}
                     />
                   </CardContent>
                 </Card>
