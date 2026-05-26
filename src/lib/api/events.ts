@@ -344,6 +344,19 @@ async function getMyEvents(client: Client, userId: string): Promise<Event[]> {
   return (data ?? []).map(mapEvent);
 }
 
+async function getEventsByIds(client: Client, ids: number[]): Promise<Event[]> {
+  if (ids.length === 0) return [];
+
+  const { data, error } = await client
+    .from("events")
+    .select("*, event_tags(tags(id, title))")
+    .in("id", ids)
+    .eq("isEventActive", true);
+
+  if (error) throw error;
+  return (data ?? []).map(mapEvent);
+}
+
 // Returns all active event slugs — used by generateStaticParams on the detail page.
 async function getAllSlugs(client: Client): Promise<string[]> {
   const { data, error } = await client
@@ -524,6 +537,7 @@ export const eventsApi = {
   getRelatedEvents,
   getAllSlugs,
   getMyEvents,
+  getEventsByIds,
   createEvent,
   updateEvent,
   deleteEvent,

@@ -17,15 +17,24 @@ import {
 } from "~/lib/event-utils";
 import type { Event } from "~/types";
 
+import { EventSaveButton } from "./EventSaveButton";
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 type Props = {
   event: Event;
   /** When true, shows organizer actions (edit / duplicate) and approval status. */
   showManageActions?: boolean;
+  initialSaved?: boolean;
+  onUnsaveSuccess?: (eventId: number) => void;
 };
 
-export function EventCard({ event, showManageActions = false }: Props) {
+export function EventCard({
+  event,
+  showManageActions = false,
+  initialSaved = false,
+  onUnsaveSuccess,
+}: Props) {
   const messages = useMessages() as { EventTags?: Record<string, string> };
   const eventTagLabels = messages.EventTags;
   const t = useTranslations("SingleEvent");
@@ -149,6 +158,12 @@ export function EventCard({ event, showManageActions = false }: Props) {
               </div>
             </>
           )}
+
+          <EventSaveButton
+            eventId={event.id}
+            initialSaved={initialSaved}
+            onUnsaveSuccess={onUnsaveSuccess}
+          />
         </div>
       </ViewTransition>
 

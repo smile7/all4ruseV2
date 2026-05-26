@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { getMessages, getTranslations } from "next-intl/server";
 
 import {
-  Bookmark,
   Calendar,
   CalendarPlus,
   Clock,
@@ -16,7 +15,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { EventCard } from "~/components/EventCard";
+import { EventCard, EventSaveButton } from "~/components/EventCard";
 import {
   EventDetailRow,
   EventDetailScrollReset,
@@ -410,10 +409,7 @@ export default async function EventDetailPage({ params }: Props) {
                     {t("addToCalendar")}
                   </a>
                 </Button>
-                <Button variant="secondary" className="w-full justify-start gap-2">
-                  <Bookmark className="size-4 shrink-0" />
-                  {t("save")}
-                </Button>
+                <EventSaveButton eventId={event.id} variant="button" />
                 <Button asChild className="w-full justify-start gap-2">
                   <a href={fbShareUrl} target="_blank" rel="noopener noreferrer">
                     <Share2 className="size-4 shrink-0" />
@@ -482,10 +478,7 @@ export default async function EventDetailPage({ params }: Props) {
                   </a>
                 </Button>
               )}
-              <Button variant="secondary" className="w-full justify-start gap-2">
-                <Bookmark className="size-4 shrink-0" />
-                {t("save")}
-              </Button>
+              <EventSaveButton eventId={event.id} variant="button" />
               <Button variant="secondary" asChild className="w-full justify-start gap-2">
                 <a href={gcalUrl} target="_blank" rel="noopener noreferrer">
                   <CalendarPlus className="size-4 shrink-0" />
