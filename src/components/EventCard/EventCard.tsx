@@ -2,7 +2,7 @@
 
 import { ViewTransition } from "react";
 import Image from "next/image";
-import { useMessages, useTranslations } from "next-intl";
+import { useLocale, useMessages, useTranslations } from "next-intl";
 
 import { CopyPlus, Pencil, User } from "lucide-react";
 
@@ -39,9 +39,13 @@ export function EventCard({
   const eventTagLabels = messages.EventTags;
   const t = useTranslations("SingleEvent");
   const tHome = useTranslations("HomePage");
+  const locale = useLocale();
   const router = useRouter();
 
-  const { day, month } = formatDateBadge(event.startDate);
+  const dateBadge = formatDateBadge(event.startDate, locale, {
+    today: tHome("today"),
+    tomorrow: tHome("tomorrow"),
+  });
   const live = isLiveNow(event);
   const imageUrl = getEventImageUrl(event.image);
   const formattedTitle = formatEventTitle(event.title);
@@ -96,11 +100,21 @@ export function EventCard({
           />
 
           {/* Date + time badge — top left */}
-          <div className="bg-background/92 absolute top-2.5 left-2.5 z-20 min-w-14 rounded-xl px-2.5 py-2 text-center shadow backdrop-blur-sm">
-            <p className="text-xl leading-none font-bold">{day}</p>
-            <p className="text-muted-foreground mt-1 text-xs leading-none tracking-widest uppercase">
-              {month}
+          <div className="bg-background/50 absolute top-2.5 left-2.5 z-20 min-w-14 rounded-xl px-2.5 py-2 text-center shadow backdrop-blur-sm">
+            <p
+              className={
+                dateBadge.secondary
+                  ? "text-xl leading-none font-bold"
+                  : "text-sm leading-none font-bold tracking-wide capitalize"
+              }
+            >
+              {dateBadge.primary}
             </p>
+            {dateBadge.secondary && (
+              <p className="text-muted-foreground mt-1 text-xs leading-none tracking-widest uppercase">
+                {dateBadge.secondary}
+              </p>
+            )}
             <p className="mt-1.5 text-sm leading-none font-semibold tabular-nums">
               {event.startTime.slice(0, 5)}
             </p>

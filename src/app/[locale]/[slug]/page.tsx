@@ -136,6 +136,7 @@ export default async function EventDetailPage({ params }: Props) {
   const { slug, locale } = await params;
   const safeLocale = locale as Locale;
   const t = await getTranslations({ locale, namespace: "SingleEvent" });
+  const tHome = await getTranslations({ locale, namespace: "HomePage" });
   const messages = await getMessages({ locale });
   const eventTagLabels = (messages as { EventTags?: Record<string, string> })
     .EventTags;
@@ -149,10 +150,18 @@ export default async function EventDetailPage({ params }: Props) {
   const live = isLiveNow(event);
   const startTime = formatTime(event.startTime);
   const endTime = formatTime(event.endTime);
-  const fullDate = formatFullDate(event.startDate, safeLocale);
+  const relativeDateLabels = {
+    today: tHome("today"),
+    tomorrow: tHome("tomorrow"),
+  };
+  const fullDate = formatFullDate(
+    event.startDate,
+    safeLocale,
+    relativeDateLabels,
+  );
   const isMultiDay = event.startDate !== event.endDate;
   const fullEndDate = isMultiDay
-    ? formatFullDate(event.endDate, safeLocale)
+    ? formatFullDate(event.endDate, safeLocale, relativeDateLabels)
     : null;
 
   const hosts = (

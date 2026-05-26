@@ -128,8 +128,8 @@ async function applyFilters(
     to,
     isFree,
     place,
-    page = 1,
-    pageSize = EVENTS_PAGE_SIZE,
+    page,
+    pageSize,
   } = params;
 
   if (search) {
@@ -171,8 +171,12 @@ async function applyFilters(
     query = query.in("id", ids);
   }
 
-  const rangeFrom = (page - 1) * pageSize;
-  query = query.range(rangeFrom, rangeFrom + pageSize - 1);
+  if (page !== undefined || pageSize !== undefined) {
+    const normalizedPage = page ?? 1;
+    const normalizedPageSize = pageSize ?? EVENTS_PAGE_SIZE;
+    const rangeFrom = (normalizedPage - 1) * normalizedPageSize;
+    query = query.range(rangeFrom, rangeFrom + normalizedPageSize - 1);
+  }
 
   return query;
 }

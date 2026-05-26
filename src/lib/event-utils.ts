@@ -25,6 +25,18 @@ const BG_MONTHS_SHORT = [
   "дек",
 ] as const;
 
+const localeMap: Record<string, string> = {
+  bg: "bg-BG",
+  en: "en-GB",
+  ua: "uk-UA",
+  ro: "ro-RO",
+};
+
+type RelativeDateLabels = {
+  today: string;
+  tomorrow: string;
+};
+
 const FACEBOOK_CDN_HOST_SUFFIX = ".fbcdn.net";
 
 /**
@@ -37,15 +49,67 @@ export function parseLocalDate(dateStr: string): Date {
   return new Date(y!, m! - 1, d!);
 }
 
-/** Returns `{ day, month }` for the date badge displayed on an EventCard. */
-export function formatDateBadge(dateStr: string): {
-  day: string;
-  month: string;
+function getIntlLocale(locale: string): string {
+  return localeMap[locale] ?? "bg-BG";
+}
+
+function startOfLocalDay(date: Date): Date {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+function getCalendarDayDiff(date: Date, now: Date): number {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.round(
+    (startOfLocalDay(date).getTime() - startOfLocalDay(now).getTime()) /
+      msPerDay,
+  );
+}
+
+function formatRelativeDateLabel(
+  dateStr: string,
+  locale: string,
+  labels: RelativeDateLabels | undefined,
+  now = new Date(),
+): string | null {
+  if (!labels) return null;
+
+  const date = parseLocalDate(dateStr);
+  const dayDiff = getCalendarDayDiff(date, now);
+
+  if (dayDiff === 0) return labels.today;
+  if (dayDiff === 1) return labels.tomorrow;
+  if (dayDiff >= 2 && dayDiff <= 4) {
+    return new Intl.DateTimeFormat(getIntlLocale(locale), {
+      weekday: "long",
+    }).format(date);
+  }
+
+  return null;
+}
+
+/** Returns the localized date badge content displayed on an EventCard. */
+export function formatDateBadge(
+  dateStr: string,
+  locale = "bg",
+  labels?: RelativeDateLabels,
+): {
+  primary: string;
+  secondary: string | null;
 } {
+  const relativeLabel = formatRelativeDateLabel(dateStr, locale, labels);
+  if (relativeLabel) {
+    return {
+      primary: relativeLabel,
+      secondary: null,
+    };
+  }
+
   const date = parseLocalDate(dateStr);
   return {
-    day: String(date.getDate()),
-    month: BG_MONTHS_SHORT[date.getMonth()]!,
+    primary: String(date.getDate()),
+    secondary: BG_MONTHS_SHORT[date.getMonth()]!,
   };
 }
 
@@ -53,21 +117,30 @@ export function formatDateBadge(dateStr: string): {
  * Returns a full localised date string for the event detail page.
  * e.g. "събота, 25 февруари 2026" (bg) / "Saturday, 25 February 2026" (en)
  */
-export function formatFullDate(dateStr: string, locale: string): string {
-  const localeMap: Record<string, string> = {
-    bg: "bg-BG",
-    en: "en-GB",
-    ua: "uk-UA",
-    ro: "ro-RO",
-  };
-  const intlLocale = localeMap[locale] ?? "bg-BG";
+export function formatFullDate(
+  dateStr: string,
+  locale: string,
+  labels?: RelativeDateLabels,
+): string {
+  const relativeLabel = formatRelativeDateLabel(dateStr, locale, labels);
+  if (relativeLabel) return relativeLabel;
+
   const date = parseLocalDate(dateStr);
-  return new Intl.DateTimeFormat(intlLocale, {
+  return new Intl.DateTimeFormat(getIntlLocale(locale), {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   }).format(date);
+}
+
+export function formatEventMonthHeading(dateStr: string, locale: string): string {
+  const date = parseLocalDate(dateStr);
+  const intlLocale = getIntlLocale(locale);
+  const month = new Intl.DateTimeFormat(intlLocale, {
+    month: "long",
+  }).format(date);
+  return month.charAt(0).toLocaleUpperCase(intlLocale) + month.slice(1);
 }
 
 /**
