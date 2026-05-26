@@ -69,7 +69,8 @@
     "tomorrow": "Mâine",
     "thisWeekend": "Weekend",
     "thisWeek": "Săptămâna asta",
-    "freeFilter": "Gratuit"
+    "freeFilter": "Gratuit",
+    "backToTop": "Înapoi sus"
   },
   "CreateEvent": {
     "createEventTitle": "Creează un eveniment nou",

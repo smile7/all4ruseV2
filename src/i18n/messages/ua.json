@@ -69,7 +69,8 @@
     "tomorrow": "Завтра",
     "thisWeekend": "Вихідні",
     "thisWeek": "Цей тиждень",
-    "freeFilter": "Безкоштовні"
+    "freeFilter": "Безкоштовні",
+    "backToTop": "Нагору"
   },
   "CreateEvent": {
     "createEventTitle": "Створити нову подію",

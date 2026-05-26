@@ -43,6 +43,18 @@ function parseSearchParams(
   };
 }
 
+function hasEventFilters(params: Partial<GetEventsParams>): boolean {
+  return Boolean(
+    params.search ||
+      params.tagIds?.length ||
+      params.from ||
+      params.to ||
+      params.isFree ||
+      params.host ||
+      params.place,
+  );
+}
+
 export default async function HomePage({
   searchParams,
 }: {
@@ -52,9 +64,20 @@ export default async function HomePage({
   const params = parseSearchParams(await searchParams);
 
   let initialData: Event[] = [];
+  let totalCount = 0;
   try {
     const client = await createSupabaseServerClient();
-    initialData = await eventsApi.getActiveEvents(client, params);
+    if (hasEventFilters(params)) {
+      const [filteredEvents, allEvents] = await Promise.all([
+        eventsApi.getActiveEvents(client, params),
+        eventsApi.getActiveEvents(client),
+      ]);
+      initialData = filteredEvents;
+      totalCount = allEvents.length;
+    } else {
+      initialData = await eventsApi.getActiveEvents(client, params);
+      totalCount = initialData.length;
+    }
   } catch (err) {
     console.error("[HomePage] Failed to fetch active events:", err);
   }
@@ -71,7 +94,11 @@ export default async function HomePage({
         The initialData from SSR ensures the first render shows content immediately.
       */}
       <Suspense fallback={<EventsGridSkeleton />}>
-        <EventsList initialData={initialData} variant="active" />
+        <EventsList
+          initialData={initialData}
+          totalCount={totalCount}
+          variant="active"
+        />
       </Suspense>
     </div>
   );
