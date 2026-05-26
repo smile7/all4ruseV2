@@ -52,7 +52,7 @@
 - [x] Why All4Ruse page
 - [x] Legal pages (cookies, GDPR, privacy, terms)
 
-## Phase 6 — Auth + user pages
+## Phase 6 — Auth + user pages (`IMPLEMENTATION_PLAN.md` Phase 3)
 
 - [x] Full auth flow: login, signup, email confirmation, callback route, forgot/update password
   - Login (`/auth/login`), signup (`/auth/signup`), signup-success, forgot-password, update-password
@@ -72,12 +72,13 @@
 
 ## Phase 7 - Saved events
 
-- [ ] When a person is logged in, he should be able to mark an events as saved. (save icon over the event card bottom right)
-- [ ] Each stored event id is kept in the database.
-- [ ] Create a page "Saved" where user sees all his saved events.
-- [ ] Order the events in Saved page by date.
-- [ ] Give option to remove an event from the list (or by clicking again the save icon over the event)
-- [ ] If an event is passed, do not show it.
+- [x] Guest clicking the saved icon sees an account prompt dialog/drawer with signup/login actions.
+- [x] When a person is logged in, he should be able to mark an event as saved. (save icon over the event card bottom right)
+- [x] Each stored event id is kept in the database.
+- [x] Create a page "Saved" where user sees all his saved events.
+- [x] Order the events in Saved page by date.
+- [x] Split Saved page into upcoming + current and past sections.
+- [x] Give option to remove an event from the list (or by clicking again the save icon over the event)
 
 ## Phase 8 — Quality
 

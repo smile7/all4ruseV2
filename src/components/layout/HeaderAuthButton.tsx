@@ -3,7 +3,13 @@
 import { useTranslations } from "next-intl";
 
 import type { User } from "@supabase/supabase-js";
-import { CalendarDays, LogOut, Plus, User as UserIcon } from "lucide-react";
+import {
+  Bookmark,
+  CalendarDays,
+  LogOut,
+  Plus,
+  User as UserIcon,
+} from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -29,6 +35,7 @@ function getAvatarFallback(user: User): string {
 
 export function HeaderAuthButton({ user }: Props) {
   const t = useTranslations("HomePage");
+  const tSaved = useTranslations("SavedEvents");
   const tProfile = useTranslations("Profile");
   const router = useRouter();
 
@@ -73,9 +80,15 @@ export function HeaderAuthButton({ user }: Props) {
             {t("createEvent")}
           </Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/my-events" className="flex cursor-pointer items-center gap-2">
+            <CalendarDays className="size-4" />
+            {t("publishedEvents")}
+          </Link>
+        </DropdownMenuItem>
 
         <DropdownMenuSeparator />
-
+        
         <DropdownMenuItem asChild>
           <Link href="/profile" className="flex cursor-pointer items-center gap-2">
             <UserIcon className="size-4" />
@@ -83,9 +96,12 @@ export function HeaderAuthButton({ user }: Props) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/my-events" className="flex cursor-pointer items-center gap-2">
-            <CalendarDays className="size-4" />
-            {t("publishedEvents")}
+          <Link
+            href="/profile/saved-events"
+            className="flex cursor-pointer items-center gap-2"
+          >
+            <Bookmark className="size-4" />
+            {tSaved("pageTitle")}
           </Link>
         </DropdownMenuItem>
 

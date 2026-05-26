@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { DatePopover } from "~/components/layout/DatePopover";
 import {
   useRegisterUnsavedChanges,
   useUnsavedChangesNavigate,
@@ -507,7 +508,15 @@ export function EventForm({
                         {isMultiDay ? t("fromDate") : t("eventDate")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <DatePopover
+                          id={field.name}
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          placeholder={t("pickDate")}
+                          clearLabel={t("clearDate")}
+                          disabled={isSubmitting}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -522,7 +531,16 @@ export function EventForm({
                       <FormItem>
                         <FormLabel>{t("toDate")}</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <DatePopover
+                            id={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            placeholder={t("pickDate")}
+                            clearLabel={t("clearDate")}
+                            disableBefore={startDate}
+                            disabled={isSubmitting}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

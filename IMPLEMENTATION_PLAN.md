@@ -244,36 +244,93 @@ This phase covers the full authentication experience and user-facing account pag
 
 ## Phase 4 — Saved events
 
-Authenticated users can bookmark events; bookmarks persist in the database. **There is no in-app admin area** — listings, tags, moderation, and roles are managed in **Supabase** (Dashboard, SQL, RLS). This phase matches `TASKS.md` Phase 7.
+Authenticated users can bookmark events; bookmarks persist in the database. Guests can discover the feature but must create an account before saving. **There is no in-app admin area** — listings, tags, moderation, and roles are managed in **Supabase** (Dashboard, SQL, RLS). This phase matches `TASKS.md` Phase 7.
 
 ### 4.1 Data model + RLS
 
-- Add a join table (e.g. `saved_events`: `user_id`, `event_id`, `created_at`) with `UNIQUE (user_id, event_id)`, FKs to `auth.users` / `events`, indexes for “my saves” queries.
-- RLS: a user can `SELECT` / `INSERT` / `DELETE` only rows where `user_id = auth.uid()`.
-- Run `npm run db:types` after the migration; extend domain types in `src/types/` if needed.
+- Add a join table `saved_events`.
+- Columns:
+  - `id uuid primary key default gen_random_uuid()` — stable row id for tooling/debugging.
+  - `user_id uuid not null references auth.users(id) on delete cascade` — owner of the saved event.
+  - `event_id int8 not null references public.events(id) on delete cascade` — saved event; this matches the current `events.id` type.
+  - `created_at timestamptz not null default now()` — when the event was saved.
+- Constraints and indexes:
+  - `unique (user_id, event_id)` so one user cannot save the same event twice.
+  - Index on `(user_id, created_at desc)` for quick “my saved events” lookups.
+  - Index on `(event_id)` for cascade/delete and future aggregate queries.
+- RLS:
+  - Enable RLS on `saved_events`.
+  - `SELECT`: users can read only rows where `user_id = auth.uid()`.
+  - `INSERT`: users can insert only rows where `user_id = auth.uid()`.
+  - `DELETE`: users can delete only rows where `user_id = auth.uid()`.
+  - No public `UPDATE` policy needed; saving is insert/delete only.
+- Run `npm run db:types` after the migration; extend domain types in `src/types/` with `DbSavedEvent` / `SavedEvent` only if the app needs named types beyond generated rows.
 
 ### 4.2 API — `lib/api`
 
-- `savedEventsApi` (or equivalent) with: list saved event ids or full events for a user, `save(userId, eventId)`, `unsave(userId, eventId)`, and optionally `isSaved` for hydration.
+- Add `src/lib/api/saved-events.ts` and export it from `src/lib/api/index.ts`.
+- `savedEventsApi` methods:
+  - `getSavedEventIds(client, userId)` — returns ids for hydrating save icons on listing pages.
+  - `getSavedEvents(client, userId)` — returns full event records with tags for the Saved page, ordered by `startDate` / `startTime` ascending.
+  - `saveEvent(client, userId, eventId)` — inserts `{ user_id, event_id }`; use the DB unique constraint as the source of truth.
+  - `unsaveEvent(client, userId, eventId)` — deletes the matching row.
 - Keep all Supabase calls in `src/lib/api/*` per project rules.
+- For listing pages, fetch the current user on the server and pass `savedEventIds` into the interactive list only when authenticated. Guests should not trigger a per-card auth fetch.
 
 ### 4.3 EventCard — save control
 
-- When the viewer is logged in, show a save/bookmark control **bottom-right** on the card (icon toggles saved state).
-- Likely a small Client Component (button) composed with the existing `EventCard`, or a prop-slot pattern — avoid duplicating card layout.
-- Mirror the same control on the **event detail** page for consistency (optional but recommended).
+- Add a save/bookmark icon button over each event image, **bottom-right**.
+- Authenticated behavior:
+  - Empty icon means not saved.
+  - Filled icon in `primary` color means saved.
+  - Clicking toggles saved/unsaved and updates the UI immediately.
+  - On failure, revert the optimistic state and show a translated toast.
+- Guest behavior:
+  - Clicking the save icon opens a responsive dialog/drawer instead of redirecting immediately.
+  - Copy explains that to use this feature and track events, the user needs to create an account and that it takes about 1 minute.
+  - Primary action links to signup; secondary action links to login or closes the dialog.
+- Implement the icon as a small Client Component composed into the existing server-friendly `EventCard`; avoid duplicating the full card layout.
+- Mirror the same save control on the **event detail** page for consistency after the listing behavior is stable.
 
-### 4.4 Saved page
+### 4.4 Client state and mutations
 
-- Implement `src/app/[locale]/profile/saved-events/page.tsx` (already scaffolded): **auth required**, redirect guests to login.
-- Load saved events, **exclude past events** (`endDate` strictly before today in the app’s date semantics).
-- **Sort by upcoming date** (e.g. by `startDate` / `startTime` ascending).
-- Allow **remove** from the list (dedicated control and/or toggling the same save icon off).
+- Add TanStack Query hooks under `src/hooks/query/saved-events.ts` because save/unsave is interactive client-side state.
+- Query keys should separate:
+  - all saved events for a user,
+  - saved event ids for a user,
+  - individual event toggle state if needed.
+- Mutations should invalidate saved ids and saved events after settling.
+- Use optimistic updates for the icon so the UI feels instant.
+- Keep the page content itself SSR-first where possible; use client hooks only for toggles/removal.
 
-### 4.5 i18n + nav
+### 4.5 Saved page
 
-- Add message keys for save/unsave, empty state, page title; keep `bg` / `en` / `uk` / `ro` in sync.
-- Ensure bottom nav **Saved** tab and any header links point at this page.
+- Implement `src/app/[locale]/profile/saved-events/page.tsx` (already scaffolded): **auth required**.
+- Guests who open the page directly can redirect to login, because the dialog/drawer requirement applies to clicking the save button from public event cards.
+- Load saved events on the server through `savedEventsApi.getSavedEvents`.
+- Split saved events into sections:
+  - **Upcoming + current**: events where `endDate >= today`, sorted by `startDate` / `startTime` ascending.
+  - **Past**: events where `endDate < today`, hidden initially behind a “Past events” control. Do not load/render past saved events until the user clicks that control; then fetch and show them, sorted newest first unless product decides otherwise.
+- Empty states:
+  - No saved events at all.
+  - No upcoming/current saved events but past saved events exist.
+  - No past saved events.
+- Allow removal from the list by toggling the same filled save icon off, with the row/card disappearing from the section after success.
+
+### 4.6 i18n + nav
+
+- Add message keys for save, saved, unsave, auth prompt title/body, signup/login CTAs, mutation errors, empty states, section titles, and page title.
+- Keep `bg` / `en` / `uk` / `ro` in sync; Bulgarian remains source copy.
+- Ensure bottom nav **Saved** tab and any header/profile links point at `/[locale]/profile/saved-events`.
+- Keep accessibility labels translated: “Save event”, “Remove from saved events”, and dialog/drawer labels.
+
+### 4.7 Acceptance checks
+
+- Guest clicking any card save icon opens the account prompt dialog/drawer and does not write to Supabase.
+- Authenticated user can save and unsave from the home listing; icon state survives refresh.
+- Authenticated user sees saved events on the Saved page split into upcoming/current and past.
+- Removing from the Saved page updates the page without leaving stale cards.
+- RLS blocks reading, creating, or deleting another user’s saved rows.
 
 ---
 
