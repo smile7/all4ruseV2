@@ -21,6 +21,7 @@ import {
   EventDetailScrollReset,
   EventHeroGallery,
   EventImagesGallery,
+  EventYoutubeEmbed,
   Typography,
 } from "~/components/layout";
 import { Button } from "~/components/ui/button";
@@ -439,6 +440,13 @@ export default async function EventDetailPage({ params }: Props) {
                     />
                   </CardContent>
                 </Card>
+              )}
+
+              {event.youtubeUrl && (
+                <EventYoutubeEmbed
+                  youtubeUrl={event.youtubeUrl}
+                  title={t("youtubeVideo")}
+                />
               )}
 
               {/* ── Mobile-only: map after description ───────────────────── */}

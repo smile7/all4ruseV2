@@ -5,6 +5,7 @@ export * from "./EventDetailRow";
 export * from "./EventDetailScrollReset";
 export * from "./EventHeroGallery";
 export * from "./EventImagesGallery";
+export * from "./EventYoutubeEmbed";
 export * from "./FiltersMobileDrawer";
 export * from "./Footer";
 export * from "./Header";

@@ -135,6 +135,10 @@
     "organizerLink": "Organizer Link",
     "fbLink": "Facebook Link",
     "enterFbLink": "Facebook event or page URL",
+    "youtubeUrl": "YouTube video",
+    "enterYoutubeUrl": "https://www.youtube.com/watch?v=...",
+    "youtubeUrlHint": "Optional. A YouTube link shown below the event description.",
+    "invalidYoutubeUrl": "Invalid YouTube link",
     "eventNotFound": "Event not found.",
     "cover": "Cover",
     "makeCover": "Set as cover",
@@ -207,7 +211,8 @@
     "moreEvents": "More events",
     "addToCalendar": "Add to Calendar",
     "shareOnFacebook": "Share on Facebook",
-    "email": "Email"
+    "email": "Email",
+    "youtubeVideo": "YouTube video"
   },
   "CurrentEvents": {
     "createEvent": "Create an Event",

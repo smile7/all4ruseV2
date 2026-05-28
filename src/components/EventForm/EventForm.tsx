@@ -16,6 +16,7 @@ import {
   Trash2,
   Type,
   Users,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -57,6 +58,7 @@ import {
 } from "~/lib/event-description-html";
 import { getEventImageUrl } from "~/lib/event-utils";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
+import { isValidYoutubeUrl } from "~/lib/youtube-url";
 import type { Event, Tag } from "~/types";
 
 import { EventDescriptionEditor } from "./EventDescriptionEditor";
@@ -113,6 +115,13 @@ function makeFormSchema(t: ReturnType<typeof useTranslations<"CreateEvent">>) {
     price: z.string().optional(),
     ticketsLink: z.string().url(t("invalidUrl")).optional().or(z.literal("")),
     fbLink: z.string().url(t("invalidUrl")).optional().or(z.literal("")),
+    youtubeUrl: z
+      .string()
+      .optional()
+      .or(z.literal(""))
+      .refine((val) => !val || isValidYoutubeUrl(val), {
+        message: t("invalidYoutubeUrl"),
+      }),
     phoneNumber: z.string().optional(),
     email: z.string().email(t("invalidEmail")).optional().or(z.literal("")),
     organizers: z.array(organizerSchema).min(1, t("atLeastOneOrganizer")),
@@ -133,6 +142,7 @@ type FormValues = {
   price?: string;
   ticketsLink?: string;
   fbLink?: string;
+  youtubeUrl?: string;
   phoneNumber?: string;
   email?: string;
   organizers: { name: string; link?: string }[];
@@ -211,6 +221,7 @@ function buildDefaultValues(
       price: initialData.price ?? "",
       ticketsLink: initialData.ticketsLink ?? "",
       fbLink: initialData.fbLink ?? "",
+      youtubeUrl: initialData.youtubeUrl ?? "",
       phoneNumber: initialData.phoneNumber ?? "",
       email: initialData.email ?? "",
       organizers,
@@ -231,6 +242,7 @@ function buildDefaultValues(
     price: "",
     ticketsLink: "",
     fbLink: "",
+    youtubeUrl: "",
     phoneNumber: profileDefaults?.phone ?? "",
     email: profileDefaults?.email ?? "",
     organizers: [{ name: defaultName, link: defaultLink }],
@@ -362,6 +374,7 @@ export function EventForm({
         price: isFree ? null : values.price || null,
         ticketsLink: values.ticketsLink || null,
         fbLink: values.fbLink || null,
+        youtubeUrl: values.youtubeUrl || null,
         phoneNumber: values.phoneNumber || null,
         email: values.email || null,
         image: uploadedPaths[0] ?? null,
@@ -466,6 +479,31 @@ export function EventForm({
                         onBlur={field.onBlur}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="youtubeUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Video className="size-4" aria-hidden />
+                      {t("youtubeUrl")}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="url"
+                        inputMode="url"
+                        placeholder={t("enterYoutubeUrl")}
+                        {...field}
+                      />
+                    </FormControl>
+                    <p className="text-muted-foreground text-xs">
+                      {t("youtubeUrlHint")}
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -135,6 +135,10 @@
     "organizerLink": "Посилання на організатора",
     "fbLink": "Посилання Facebook",
     "enterFbLink": "Посилання на подію у Facebook",
+    "youtubeUrl": "Відео YouTube",
+    "enterYoutubeUrl": "https://www.youtube.com/watch?v=...",
+    "youtubeUrlHint": "Необовʼязково. Посилання на відео YouTube під описом події.",
+    "invalidYoutubeUrl": "Невалідне посилання YouTube",
     "eventNotFound": "Подію не знайдено.",
     "cover": "Обкладинка",
     "makeCover": "Зробити обкладинкою",
@@ -207,7 +211,8 @@
     "moreEvents": "Більше подій",
     "addToCalendar": "Додати до календаря",
     "shareOnFacebook": "Поділитися",
-    "email": "Електронна пошта"
+    "email": "Електронна пошта",
+    "youtubeVideo": "Відео YouTube"
   },
   "CurrentEvents": {
     "createEvent": "Створити подію",

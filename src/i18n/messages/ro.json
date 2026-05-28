@@ -135,6 +135,10 @@
     "organizerLink": "Link gazdă",
     "fbLink": "Link Facebook",
     "enterFbLink": "URL-ul evenimentului sau paginii de Facebook",
+    "youtubeUrl": "Video YouTube",
+    "enterYoutubeUrl": "https://www.youtube.com/watch?v=...",
+    "youtubeUrlHint": "Opțional. Un link YouTube afișat sub descrierea evenimentului.",
+    "invalidYoutubeUrl": "Link YouTube invalid",
     "eventNotFound": "Evenimentul nu a fost găsit.",
     "cover": "Copertă",
     "makeCover": "Setează ca imagine de copertă",
@@ -207,7 +211,8 @@
     "moreEvents": "Mai multe evenimente",
     "addToCalendar": "Adaugă în calendar",
     "shareOnFacebook": "Distribuie",
-    "email": "Email"
+    "email": "Email",
+    "youtubeVideo": "Video YouTube"
   },
   "CurrentEvents": {
     "createEvent": "Creează un eveniment",

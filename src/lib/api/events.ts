@@ -390,6 +390,7 @@ type EventWriteInput = {
   price?: string | null;
   ticketsLink?: string | null;
   fbLink?: string | null;
+  youtubeUrl?: string | null;
   phoneNumber?: string | null;
   email?: string | null;
   image?: string | null;
@@ -443,6 +444,7 @@ async function createEvent(
       price: data.price ?? null,
       ticketsLink: data.ticketsLink ?? null,
       fbLink: data.fbLink ?? null,
+      youtubeUrl: data.youtubeUrl ?? null,
       phoneNumber: data.phoneNumber ?? null,
       email: data.email ?? null,
       image: data.image ?? null,
@@ -493,6 +495,7 @@ async function updateEvent(
       price: data.price ?? null,
       ticketsLink: data.ticketsLink ?? null,
       fbLink: data.fbLink ?? null,
+      youtubeUrl: data.youtubeUrl ?? null,
       phoneNumber: data.phoneNumber ?? null,
       email: data.email ?? null,
       image: data.image ?? null,

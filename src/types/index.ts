@@ -66,6 +66,7 @@ export const createEventSchema = z.object({
   price: z.string().optional(),
   ticketsLink: z.string().url("Невалиден линк").optional().or(z.literal("")),
   fbLink: z.string().url("Невалиден линк").optional().or(z.literal("")),
+  youtubeUrl: z.string().optional().or(z.literal("")),
   phoneNumber: z.string().optional(),
   email: z.string().email("Невалиден имейл").optional().or(z.literal("")),
   image: z.string().optional(),
