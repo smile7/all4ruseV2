@@ -28,7 +28,7 @@ export function RevealOnScroll({ children, className, delay = 0, from = "bottom"
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (!entry.isIntersecting) return;
+        if (!entry?.isIntersecting) return;
         setTimeout(() => {
           el.style.opacity = "1";
           el.style.transform = "none";
