@@ -85,7 +85,11 @@ export type UpdateEventInput = Partial<CreateEventInput>;
 
 export const updateProfileSchema = z.object({
   full_name: z.string().max(100).optional().or(z.literal("")),
-  username: z.string().max(50).optional().or(z.literal("")),
+  username: z
+    .string()
+    .regex(/^[a-z0-9-]{3,30}$/, "3–30 знака: малки букви, цифри, тире")
+    .optional()
+    .or(z.literal("")),
   bio: z.string().max(500).optional().or(z.literal("")),
   phone: z.string().max(30).optional().or(z.literal("")),
   place: z.string().max(100).optional().or(z.literal("")),
@@ -96,6 +100,11 @@ export const updateProfileSchema = z.object({
   fb: z.string().url().optional().or(z.literal("")),
   instagram: z.string().url().optional().or(z.literal("")),
   tiktok: z.string().url().optional().or(z.literal("")),
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Невалиден цвят")
+    .optional()
+    .or(z.literal("")),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

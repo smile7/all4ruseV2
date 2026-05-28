@@ -141,16 +141,19 @@ export type Database = {
           address_physical: string | null
           avatar_url: string | null
           bio: string | null
+          color: string | null
           email: string | null
           email_to_show: string | null
           fb: string | null
           full_name: string | null
+          header_url: string | null
           id: string
           instagram: string | null
           is_confirmed: boolean | null
           name_to_show: string | null
           phone: string | null
           place: string | null
+          profile_gallery: Json | null
           tiktok: string | null
           updated_at: string | null
           username: string | null
@@ -160,16 +163,19 @@ export type Database = {
           address_physical?: string | null
           avatar_url?: string | null
           bio?: string | null
+          color?: string | null
           email?: string | null
           email_to_show?: string | null
           fb?: string | null
           full_name?: string | null
+          header_url?: string | null
           id: string
           instagram?: string | null
           is_confirmed?: boolean | null
           name_to_show?: string | null
           phone?: string | null
           place?: string | null
+          profile_gallery?: Json | null
           tiktok?: string | null
           updated_at?: string | null
           username?: string | null
@@ -179,16 +185,19 @@ export type Database = {
           address_physical?: string | null
           avatar_url?: string | null
           bio?: string | null
+          color?: string | null
           email?: string | null
           email_to_show?: string | null
           fb?: string | null
           full_name?: string | null
+          header_url?: string | null
           id?: string
           instagram?: string | null
           is_confirmed?: boolean | null
           name_to_show?: string | null
           phone?: string | null
           place?: string | null
+          profile_gallery?: Json | null
           tiktok?: string | null
           updated_at?: string | null
           username?: string | null
