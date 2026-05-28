@@ -71,6 +71,7 @@ export type Database = {
           ticketsLink: string | null
           title: string
           town: string
+          youtubeUrl: string | null
         }
         Insert: {
           address: string
@@ -98,6 +99,7 @@ export type Database = {
           ticketsLink?: string | null
           title: string
           town: string
+          youtubeUrl?: string | null
         }
         Update: {
           address?: string
@@ -125,6 +127,7 @@ export type Database = {
           ticketsLink?: string | null
           title?: string
           town?: string
+          youtubeUrl?: string | null
         }
         Relationships: [
           {

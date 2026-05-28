@@ -135,6 +135,10 @@
     "organizerLink": "Линк към организатора",
     "fbLink": "Facebook линк",
     "enterFbLink": "Линк към Facebook събитие",
+    "youtubeUrl": "YouTube видео",
+    "enterYoutubeUrl": "https://www.youtube.com/watch?v=...",
+    "youtubeUrlHint": "По избор - линк към YouTube видео, което ще се покаже под описанието на събитието.",
+    "invalidYoutubeUrl": "Невалиден YouTube линк",
     "eventNotFound": "Събитието не е намерено.",
     "cover": "Главна",
     "makeCover": "Направи главна",
@@ -173,7 +177,7 @@
     "fromDate": "От дата",
     "toDate": "До дата",
     "removeOrganizer": "Премахни организатор",
-    "contactInfo": "Контактна информация",
+    "contactInfo": "Контакти",
     "cancel": "Отказ"
   },
   "PastEvents": {
@@ -208,7 +212,8 @@
     "moreEvents": "Още събития",
     "addToCalendar": "Google календар",
     "shareOnFacebook": "Сподели",
-    "email": "Имейл"
+    "email": "Имейл",
+    "youtubeVideo": "YouTube видео"
   },
   "CurrentEvents": {
     "createEvent": "Създай Събитие",
