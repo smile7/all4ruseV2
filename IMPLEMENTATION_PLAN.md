@@ -334,7 +334,84 @@ Authenticated users can bookmark events; bookmarks persist in the database. Gues
 
 ---
 
-## Phase 5 — i18n, SEO, and Polish
+## Phase 5 — Public Profiles
+
+Every registered user gets a public profile page at `/[locale]/user/[username]`. The page has two visual modes based on whether the person has ever created at least one event (past or present). For those users the page is designed to serve as a shareable mini-website. For pure consumers the page is a lighter info card.
+
+### Design direction
+
+- **Host profile** — anyone with ≥ 1 created event (any status, past or present). Full landing-page feel: full-width cover photo with a branded color gradient overlay, avatar (their logo), name, bio, social links, website CTA button, and below that their upcoming/live events (hero section) then past events (collapsed).
+- **User profile** — registered users with no created events. Lighter card: cover strip with color accent, avatar, name, bio. No events section, no social deep-dive. Just the basics.
+- **Single page, two visual modes**: one route `/[locale]/user/[username]`, branching on whether the profile has any created events.
+- URL is clean and shareable: `all4ruse.com/bg/user/theirname`.
+
+### 5.1 DB schema additions
+
+- Add `header_url text` column to `profiles` — the cover/banner photo. (The `color` column was already added separately.)
+- Add `UNIQUE` constraint on `profiles.username` — required for reliable URL routing.
+- Run `npm run db:types` to regenerate `src/types/database.ts`.
+- RLS: public profiles should be **readable by everyone** (`SELECT` policy with no `auth.uid()` check). Write policies remain owner-only.
+- No new storage bucket needed — upload cover photos to the existing avatars bucket under a `headers/` path prefix.
+
+### 5.2 Edit profile additions
+
+- **Color picker**: add to `ProfileForm` a curated palette of ~12 oklch swatches (warm/cool/neutral tones that guarantee legible contrast on the public page). Avoid a free-form `<input type="color">` — non-designers make poor choices.
+- **Header/cover photo upload**: same upload UX pattern as the existing avatar field (`<input type="file">` → upload to Supabase Storage `headers/{userId}` → save URL to `header_url`). Show a preview strip (not a large thumbnail) so the form stays compact.
+- Extend `updateProfileSchema` / `UpdateProfileInput` in `src/types/index.ts` with `color` and `header_url`.
+- Extend `ProfileUpdatePayload` in `src/lib/api/profiles.ts` with the two new fields.
+
+### 5.3 Data layer — `profilesApi` additions
+
+- Add `getPublicProfile(client, username)` — selects the profile row by `username` (public, no auth required). Returns `null` when not found → 404.
+- Add `getProfileEvents(client, userId)` — fetches events where `created_by = userId`. Returns upcoming/live (`endDate >= today`, ascending) and the total count. Past events are loaded lazily on demand (same pattern as Saved page). A non-zero total count is also what determines the "host" mode on the page — no separate flag needed.
+- Keep both functions in `src/lib/api/profiles.ts`.
+
+### 5.4 Public profile page — route and rendering
+
+- Route: `src/app/[locale]/user/[username]/page.tsx` — async Server Component, SSG-friendly (`generateStaticParams` is optional for now since usernames are dynamic).
+- `generateMetadata` — title = `{name_to_show} | All4Ruse`, description = bio (truncated to 160 chars), OG image = `header_url` or `avatar_url`. Hreflang alternates via next-intl.
+- `notFound()` when `getPublicProfile` returns null.
+- Fetch profile + events in parallel (`Promise.all`). The presence of any events (total count > 0) determines which layout to render — no extra DB column needed.
+- **Host layout** (profile has ≥ 1 created event):
+  - Full-width hero: cover photo (`header_url`) with `color` gradient overlay at bottom. If no cover photo, render a solid color gradient using `color`. Avatar centered over the hero bottom edge (overlapping).
+  - Below hero: name, bio, social icon row (fb/ig/tiktok/website), primary CTA "Visit website" button (if `website` set).
+  - Upcoming & live events section — `EventCard` grid, same component as the listing page.
+  - Past events section — collapsed by default, toggle button to load on client click (same lazy pattern as Saved page).
+- **User layout** (no created events):
+  - Full-width cover strip using `header_url` or a solid `color` gradient.
+  - Avatar, name, bio. Social links if present.
+  - No events section. Clean, minimal.
+- **No edit controls on the public page** — it is purely read-only. The edit link lives on the private `/profile` page.
+
+### 5.5 i18n
+
+- Add message keys under `PublicProfile` namespace: `upcomingEvents`, `pastEvents`, `showPastEvents`, `visitWebsite`, `noEvents`, `eventsBy`, `notFound`, meta title/description templates.
+- Keep all four locale files in sync.
+
+### 5.6 SEO + JSON-LD
+
+- `generateMetadata` per 5.4 above.
+- Add `LocalBusiness` or `Organization` JSON-LD block for host-mode profiles (≥ 1 event): `name`, `url`, `logo` (`avatar_url`), `image` (`header_url`), `sameAs` (social links). Embed in `<script type="application/ld+json">`.
+
+### 5.7 Username enforcement + UX
+
+- If a user has no `username` set, their profile URL does not exist yet — the `/user/[username]` route returns 404 for an empty slug. The private profile page should nudge them to set one with a banner: "Set a username to get your public profile link."
+- Username validation in `ProfileForm`: alphanumeric + hyphens only, 3–30 chars, checked for uniqueness via a debounced Supabase `select` call before save.
+- After a successful username save, show the public profile link as a copyable chip on the profile page.
+
+### 5.8 Acceptance checks
+
+- Unauthenticated visitor can open `/bg/user/someusername` and see the profile without logging in.
+- Host-mode page (≥ 1 event) renders cover photo, color gradient overlay, avatar, bio, social links, upcoming events, collapsed past events.
+- User-mode page (no events) renders cover strip, avatar, name, bio — no events section.
+- If `username` is not set, the `/user/` URL returns a proper 404.
+- Changing `color` in profile form updates the public page gradient.
+- Changing `header_url` in profile form updates the cover photo.
+- `generateMetadata` produces correct OG image and title for sharing on WhatsApp/FB.
+
+---
+
+## Phase 6 — i18n, SEO, and Polish
 
 ### 5.1 Complete Bulgarian message file
 

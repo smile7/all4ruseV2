@@ -80,7 +80,54 @@
 - [x] Split Saved page into upcoming + current and past sections.
 - [x] Give option to remove an event from the list (or by clicking again the save icon over the event)
 
-## Phase 8 — Quality
+## Phase 8 — Public Profiles (`IMPLEMENTATION_PLAN.md` Phase 5)
+
+### DB + types
+
+- [ ] Add `header_url text` column to `profiles` in Supabase
+- [ ] Add `UNIQUE` constraint on `profiles.username`
+- [ ] Run `npm run db:types` to regenerate `src/types/database.ts`
+- [ ] Extend `updateProfileSchema` / `UpdateProfileInput` in `src/types/index.ts` with `color` and `header_url`
+- [ ] Extend `ProfileUpdatePayload` in `src/lib/api/profiles.ts` with the two new fields
+
+### Data layer
+
+- [ ] Add `getPublicProfile(client, username)` to `profilesApi` — public, no auth
+- [ ] Add `getProfileEvents(client, userId)` to `profilesApi` — upcoming/live and past events for a user
+
+### Edit profile additions
+
+- [ ] Add color picker (curated ~12-swatch palette) to `ProfileForm`
+- [ ] Add header/cover photo upload to `ProfileForm` — same pattern as avatar, stores to `headers/{userId}` path
+- [ ] Show copyable public profile link on profile page after username is set
+- [ ] Username validation in `ProfileForm`: alphanumeric + hyphens, 3–30 chars, debounced uniqueness check
+- [ ] Show banner nudge on profile page when no username set
+
+### Public profile page
+
+- [ ] Create `src/app/[locale]/user/[username]/page.tsx` — async Server Component
+- [ ] `generateMetadata` — title, description (bio), OG image (header or avatar), hreflang
+- [ ] Host layout (profile has ≥ 1 created event): cover photo + color gradient overlay, avatar, name, bio, social links, "Visit website" CTA
+- [ ] Upcoming/live events grid (same `EventCard`)
+- [ ] Past events section — collapsed by default, toggle to load lazily
+- [ ] User layout (no created events): cover strip with color accent, avatar, name, bio — no events section
+- [ ] `notFound()` when username does not exist
+- [ ] `LocalBusiness` / `Organization` JSON-LD block for host-mode profiles
+
+### i18n
+
+- [ ] Add `PublicProfile` namespace keys to all 4 locale files
+
+### Acceptance checks
+
+- [ ] Unauthenticated visitor can view any public profile
+- [ ] Host-mode page (≥ 1 event): cover photo, color gradient, avatar, bio, social links, upcoming events, collapsed past events
+- [ ] User-mode page (no events): cover strip, avatar, name, bio — no events section shown
+- [ ] Missing username → 404
+- [ ] Color and cover photo changes reflect on public page
+- [ ] OG image and title correct for social sharing
+
+## Phase 9 — Quality
 
 - [ ] SEO metadata on all public pages (generateMetadata)
 - [x] JSON-LD structured data on event detail (`[slug]` page — `Event` schema)
@@ -90,10 +137,9 @@
 - [ ] i18n audit — all UI strings through t(), all 4 languages complete
 - [ ] PWA service worker + offline fallback (next-pwa, cache strategies, offline page)
 
-## Phase 9 — Future scope
+## Phase 10 — Future scope
 
 - [ ] Event content auto-translation via Google Translate API
-- [ ] Host profiles and submission workflow
 - [ ] Premium and featured listings
 - [ ] Sponsorship placements
 - [ ] Ticket-related flows

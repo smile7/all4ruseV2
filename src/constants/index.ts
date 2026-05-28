@@ -30,6 +30,27 @@ export const BREAKPOINTS = {
 
 export type ScreenSize = keyof typeof BREAKPOINTS;
 
+export const DEFAULT_PROFILE_COLOR = "#ea580c";
+
+export const PROFILE_COLOR_SWATCHES = [
+  { label: "Оранжев",    value: "#ea580c" },
+  { label: "Кехлибар",   value: "#d97706" },
+  { label: "Жълт",       value: "#eab308" },
+  { label: "Златист",    value: "#ca8a04" },
+  { label: "Жълтозелен", value: "#65a30d" },
+  { label: "Зелен",      value: "#16a34a" },
+  { label: "Циан",       value: "#0891b2" },
+  { label: "Сапфир",     value: "#2563eb" },
+  { label: "Индиго",     value: "#4f46e5" },
+  { label: "Виолетов",   value: "#7c3aed" },
+  { label: "Розов",      value: "#db2777" },
+  { label: "Червен",     value: "#dc2626" },
+  { label: "Тъмносин",   value: "#1e3a5f" },
+  { label: "Тъмен",      value: "#1e293b" },
+] as const;
+
+export type ProfileColorSwatch = (typeof PROFILE_COLOR_SWATCHES)[number];
+
 export const TAG_COLOR_CLASSES = [
   "bg-rose-50     text-rose-500     dark:bg-rose-950/50     dark:text-rose-300",
   "bg-sky-50      text-sky-500      dark:bg-sky-950/50      dark:text-sky-300",
