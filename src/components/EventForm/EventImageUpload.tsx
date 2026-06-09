@@ -112,7 +112,7 @@ export function EventImageUpload({ images, onChange }: Props) {
           {images.map((img, index) => (
             <div
               key={img.id}
-              className="group bg-muted relative aspect-square overflow-hidden rounded-md"
+              className="bg-muted relative aspect-square overflow-hidden rounded-md"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -121,27 +121,27 @@ export function EventImageUpload({ images, onChange }: Props) {
                 className="h-full w-full object-cover"
               />
 
-              <div className="absolute inset-0 flex flex-col items-end justify-between p-1 opacity-0 transition-opacity group-hover:opacity-100">
-                <button
-                  type="button"
-                  aria-label={t("removeImageAria")}
-                  onClick={() => handleRemove(img.id)}
-                  className="cursor-pointer rounded-full bg-black/60 p-1 text-white transition-colors hover:bg-black/80"
-                >
-                  <X className="size-3" />
-                </button>
+              <button
+                type="button"
+                aria-label={t("removeImageAria")}
+                onClick={() => handleRemove(img.id)}
+                className="absolute right-1 top-1 z-10 cursor-pointer rounded-full bg-black/35 p-1 text-white/85 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
+              >
+                <X className="size-3" />
+              </button>
 
-                {index !== 0 && (
+              {index !== 0 && (
+                <div className="absolute inset-0 flex items-center justify-center">
                   <button
                     type="button"
                     aria-label={t("makeCoverAria")}
                     onClick={() => handleMakeCover(img.id)}
-                    className="cursor-pointer rounded-full bg-black/60 px-1.5 py-0.5 text-xs text-white transition-colors hover:bg-black/80"
+                    className="cursor-pointer rounded-md bg-black/40 px-2 py-1 text-xs text-white/90 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
                   >
                     {t("makeCover")}
                   </button>
-                )}
-              </div>
+                </div>
+              )}
 
               {index === 0 && (
                 <Badge className="absolute bottom-1 left-1 py-0 text-xs">

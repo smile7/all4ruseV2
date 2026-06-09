@@ -7,6 +7,7 @@ import { addDays, format } from "date-fns";
 import { Search, X } from "lucide-react";
 
 import { DatePopoverRange } from "~/components/layout/DatePopoverRange";
+import { EventTag } from "~/components/EventTag";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -17,16 +18,6 @@ import { useDebounce } from "~/hooks/useDebounce";
 import { useFilters } from "~/hooks/useFilters";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { cn } from "~/lib/utils";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Title-case + underscore-to-space so "COMEDY_SHOW" → "Comedy Show". */
-function formatTagLabel(label: string): string {
-  return label
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
 
 // ─── Date range helpers ────────────────────────────────────────────────────────
 
@@ -302,7 +293,7 @@ export function FilterContent() {
         </div>
       </div>
 
-      {/* ━━ Row 3: Tags sorted by usage, primary color, title-cased ━━ */}
+      {/* ━━ Row 3: Tags sorted by usage, each with its own color ━━ */}
       {isLoadingTags ? (
         <div className="flex flex-wrap gap-2">
           {Array.from({ length: 10 }).map((_, i) => (
@@ -310,27 +301,22 @@ export function FilterContent() {
           ))}
         </div>
       ) : tags.length > 0 ? (
-        <div className="flex flex-wrap gap-3 mt-4">
+        <div className="mt-4 flex flex-wrap gap-2">
           {tags.map((tag) => {
             const isActive = filters.tagIds.includes(tag.id);
             const raw = tag.title?.trim() ?? "";
             const resolved = localizedEventTagTitle(tag.title, eventTagLabels);
-            const label = resolved !== raw ? resolved : formatTagLabel(raw);
+            const label = resolved !== raw ? resolved : raw.replace(/_/g, " ");
             return (
-              <Button
+              <EventTag
                 key={tag.id}
-                type="button"
-                variant="ghost"
+                title={tag.title ?? ""}
+                label={label}
+                size="md"
+                interactive
+                selected={isActive}
                 onClick={() => toggleTag(tag.id)}
-                className={cn(
-                  "h-auto cursor-pointer rounded-full border px-3 py-1 text-xs font-medium uppercase transition-colors",
-                  isActive
-                    ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "border-primary/30 text-primary hover:border-primary/60 hover:bg-primary/10",
-                )}
-              >
-                #{label}
-              </Button>
+              />
             );
           })}
         </div>

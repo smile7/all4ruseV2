@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 
 import data from "@emoji-mart/data";
 import type { Editor } from "@tiptap/core";
-import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -127,9 +126,6 @@ export function EventDescriptionEditor({
         TextAlign.configure({
           types: ["heading", "paragraph"],
         }),
-        Placeholder.configure({
-          placeholder: placeholder ?? "",
-        }),
       ],
       onUpdate: ({ editor: ed }) => {
         onChange(sanitizeEventDescription(ed.getHTML()));
@@ -141,6 +137,25 @@ export function EventDescriptionEditor({
   useEffect(() => {
     editor?.setEditable(!disabled);
   }, [disabled, editor]);
+
+  // Sync external value changes — e.g. when SmartFillPanel applies a draft.
+  // During normal typing the editor owns the value, so we guard against
+  // redundant setContent calls by comparing the sanitized HTML strings.
+  const prevValueRef = useRef(value);
+  useEffect(() => {
+    if (!editor) return;
+    if (value === prevValueRef.current) return;
+    prevValueRef.current = value;
+
+    const incoming = sanitizeEventDescription(
+      normalizeDescriptionForEditor(value),
+    );
+    const current = sanitizeEventDescription(editor.getHTML());
+    if (incoming !== current) {
+      // emitUpdate: false prevents triggering onChange → infinite loop
+      editor.commands.setContent(incoming, { emitUpdate: false });
+    }
+  }, [value, editor]);
 
   if (!editor) {
     return (
@@ -157,7 +172,7 @@ export function EventDescriptionEditor({
   const emojiTheme = resolvedTheme === "dark" ? "dark" : "light";
 
   return (
-    <div className="border-input bg-background/30 focus-within:ring-ring rounded-md border shadow-xs focus-within:ring-2">
+    <div className="event-description-editor border-input bg-background/30 focus-within:ring-ring rounded-md border shadow-xs focus-within:ring-2">
       <div
         className="bg-muted/30 flex flex-wrap items-center gap-1 border-b p-2"
         role="toolbar"
@@ -330,7 +345,15 @@ export function EventDescriptionEditor({
         </Popover>
       </div>
 
-      <div className="min-h-[220px]" onBlur={onBlur}>
+      <div className="relative min-h-[220px]" onBlur={onBlur}>
+        {editor.isEmpty && placeholder && (
+          <p
+            className="text-muted-foreground pointer-events-none absolute top-0 left-0 px-3 py-2 text-sm"
+            aria-hidden
+          >
+            {placeholder}
+          </p>
+        )}
         <EditorContent editor={editor} />
       </div>
     </div>

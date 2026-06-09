@@ -6,6 +6,7 @@ import { useLocale, useMessages, useTranslations } from "next-intl";
 
 import { CopyPlus, Pencil, User } from "lucide-react";
 
+import { EventTag } from "~/components/EventTag";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { Link, useRouter } from "~/i18n/navigation";
 import {
@@ -196,14 +197,14 @@ export function EventCard({
           )}
 
           {(event.tags?.length ?? 0) > 0 && (
-            <div className="mt-2 flex gap-1.5 overflow-hidden">
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {event.tags!.slice(0, 3).map((tag) => (
-                <span
+                <EventTag
                   key={tag.id}
-                  className="bg-primary/10 text-primary shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-wide uppercase"
-                >
-                  #{localizedEventTagTitle(tag.title, eventTagLabels)}
-                </span>
+                  title={tag.title}
+                  label={localizedEventTagTitle(tag.title, eventTagLabels)}
+                  size="sm"
+                />
               ))}
             </div>
           )}

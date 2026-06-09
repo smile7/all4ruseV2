@@ -109,3 +109,50 @@ export const updateProfileSchema = z.object({
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+// ─── Smart Fill ───────────────────────────────────────────────────────────────
+
+/**
+ * Partial event data produced by any smart-fill source (Facebook import,
+ * AI text prompt, or poster image upload). All fields are optional — only
+ * the fields the source was able to parse are populated.
+ *
+ * `image` is a storage path relative to EVENTS_BUCKET (same convention as
+ * the rest of the app). The image has already been re-uploaded to Supabase
+ * Storage by the API route before this draft reaches the client, so the URL
+ * is permanent and never a Facebook CDN token.
+ */
+export type EventDraft = {
+  title?: string;
+  /** HTML string — simple <p> paragraphs. Ready to set directly into TipTap. */
+  description?: string;
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
+  startTime?: string; // HH:MM (24-hour)
+  endTime?: string;   // HH:MM (24-hour)
+  address?: string;
+  town?: string;
+  place?: string;
+  price?: string;
+  ticketsLink?: string;
+  fbLink?: string;
+  /** Storage path relative to EVENTS_BUCKET, e.g. "smart-fill/uuid.jpg" */
+  image?: string;
+  /** Organizer / host name — applied to organizers[0].name in the form. */
+  organizer?: string;
+  /** Organizer profile URL — applied to organizers[0].link in the form. */
+  organizerLink?: string;
+  /** Multiple hosts — replaces the organizers array in the form when provided. */
+  organizers?: { name: string; link?: string }[];
+  /**
+   * Raw category/tag names from the source (e.g. "За деца", "Музика").
+   * handleDraftApply matches these against available Tag titles to set tagIds.
+   */
+  suggestedTagNames?: string[];
+  /**
+   * When true, handleDraftApply will clear organizers[0].link.
+   * Used by scrapers (Grabo, Ruse on the Danube) whose events are not owned
+   * by the current user, so the profile website should not bleed through.
+   */
+  clearOrganizerLink?: boolean;
+};

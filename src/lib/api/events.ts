@@ -396,6 +396,7 @@ type EventWriteInput = {
   image?: string | null;
   images?: string[] | null;
   organizers?: { name: string; link?: string }[] | null;
+  seriesId?: string | null;
 };
 
 // ─── Fetch by ID ──────────────────────────────────────────────────────────────
@@ -450,6 +451,7 @@ async function createEvent(
       image: data.image ?? null,
       images: (data.images ?? null) as import("~/types/database").Json,
       organizers: (data.organizers ?? null) as import("~/types/database").Json,
+      seriesId: data.seriesId ?? null,
       isEventActive: trustedPublisher,
       isEventPremium: false,
       isEventCancelled: false,
@@ -472,6 +474,85 @@ async function createEvent(
   }
 
   return reloadEventWithTags(client, inserted.id);
+}
+
+/**
+ * Creates multiple occurrences of a recurring event in a single batch.
+ * All occurrences share the same seriesId and base data; only startDate/endDate differ.
+ * Returns all created events ordered by startDate.
+ */
+async function createRecurringEvents(
+  client: Client,
+  userId: string,
+  baseData: Omit<EventWriteInput, "startDate" | "endDate" | "seriesId">,
+  tagIds: number[],
+  occurrenceDates: string[],
+  seriesId: string,
+): Promise<Event[]> {
+  if (occurrenceDates.length === 0) return [];
+
+  const trustedPublisher = await isCreatorConfirmed(client, userId);
+
+  const rows = occurrenceDates.map((date) => ({
+    title: baseData.title,
+    description: baseData.description,
+    startDate: date,
+    endDate: date,
+    startTime: baseData.startTime,
+    endTime: baseData.endTime ?? null,
+    address: baseData.address,
+    town: baseData.town,
+    place: baseData.place ?? null,
+    price: baseData.price ?? null,
+    ticketsLink: baseData.ticketsLink ?? null,
+    fbLink: baseData.fbLink ?? null,
+    youtubeUrl: baseData.youtubeUrl ?? null,
+    phoneNumber: baseData.phoneNumber ?? null,
+    email: baseData.email ?? null,
+    image: baseData.image ?? null,
+    images: (baseData.images ?? null) as import("~/types/database").Json,
+    organizers: (baseData.organizers ?? null) as import("~/types/database").Json,
+    seriesId,
+    isEventActive: trustedPublisher,
+    isEventPremium: false,
+    isEventCancelled: false,
+    isSoldOut: false,
+    createdBy: userId,
+  }));
+
+  const { data: inserted, error } = await client
+    .from("events")
+    .insert(rows)
+    .select("id");
+
+  if (error) throw error;
+
+  if (tagIds.length > 0) {
+    await client
+      .from("event_tags")
+      .insert(
+        inserted.flatMap(({ id }) =>
+          tagIds.map((tag_id) => ({ event_id: id, tag_id })),
+        ),
+      );
+  }
+
+  if (trustedPublisher) {
+    await Promise.all(
+      inserted.map(({ id }) =>
+        assignSlugForPublishedEvent(client, id, baseData.title),
+      ),
+    );
+  }
+
+  const { data: all, error: reloadError } = await client
+    .from("events")
+    .select("*, event_tags(tags(id, title))")
+    .in("id", inserted.map((r) => r.id))
+    .order("startDate", { ascending: true });
+
+  if (reloadError) throw reloadError;
+  return (all ?? []).map(mapEvent);
 }
 
 async function updateEvent(
@@ -546,6 +627,7 @@ export const eventsApi = {
   getMyEvents,
   getEventsByIds,
   createEvent,
+  createRecurringEvents,
   updateEvent,
   deleteEvent,
 };
