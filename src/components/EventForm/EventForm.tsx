@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { useMessages, useTranslations } from "next-intl";
+import { useLocale, useMessages, useTranslations } from "next-intl";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { addDays, addMonths, addWeeks, format, parseISO } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
+import { bg, enUS, ro, uk } from "date-fns/locale";
 import {
   CalendarDays,
   ImageIcon,
@@ -58,6 +59,7 @@ import {
 } from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { EVENTS_BUCKET } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { useRouter } from "~/i18n/navigation";
@@ -80,31 +82,128 @@ const DEFAULT_EVENT_TOWN = "Русе";
 
 const MAX_OCCURRENCES = 52;
 
+const DATE_FNS_LOCALES = {
+  bg,
+  en: enUS,
+  ua: uk,
+  ro,
+} as const;
+
+/** JS getDay(): 0 = Sun … 6 = Sat. Display order Mon–Sun. */
+const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
+
+const WEEKDAY_REF_DATE: Record<number, Date> = {
+  0: new Date(2024, 0, 7),
+  1: new Date(2024, 0, 1),
+  2: new Date(2024, 0, 2),
+  3: new Date(2024, 0, 3),
+  4: new Date(2024, 0, 4),
+  5: new Date(2024, 0, 5),
+  6: new Date(2024, 0, 6),
+};
+
 type RecurrencePattern = "daily" | "weekly" | "monthly";
+
+function weekdayFromDate(dateStr: string): number {
+  return parseISO(dateStr).getDay();
+}
+
+function recurrenceUsesWeekdays(pattern: RecurrencePattern): boolean {
+  return pattern === "weekly" || pattern === "monthly";
+}
+
+/** 1-based index of this date's weekday within its month (e.g. 2 = second Tuesday). */
+function weekdayOccurrenceInMonth(date: Date): number {
+  const weekday = date.getDay();
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  let count = 0;
+  for (let d = 1; d <= date.getDate(); d++) {
+    if (new Date(year, month, d).getDay() === weekday) count++;
+  }
+  return count;
+}
+
+function dateForNthWeekdayInMonth(
+  year: number,
+  month: number,
+  weekday: number,
+  occurrence: number,
+): Date | null {
+  let count = 0;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    if (date.getDay() === weekday) {
+      count++;
+      if (count === occurrence) return date;
+    }
+  }
+  return null;
+}
 
 function generateOccurrenceDates(
   firstDate: string,
   pattern: RecurrencePattern,
   periodEnd: string,
+  weekdays: number[] = [],
 ): string[] {
   if (!firstDate || !periodEnd) return [];
   const dates: string[] = [];
-  let current = parseISO(firstDate);
+  const start = parseISO(firstDate);
   const end = parseISO(periodEnd);
-  if (current > end) return [];
+  if (start > end) return [];
+
+  if (pattern === "weekly") {
+    if (weekdays.length === 0) return [];
+    const daySet = new Set(weekdays);
+    let current = start;
+    while (current <= end && dates.length < MAX_OCCURRENCES) {
+      if (daySet.has(current.getDay())) {
+        dates.push(format(current, "yyyy-MM-dd"));
+      }
+      current = addDays(current, 1);
+    }
+    return dates;
+  }
+
+  if (pattern === "monthly") {
+    if (weekdays.length === 0) return [];
+    const occurrence = weekdayOccurrenceInMonth(start);
+    let year = start.getFullYear();
+    let month = start.getMonth();
+    const endYear = end.getFullYear();
+    const endMonth = end.getMonth();
+
+    while (
+      (year < endYear || (year === endYear && month <= endMonth)) &&
+      dates.length < MAX_OCCURRENCES
+    ) {
+      for (const weekday of weekdays) {
+        const candidate = dateForNthWeekdayInMonth(
+          year,
+          month,
+          weekday,
+          occurrence,
+        );
+        if (candidate && candidate >= start && candidate <= end) {
+          dates.push(format(candidate, "yyyy-MM-dd"));
+        }
+      }
+      month++;
+      if (month > 11) {
+        month = 0;
+        year++;
+      }
+    }
+
+    return [...new Set(dates)].sort().slice(0, MAX_OCCURRENCES);
+  }
+
+  let current = start;
   while (current <= end && dates.length < MAX_OCCURRENCES) {
     dates.push(format(current, "yyyy-MM-dd"));
-    switch (pattern) {
-      case "daily":
-        current = addDays(current, 1);
-        break;
-      case "weekly":
-        current = addWeeks(current, 1);
-        break;
-      case "monthly":
-        current = addMonths(current, 1);
-        break;
-    }
+    current = addDays(current, 1);
   }
   return dates;
 }
@@ -309,6 +408,7 @@ export function EventForm({
   userId,
 }: Props) {
   const t = useTranslations("CreateEvent");
+  const locale = useLocale();
   const messages = useMessages() as { EventTags?: Record<string, string> };
   const eventTagLabels = messages.EventTags;
   const router = useRouter();
@@ -326,6 +426,7 @@ export function EventForm({
   const [recurrencePattern, setRecurrencePattern] =
     useState<RecurrencePattern>("weekly");
   const [recurrencePeriodEnd, setRecurrencePeriodEnd] = useState("");
+  const [recurrenceWeekdays, setRecurrenceWeekdays] = useState<number[]>([]);
   const [images, setImages] = useState<UploadableImage[]>(() =>
     initialData ? buildInitialImages(initialData) : [],
   );
@@ -371,9 +472,43 @@ export function EventForm({
   const endDate = form.watch("endDate");
   const startTime = form.watch("startTime");
 
-  // Prefill / clamp endDate when start moves forward
+  const dateFnsLocale =
+    DATE_FNS_LOCALES[locale as keyof typeof DATE_FNS_LOCALES] ?? bg;
+
+  const weekdayLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        WEEKDAY_ORDER.map((day) => [
+          day,
+          format(WEEKDAY_REF_DATE[day]!, "EEEEEE", { locale: dateFnsLocale }),
+        ]),
+      ) as Record<number, string>,
+    [dateFnsLocale],
+  );
+
+  // Default weekdays from start date when none selected yet
   useEffect(() => {
-    if (isRecurring || !startDate) return;
+    if (
+      !isRecurring ||
+      !recurrenceUsesWeekdays(recurrencePattern) ||
+      !startDate
+    ) {
+      return;
+    }
+    setRecurrenceWeekdays((prev) =>
+      prev.length > 0 ? prev : [weekdayFromDate(startDate)],
+    );
+  }, [startDate, isRecurring, recurrencePattern]);
+
+  // Prefill / clamp endDate when start moves forward.
+  // In recurring mode the endDate field is hidden; mirror startDate into it so
+  // the zod schema (which requires endDate) doesn't silently block submit.
+  useEffect(() => {
+    if (!startDate) return;
+    if (isRecurring) {
+      form.setValue("endDate", startDate);
+      return;
+    }
     const currentEnd = form.getValues("endDate");
     if (!currentEnd || currentEnd < startDate) {
       form.setValue("endDate", startDate);
@@ -450,10 +585,18 @@ export function EventForm({
 
       // ── Recurring create ─────────────────────────────────────────────────
       if (isRecurring && mode !== "edit") {
+        if (
+          recurrenceUsesWeekdays(recurrencePattern) &&
+          recurrenceWeekdays.length === 0
+        ) {
+          toast.error(t("recurrenceWeekdaysRequired"));
+          return;
+        }
         const occurrenceDates = generateOccurrenceDates(
           values.startDate,
           recurrencePattern,
           recurrencePeriodEnd,
+          recurrenceWeekdays,
         );
         if (occurrenceDates.length === 0) {
           toast.error(t("recurrenceNoOccurrences"));
@@ -835,9 +978,17 @@ export function EventForm({
                     </label>
                     <Select
                       value={recurrencePattern}
-                      onValueChange={(v) =>
-                        setRecurrencePattern(v as RecurrencePattern)
-                      }
+                      onValueChange={(v) => {
+                        const next = v as RecurrencePattern;
+                        setRecurrencePattern(next);
+                        if (recurrenceUsesWeekdays(next) && startDate) {
+                          setRecurrenceWeekdays((prev) =>
+                            prev.length > 0
+                              ? prev
+                              : [weekdayFromDate(startDate)],
+                          );
+                        }
+                      }}
                       disabled={isSubmitting}
                     >
                       <SelectTrigger id="recurrencePattern" className="w-full sm:w-64">
@@ -857,6 +1008,37 @@ export function EventForm({
                     </Select>
                   </div>
 
+                  {recurrenceUsesWeekdays(recurrencePattern) && (
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-sm font-medium">
+                        {t("recurrenceWeekdays")}
+                      </span>
+                      <ToggleGroup
+                        type="multiple"
+                        variant="outline"
+                        spacing={0}
+                        value={recurrenceWeekdays.map(String)}
+                        onValueChange={(values) =>
+                          setRecurrenceWeekdays(values.map(Number))
+                        }
+                        disabled={isSubmitting}
+                        className="w-full flex-wrap"
+                        aria-label={t("recurrenceWeekdays")}
+                      >
+                        {WEEKDAY_ORDER.map((day) => (
+                          <ToggleGroupItem
+                            key={day}
+                            value={String(day)}
+                            className="min-w-10 flex-1 capitalize"
+                            aria-label={weekdayLabels[day]}
+                          >
+                            {weekdayLabels[day]}
+                          </ToggleGroupItem>
+                        ))}
+                      </ToggleGroup>
+                    </div>
+                  )}
+
                   {/* Occurrence count preview */}
                   {(() => {
                     if (!startDate || !recurrencePeriodEnd) return null;
@@ -864,6 +1046,7 @@ export function EventForm({
                       startDate,
                       recurrencePattern,
                       recurrencePeriodEnd,
+                      recurrenceWeekdays,
                     );
                     if (dates.length === 0) {
                       return (

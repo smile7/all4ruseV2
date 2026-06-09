@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { extractDraftFromImageBytes } from "~/lib/smart-fill/gemini";
+import { extractDraftFromImageBytes, QuotaExceededError } from "~/lib/smart-fill/gemini";
 import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import type { EventDraft } from "~/types";
@@ -73,12 +73,14 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[smart-fill/photo]", message);
-    // Image was uploaded — still return a partial draft with the image
+    // Image was uploaded — still return a partial draft with the image.
+    // For quota errors, signal the client so it can show the right message.
     const partialDraft: EventDraft = { image: storagePath };
     return NextResponse.json(
       {
         draft: partialDraft,
         warning: "Image was saved but details could not be extracted automatically.",
+        ...(err instanceof QuotaExceededError && { errorCode: "quota_exceeded" }),
       },
       { status: 200 },
     );

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { extractDraftFromText } from "~/lib/smart-fill/gemini";
+import { extractDraftFromText, QuotaExceededError } from "~/lib/smart-fill/gemini";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 const MAX_TEXT_LENGTH = 3000;
@@ -43,6 +43,12 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[smart-fill/text]", message);
+    if (err instanceof QuotaExceededError) {
+      return NextResponse.json(
+        { error: message, errorCode: "quota_exceeded" },
+        { status: 429 },
+      );
+    }
     return NextResponse.json(
       { error: "Could not parse the description. Try again or fill manually." },
       { status: 502 },

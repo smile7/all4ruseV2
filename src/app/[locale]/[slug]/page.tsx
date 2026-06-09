@@ -485,8 +485,8 @@ export default async function EventDetailPage({ params }: Props) {
                 </div>
               )}
 
-              {/* Image gallery */}
-              {galleryImages.length > 0 && (
+              {/* Image gallery — skip when only one image (hero already covers it) */}
+              {galleryImages.length > 1 && (
                 <Card>
                   <CardContent className="p-4 sm:px-6 sm:pb-6">
                     <Typography.H2>

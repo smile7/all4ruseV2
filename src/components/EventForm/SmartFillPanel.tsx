@@ -32,6 +32,7 @@ type ParseState =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "applied" }
+  | { status: "partialApplied" }
   | { status: "error"; message: string };
 
 
@@ -121,19 +122,29 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
       const json = (await res.json()) as {
         draft?: EventDraft;
         error?: string;
+        errorCode?: string;
+        warning?: string;
       };
 
       if (!res.ok || !json.draft) {
-        setParseState({
-          status: "error",
-          message: t("errorGeneric"),
-        });
+        const message =
+          json.errorCode === "quota_exceeded"
+            ? t("errorQuota")
+            : t("errorGeneric");
+        setParseState({ status: "error", message });
         return;
       }
 
       // Auto-apply immediately — no confirm step needed
       onApply(json.draft);
-      setParseState({ status: "applied" });
+
+      // A `warning` means the API applied a partial draft (e.g. image saved
+      // but text extraction failed). Show a softer message instead of success.
+      if (json.warning) {
+        setParseState({ status: "partialApplied" });
+      } else {
+        setParseState({ status: "applied" });
+      }
     } catch {
       setParseState({ status: "error", message: t("errorGeneric") });
     }
@@ -304,6 +315,13 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
         {parseState.status === "applied" && (
           <p className="mt-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">
             ✓ {t("applied")}
+          </p>
+        )}
+
+        {/* Partial success — image saved but text extraction failed */}
+        {parseState.status === "partialApplied" && (
+          <p className="text-muted-foreground mt-2 text-xs">
+            {t("appliedImageOnly")}
           </p>
         )}
       </div>
