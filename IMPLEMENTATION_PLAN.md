@@ -411,57 +411,155 @@ Every registered user gets a public profile page at `/[locale]/user/[username]`.
 
 ---
 
-## Phase 6 — i18n, SEO, and Polish
+## Phase 6 — Event Creation Automation
 
-### 5.1 Complete Bulgarian message file
+Smart-fill helpers that pre-populate `EventForm` so users spend less time typing. All share the same output shape (`EventDraft`) and the same UX pattern: input → preview → "Apply to form". There is also a separate admin-only scraper (only the site owner's account) for pulling events from two additional local websites.
+
+### Design principles
+
+- None of these helpers are blocking paths. If Apify is down or the AI misparses, the user falls back to filling the form manually.
+- Authentication is the only gate needed at this scale (~200 total events, users with at most 10 events, additions happen once a month). No dedicated rate-limit table — it is unnecessary over-engineering for this volume.
+- The text prompt is **not a chat**. It is a single-shot input field. The user types or pastes a description, submits once, and the AI returns structured fields. There is no back-and-forth conversation.
+- The AI-generated description should be written in an engaging, promotional Facebook-post style — punchy opening, key details stated clearly, emoji where natural, ending with a call to action. This is controlled entirely via the Gemini system prompt; the user can edit the result before saving.
+
+### 6.1 `EventDraft` type and `SmartFillPanel` component
+
+- Add `EventDraft` to `src/types/index.ts` — a partial `createEventSchema` shape: `title`, `description`, `startDate`, `startTime`, `endDate`, `endTime`, `place`, `imageUrl`, `facebookUrl`, `ticketUrl`, `price`, `tags`. All fields optional.
+- Create `src/components/EventForm/SmartFillPanel.tsx` — a collapsible panel that renders above the form fields. Three tabs visible to all authenticated users: **Facebook URL** · **Describe event** · **Upload poster**. Admin users additionally see a fourth tab: **Scrape website** (see 6.4).
+- Each tab: input UI → loading state → preview card listing parsed fields with their values → "Apply to form" + "Discard".
+- "Apply to form" calls `onApply(draft: EventDraft)` on the parent `EventForm`. The parent merges non-empty draft fields via `react-hook-form`'s `setValue` — fields the user has already manually edited are **not overwritten**.
+- The panel is opt-in: a "Smart fill ✨" toggle button at the top of `EventForm` shows/hides it. Hidden entirely for unauthenticated users.
+
+### 6.2 API routes (server-side — keys never reach the client)
+
+All routes under `src/app/api/smart-fill/`. Every route:
+1. Calls `getUser()` on the server Supabase client; returns 401 if unauthenticated.
+2. Executes the external call.
+3. Returns `{ draft: EventDraft }` on success or `{ error: string }` on failure.
+
+---
+
+**`facebook/route.ts`** — Facebook event URL → Apify
+
+- Accepts `{ url: string }` POST body.
+- Validates the URL matches `facebook.com/events/`.
+- Calls the Apify REST API with `APIFY_TOKEN` and `APIFY_ACTOR_ID`.
+- Maps the Apify response fields to `EventDraft`.
+- **Image handling — permanent URL:** Facebook CDN image URLs are time-limited tokens and expire within hours or days. To fix this: after Apify returns the image URL, the route fetches the image bytes server-side and uploads them to Supabase Storage at `event-images/{uuid}.{ext}` using the service role client. The permanent Supabase Storage URL is stored in `EventDraft.imageUrl`. The original Facebook CDN URL is discarded. This way the image survives indefinitely.
+- Env vars: `APIFY_TOKEN`, `APIFY_ACTOR_ID`.
+
+---
+
+**`text/route.ts`** — freeform description → Gemini 1.5 Flash
+
+- Accepts `{ text: string }` POST body (max 2000 chars).
+- System prompt instructs Gemini to: extract event title, dates (ISO format), times, location, price, and any inferable tags; write the description in an engaging, promotional Facebook-post style (punchy, emoji where natural, ends with a call to action); return a JSON object only — no surrounding prose.
+- Parses the JSON response and maps to `EventDraft`.
+- Env var: `GEMINI_API_KEY`.
+
+---
+
+**`photo/route.ts`** — uploaded image → Gemini 1.5 Flash Vision
+
+- Accepts `multipart/form-data` with an `image` file (max 5 MB, JPEG/PNG/WEBP).
+- Uploads the image to Supabase Storage at `event-images/{uuid}.{ext}` immediately (permanent URL).
+- Sends the image bytes + same structured extraction + promotional description prompt to Gemini Flash Vision.
+- Returns the draft with `imageUrl` set to the already-uploaded Supabase Storage URL.
+- Env vars: `GEMINI_API_KEY`, service role for storage.
+
+### 6.3 AI description style — Gemini prompt guidance
+
+Both text and photo routes use the same description generation instructions in the system prompt:
+
+> Write the event description in Bulgarian, in an engaging and promotional style — as if writing a Facebook event post that makes people excited to attend. Use a punchy opening sentence. Include the key practical details (date, time, place, price if known) in a natural, readable way. Add 1–3 relevant emoji where they feel natural, not forced. End with a short call to action (e.g. "Очакваме ви!", "Не пропускайте!", "Елате да се забавляваме заедно!"). Keep the total length between 100 and 250 words. Return only the description text — no JSON wrapping for this field.
+
+The description text is embedded in the JSON response as the `description` field value.
+
+### 6.4 Admin-only scraper tab — Grabo and Ruse on the Danube
+
+Two additional scraping sources only accessible to the site owner's account. Controlled via `ADMIN_USER_ID` env var (the owner's Supabase auth UUID — never hardcoded in source, lives in `.env.local`).
+
+**`admin-scrape/route.ts`**
+- After the standard 401 auth check, additionally verifies `user.id === process.env.ADMIN_USER_ID`. Returns 403 for any other user.
+- Accepts `{ url: string, source: 'grabo' | 'ruse-on-the-danube' }` POST body.
+- Validates the URL matches the expected domain for the given `source`.
+- Calls the appropriate Apify actor or custom scraping logic per source.
+- Maps the response to `EventDraft` using source-specific field mappers (each site has a different HTML structure).
+- Same permanent image re-upload pattern as the Facebook route.
+- Env vars: `APIFY_TOKEN`, `APIFY_ACTOR_ID_GRABO`, `APIFY_ACTOR_ID_RUSE_DANUBE`, `ADMIN_USER_ID`.
+
+**`SmartFillPanel` — admin tab visibility:**
+- The panel checks the current user's ID from session against `NEXT_PUBLIC_ADMIN_USER_ID` (a public env var — it's not a secret, it's just a UUID used for UI gating; the actual security check happens server-side in the route).
+- If the IDs match, a fourth tab "Scrape website" is shown with a URL input and a `source` selector (Grabo · Ruse on the Danube).
+
+### 6.5 i18n
+
+Add keys under `SmartFill` namespace in all 4 locale files: panel toggle label, tab labels, input placeholders, loading messages, error messages, preview section titles, apply/discard labels.
+
+### 6.6 Acceptance checks
+
+- Guest users receive 401 from all routes; `SmartFillPanel` is hidden.
+- Facebook import: valid FB event URL → draft preview with title/dates/description → apply fills form → image URL is a permanent Supabase Storage URL (not a Facebook CDN URL).
+- Text prompt: freeform description → draft preview with promotional description → apply fills form.
+- Photo upload: poster image → draft preview → `imageUrl` is already uploaded to Supabase Storage → apply fills form including image field.
+- Apply merges — does not overwrite fields the user has already manually typed.
+- Admin scraper tab is invisible to all users except the owner.
+- Non-admin user hitting `admin-scrape` route directly receives 403.
+- Grabo and Ruse on the Danube scrapes produce valid `EventDraft` with permanent image URLs.
+
+---
+
+## Phase 7 — i18n, SEO, and Polish
+
+### 7.1 Complete Bulgarian message file
 
 - Audit every page and component for hardcoded Bulgarian or English strings.
 - Move all UI strings into `src/i18n/messages/bg.json` — organized by page/feature key (`nav`, `home`, `events`, `auth`, `profile`, `saved`, `common`, `errors`).
 
-### 5.2 Translate to other languages
+### 7.2 Translate to other languages
 
 - Copy `bg.json` structure to `en.json`, `uk.json`, `ro.json`.
 - Translate manually or using a script. (Auto-translate via Google Translate API is Phase 9 scope — for now, best-effort manual translation is fine.)
 
-### 5.3 Wire all strings through `t()`
+### 7.3 Wire all strings through `t()`
 
 - Replace every hardcoded string in components with `t("key")` or `useTranslations("namespace")`.
 - Verify locale switching works end-to-end on all pages.
 
-### 5.4 SEO metadata
+### 7.4 SEO metadata
 
 - Add `generateMetadata` to `app/[locale]/page.tsx` and `past/page.tsx` — translated titles and descriptions.
 - Verify event detail `generateMetadata` includes Open Graph image, title, description.
 - Add `<link rel="alternate" hreflang>` via next-intl's alternates support.
 
-### 5.5 JSON-LD structured data ✅
+### 7.5 JSON-LD structured data ✅
 
 - Implemented on `app/[locale]/[slug]/page.tsx` (see Phase 2.5). Remaining polish: keep schema fields in sync if event model changes; extend only if SEO needs more types.
 
-### 5.6 Loading and error states
+### 7.6 Loading and error states
 
 - Add `loading.tsx` to `app/[locale]/` — renders a skeleton (add nested `loading.tsx` only under routes that benefit from it).
 - Add `error.tsx` to `app/[locale]/` — friendly error message with retry.
 - Add a custom `not-found.tsx` for event detail (when slug does not match any event).
 
-### 5.7 Images
+### 7.7 Images
 
 - Replace any `<img>` tags with `next/image` throughout.
 - Add a placeholder/blur image for events without an image.
 - Configure `next.config.ts` to allow the Supabase storage domain.
 
-### 5.8 Responsive review
+### 7.8 Responsive review
 
 - Walk through every page on a 375 px viewport.
 - Fix layout issues in the event listing grid, event detail, and the Saved page.
 
-### 5.9 Accessibility pass
+### 7.9 Accessibility pass
 
 - Check keyboard navigation on filters, forms, and modals.
 - Verify all interactive elements have accessible labels.
 - Check color contrast ratios against WCAG AA on both light and dark themes.
 
-### 5.10 PWA service worker + offline fallback
+### 7.10 PWA service worker + offline fallback
 
 Do this after all routes are stable so cache strategies don't keep changing.
 

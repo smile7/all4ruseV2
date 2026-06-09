@@ -127,7 +127,55 @@
 - [ ] Color and cover photo changes reflect on public page
 - [ ] OG image and title correct for social sharing
 
-## Phase 9 — Quality
+## Phase 9 — Event Creation Automation (`IMPLEMENTATION_PLAN.md` Phase 6)
+
+Smart-fill helpers that pre-populate `EventForm` from a Facebook URL, freeform text prompt, or an uploaded poster image. A separate admin-only tab handles scraping from Grabo and Ruse on the Danube. All routes are server-side (API keys never reach the client). No dedicated rate-limit table — authentication is a sufficient gate at this usage scale.
+
+### Types
+
+- [ ] Add `EventDraft` partial type to `src/types/index.ts` (all optional: `title`, `description`, `startDate`, `startTime`, `endDate`, `endTime`, `place`, `imageUrl`, `facebookUrl`, `ticketUrl`, `price`, `tags`)
+
+### API routes (`src/app/api/smart-fill/`)
+
+- [ ] `facebook/route.ts` — auth check → Apify actor call → **fetch + re-upload Apify image to Supabase Storage** (permanent URL, fixes FB CDN expiry) → map to `EventDraft`. Env: `APIFY_TOKEN`, `APIFY_ACTOR_ID`
+- [ ] `text/route.ts` — auth check → Gemini 1.5 Flash with structured extraction + promotional description prompt → `EventDraft`. Env: `GEMINI_API_KEY`
+- [ ] `photo/route.ts` — auth check → upload image to Supabase Storage `event-images/{uuid}` → Gemini 1.5 Flash Vision with same prompt → `EventDraft` with permanent `imageUrl`. Env: `GEMINI_API_KEY`
+- [ ] `admin-scrape/route.ts` — auth check + `userId === ADMIN_USER_ID` check (403 otherwise) → scrape Grabo or Ruse on the Danube via Apify → re-upload image to Supabase Storage → `EventDraft`. Env: `APIFY_TOKEN`, `APIFY_ACTOR_ID_GRABO`, `APIFY_ACTOR_ID_RUSE_DANUBE`, `ADMIN_USER_ID`
+
+### UI — `SmartFillPanel` component
+
+- [ ] Create `src/components/EventForm/SmartFillPanel.tsx` with tabs: **Facebook URL** · **Describe event** · **Upload poster**
+- [ ] Each tab: input → loading state → preview card listing parsed field values → "Apply to form" / "Discard"
+- [ ] Wire `onApply(draft: EventDraft)`; parent `EventForm` merges via `setValue` — does not overwrite fields the user has already manually edited
+- [ ] Add "Smart fill ✨" toggle button at top of `EventForm`; hide panel entirely when not authenticated
+- [ ] Admin-only fourth tab "Scrape website" (URL input + Grabo / Ruse on the Danube selector) — visible only when `session.user.id === NEXT_PUBLIC_ADMIN_USER_ID`
+
+### Gemini prompt
+
+- [ ] System prompt for text and photo routes instructs: extract structured fields as JSON + write `description` in engaging Bulgarian promotional style (punchy opener, emoji where natural, call to action, 100–250 words)
+
+### Env vars to add to `.env.local`
+
+- [ ] `APIFY_TOKEN`, `APIFY_ACTOR_ID`
+- [ ] `APIFY_ACTOR_ID_GRABO`, `APIFY_ACTOR_ID_RUSE_DANUBE`
+- [ ] `GEMINI_API_KEY`
+- [ ] `ADMIN_USER_ID` (server-only), `NEXT_PUBLIC_ADMIN_USER_ID` (UI gating only — not a secret)
+
+### i18n
+
+- [ ] Add `SmartFill` namespace to all 4 locale files (tab labels, placeholders, loading, error messages, preview titles, apply/discard labels)
+
+### Acceptance checks
+
+- [ ] Guest users: panel hidden, all routes return 401
+- [ ] FB import: valid URL → draft preview → apply fills form → image URL is a permanent Supabase Storage URL (not Facebook CDN)
+- [ ] Text prompt: freeform description → draft with promotional Bulgarian description → apply fills form
+- [ ] Photo upload: poster → image uploaded to Supabase Storage → draft preview → apply fills form including image field
+- [ ] Apply merges only — does not overwrite already-edited fields
+- [ ] Admin scraper tab invisible to all non-admin users; direct route call by non-admin returns 403
+- [ ] Grabo and Ruse on the Danube scrapes produce valid draft with permanent image URLs
+
+## Phase 10 — Quality
 
 - [ ] SEO metadata on all public pages (generateMetadata)
 - [x] JSON-LD structured data on event detail (`[slug]` page — `Event` schema)
@@ -137,7 +185,7 @@
 - [ ] i18n audit — all UI strings through t(), all 4 languages complete
 - [ ] PWA service worker + offline fallback (next-pwa, cache strategies, offline page)
 
-## Phase 10 — Future scope
+## Phase 11 — Future scope
 
 - [ ] Event content auto-translation via Google Translate API
 - [ ] Premium and featured listings

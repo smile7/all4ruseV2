@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Mail,
   MapPin,
+  Pencil,
   Phone,
   Share2,
   Ticket,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { EventCard, EventSaveButton } from "~/components/EventCard";
+import { EventTag } from "~/components/EventTag";
 import {
   EventDetailRow,
   EventDetailScrollReset,
@@ -42,7 +44,10 @@ import {
   getEventImageUrl,
   isLiveNow,
 } from "~/lib/event-utils";
-import { createSupabasePublicServerClient } from "~/lib/supabase/server";
+import {
+  createSupabasePublicServerClient,
+  createSupabaseServerClient,
+} from "~/lib/supabase/server";
 import type { Host } from "~/types";
 
 export const dynamic = "force-dynamic";
@@ -142,9 +147,17 @@ export default async function EventDetailPage({ params }: Props) {
   const eventTagLabels = (messages as { EventTags?: Record<string, string> })
     .EventTags;
 
-  const client = createSupabasePublicServerClient();
-  const event = await eventsApi.getEventBySlug(client, slug);
+  const [authClient, publicClient] = await Promise.all([
+    createSupabaseServerClient(),
+    Promise.resolve(createSupabasePublicServerClient()),
+  ]);
+  const [event, { data: { user } }] = await Promise.all([
+    eventsApi.getEventBySlug(publicClient, slug),
+    authClient.auth.getUser(),
+  ]);
   if (!event) notFound();
+
+  const isEventCreator = Boolean(user && event.createdBy === user.id);
 
   const formattedTitle = formatEventTitle(event.title);
   const imageUrl = getEventImageUrl(event.image);
@@ -175,7 +188,7 @@ export default async function EventDetailPage({ params }: Props) {
         .map(getEventImageUrl)
     : [];
   const relatedEvents = await eventsApi.getRelatedEvents(
-    client,
+    publicClient,
     event.id,
     (event.tags ?? []).map((tag) => tag.id),
   );
@@ -287,14 +300,14 @@ export default async function EventDetailPage({ params }: Props) {
               {formattedTitle}
             </h1>
             {(event.tags?.length ?? 0) > 0 && (
-              <div className="flex flex-wrap justify-center gap-1.5">
+              <div className="flex flex-wrap justify-center gap-2">
                 {event.tags!.map((tag) => (
-                  <span
+                  <EventTag
                     key={tag.id}
-                    className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase"
-                  >
-                    #{localizedEventTagTitle(tag.title ?? "", eventTagLabels)}
-                  </span>
+                    title={tag.title ?? ""}
+                    label={localizedEventTagTitle(tag.title ?? "", eventTagLabels)}
+                    size="md"
+                  />
                 ))}
               </div>
             )}
@@ -397,6 +410,14 @@ export default async function EventDetailPage({ params }: Props) {
             </CardContent>
           </Card>
               <div className="flex flex-col gap-3 lg:hidden">
+                {isEventCreator && (
+                  <Button variant="outline" asChild className="w-full justify-start gap-2">
+                    <a href={`/${locale}/create-event?editId=${event.id}`}>
+                      <Pencil className="size-4 shrink-0" />
+                      {t("editEvent")}
+                    </a>
+                  </Button>
+                )}
                 {event.ticketsLink && (
                   <Button variant="secondary" asChild className="w-full justify-start gap-2">
                     <a href={event.ticketsLink} target="_blank" rel="noopener noreferrer">
@@ -479,6 +500,14 @@ export default async function EventDetailPage({ params }: Props) {
 
             {/* ── Desktop sidebar (hidden on mobile) ──────────────────── */}
             <div className="hidden lg:sticky lg:top-20 lg:flex lg:w-52 lg:shrink-0 lg:flex-col lg:gap-3">
+              {isEventCreator && (
+                <Button variant="outline" asChild className="w-full justify-start gap-2">
+                  <a href={`/${locale}/create-event?editId=${event.id}`}>
+                    <Pencil className="size-4 shrink-0" />
+                    {t("editEvent")}
+                  </a>
+                </Button>
+              )}
               {event.ticketsLink && (
                 <Button variant="secondary" asChild className="w-full justify-start gap-2">
                   <a href={event.ticketsLink} target="_blank" rel="noopener">

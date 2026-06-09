@@ -65,6 +65,7 @@ export type Database = {
           phoneNumber: string | null
           place: string | null
           price: string | null
+          seriesId: string | null
           slug: string | null
           startDate: string
           startTime: string
@@ -93,6 +94,7 @@ export type Database = {
           phoneNumber?: string | null
           place?: string | null
           price?: string | null
+          seriesId?: string | null
           slug?: string | null
           startDate: string
           startTime: string
@@ -121,6 +123,7 @@ export type Database = {
           phoneNumber?: string | null
           place?: string | null
           price?: string | null
+          seriesId?: string | null
           slug?: string | null
           startDate?: string
           startTime?: string

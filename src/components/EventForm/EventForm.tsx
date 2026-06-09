@@ -5,6 +5,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { useMessages, useTranslations } from "next-intl";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { addDays, addMonths, addWeeks, format, parseISO } from "date-fns";
 import {
   CalendarDays,
   ImageIcon,
@@ -21,11 +22,13 @@ import {
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { EventTag } from "~/components/EventTag";
 import { DatePopover } from "~/components/layout/DatePopover";
 import {
   useRegisterUnsavedChanges,
   useUnsavedChangesNavigate,
 } from "~/components/layout/UnsavedChangesGuard";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -46,6 +49,13 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
 import { EVENTS_BUCKET } from "~/constants";
@@ -59,13 +69,45 @@ import {
 import { getEventImageUrl } from "~/lib/event-utils";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 import { isValidYoutubeUrl } from "~/lib/youtube-url";
-import type { Event, Tag } from "~/types";
+import type { Event, EventDraft, Tag } from "~/types";
 
 import { EventDescriptionEditor } from "./EventDescriptionEditor";
 import { EventImageUpload, type UploadableImage } from "./EventImageUpload";
+import { SmartFillPanel } from "./SmartFillPanel";
 
 /** Default населено място for new events (Ruse). */
 const DEFAULT_EVENT_TOWN = "Русе";
+
+const MAX_OCCURRENCES = 52;
+
+type RecurrencePattern = "daily" | "weekly" | "monthly";
+
+function generateOccurrenceDates(
+  firstDate: string,
+  pattern: RecurrencePattern,
+  periodEnd: string,
+): string[] {
+  if (!firstDate || !periodEnd) return [];
+  const dates: string[] = [];
+  let current = parseISO(firstDate);
+  const end = parseISO(periodEnd);
+  if (current > end) return [];
+  while (current <= end && dates.length < MAX_OCCURRENCES) {
+    dates.push(format(current, "yyyy-MM-dd"));
+    switch (pattern) {
+      case "daily":
+        current = addDays(current, 1);
+        break;
+      case "weekly":
+        current = addWeeks(current, 1);
+        break;
+      case "monthly":
+        current = addMonths(current, 1);
+        break;
+    }
+  }
+  return dates;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -126,7 +168,19 @@ function makeFormSchema(t: ReturnType<typeof useTranslations<"CreateEvent">>) {
     email: z.string().email(t("invalidEmail")).optional().or(z.literal("")),
     organizers: z.array(organizerSchema).min(1, t("atLeastOneOrganizer")),
     tagIds: z.array(z.number()).optional(),
-  });
+  })
+    .refine((data) => data.endDate >= data.startDate, {
+      message: t("endDateAfterStartDate"),
+      path: ["endDate"],
+    })
+    .refine(
+      (data) => {
+        if (!data.endTime?.trim()) return true;
+        if (data.endDate !== data.startDate) return true;
+        return data.endTime >= data.startTime;
+      },
+      { message: t("endTimeAfterStartTime"), path: ["endTime"] },
+    );
 }
 
 type FormValues = {
@@ -168,11 +222,6 @@ function baselineFreeFromEvent(initialData?: Event | null): boolean {
   return !p || p === "" || p === "0" || p === "0.00";
 }
 
-function baselineMultiFromEvent(initialData?: Event | null): boolean {
-  if (!initialData) return false;
-  return initialData.startDate !== initialData.endDate;
-}
-
 function buildInitialImages(event: Event): UploadableImage[] {
   const paths: string[] = [];
 
@@ -209,14 +258,14 @@ function buildDefaultValues(
       : [{ name: defaultName, link: defaultLink }];
 
     return {
-      title: initialData.title,
+      title: initialData.title ?? "",
       description: sanitizeEventDescription(initialData.description ?? ""),
-      startDate: initialData.startDate,
-      endDate: initialData.endDate,
-      startTime: initialData.startTime.slice(0, 5),
+      startDate: initialData.startDate ?? "",
+      endDate: initialData.endDate ?? "",
+      startTime: initialData.startTime?.slice(0, 5) ?? "",
       endTime: initialData.endTime?.slice(0, 5) ?? "",
-      address: initialData.address,
-      town: initialData.town,
+      address: initialData.address ?? "",
+      town: initialData.town ?? "",
       place: initialData.place ?? "",
       price: initialData.price ?? "",
       ticketsLink: initialData.ticketsLink ?? "",
@@ -273,10 +322,10 @@ export function EventForm({
     const p = initialData.price;
     return !p || p === "" || p === "0" || p === "0.00";
   });
-  const [isMultiDay, setIsMultiDay] = useState<boolean>(() => {
-    if (!initialData) return false;
-    return initialData.startDate !== initialData.endDate;
-  });
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrencePattern, setRecurrencePattern] =
+    useState<RecurrencePattern>("weekly");
+  const [recurrencePeriodEnd, setRecurrencePeriodEnd] = useState("");
   const [images, setImages] = useState<UploadableImage[]>(() =>
     initialData ? buildInitialImages(initialData) : [],
   );
@@ -288,14 +337,12 @@ export function EventForm({
   );
   const baselineTogglesRef = useRef({
     isFree: baselineFreeFromEvent(initialData),
-    isMultiDay: baselineMultiFromEvent(initialData),
   });
 
   const imagesDirty =
     uploadableImagesFingerprint(images) !== baselineImagesFingerprintRef.current;
   const togglesDirty =
-    isFree !== baselineTogglesRef.current.isFree ||
-    isMultiDay !== baselineTogglesRef.current.isMultiDay;
+    isFree !== baselineTogglesRef.current.isFree || isRecurring;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -320,13 +367,32 @@ export function EventForm({
     remove: removeOrganizer,
   } = useFieldArray({ control: form.control, name: "organizers" });
 
-  // Keep endDate in sync with startDate when single-day
   const startDate = form.watch("startDate");
+  const endDate = form.watch("endDate");
+  const startTime = form.watch("startTime");
+
+  // Prefill / clamp endDate when start moves forward
   useEffect(() => {
-    if (!isMultiDay) {
+    if (isRecurring || !startDate) return;
+    const currentEnd = form.getValues("endDate");
+    if (!currentEnd || currentEnd < startDate) {
       form.setValue("endDate", startDate);
     }
-  }, [startDate, isMultiDay, form]);
+  }, [startDate, isRecurring, form]);
+
+  // Block end time before start time on the same day
+  useEffect(() => {
+    if (!startDate || !startTime) return;
+    const currentEndDate = form.getValues("endDate");
+    const currentEndTime = form.getValues("endTime");
+    if (
+      currentEndDate === startDate &&
+      currentEndTime &&
+      currentEndTime < startTime
+    ) {
+      form.setValue("endTime", startTime);
+    }
+  }, [startDate, endDate, startTime, form]);
 
   useRegisterUnsavedChanges(
     form.formState.isDirty || imagesDirty || togglesDirty,
@@ -361,11 +427,9 @@ export function EventForm({
         }
       }
 
-      const eventData = {
+      const baseEventData = {
         title: values.title,
         description: sanitizeEventDescription(values.description),
-        startDate: values.startDate,
-        endDate: isMultiDay ? values.endDate : values.startDate,
         startTime: values.startTime,
         endTime: values.endTime || null,
         address: values.address,
@@ -383,6 +447,43 @@ export function EventForm({
       };
 
       const tagIds = values.tagIds ?? [];
+
+      // ── Recurring create ─────────────────────────────────────────────────
+      if (isRecurring && mode !== "edit") {
+        const occurrenceDates = generateOccurrenceDates(
+          values.startDate,
+          recurrencePattern,
+          recurrencePeriodEnd,
+        );
+        if (occurrenceDates.length === 0) {
+          toast.error(t("recurrenceNoOccurrences"));
+          return;
+        }
+        const seriesId = crypto.randomUUID();
+        const created = await eventsApi.createRecurringEvents(
+          supabase,
+          userId,
+          baseEventData,
+          tagIds,
+          occurrenceDates,
+          seriesId,
+        );
+        const anyLive = created.some((e) => e.isEventActive);
+        toast.success(
+          anyLive
+            ? t("recurringEventsCreated", { count: created.length })
+            : t("recurringEventsCreatedPending", { count: created.length }),
+        );
+        router.push("/my-events");
+        return;
+      }
+
+      // ── Single create / edit ─────────────────────────────────────────────
+      const eventData = {
+        ...baseEventData,
+        startDate: values.startDate,
+        endDate: values.endDate || values.startDate,
+      };
 
       let saved: Event;
       if (mode === "edit" && initialData) {
@@ -436,10 +537,120 @@ export function EventForm({
     }
   }
 
+  // ── Smart Fill ────────────────────────────────────────────────────────────
+  function handleDraftApply(draft: EventDraft) {
+    const textFields = [
+      "title",
+      "description",
+      "startDate",
+      "endDate",
+      "startTime",
+      "endTime",
+      "address",
+      "town",
+      "place",
+      "price",
+      "ticketsLink",
+      "fbLink",
+    ] as const;
+
+    for (const field of textFields) {
+      const value = draft[field];
+      if (value !== undefined && value !== "") {
+        form.setValue(field as keyof FormValues, value, { shouldDirty: true });
+      }
+    }
+
+    // Organizers — replace the full list when multiple hosts are scraped
+    if (draft.organizers && draft.organizers.length > 0) {
+      form.setValue(
+        "organizers",
+        draft.organizers.map((o) => ({ name: o.name, link: o.link ?? "" })),
+        { shouldDirty: true },
+      );
+    } else if (draft.organizer || draft.organizerLink) {
+      const currentOrganizers = form.getValues("organizers");
+      if (currentOrganizers.length > 0) {
+        if (draft.organizer) {
+          form.setValue("organizers.0.name", draft.organizer, { shouldDirty: true });
+        }
+        if (draft.organizerLink) {
+          form.setValue("organizers.0.link", draft.organizerLink, { shouldDirty: true });
+        }
+      } else {
+        form.setValue(
+          "organizers",
+          [{ name: draft.organizer ?? "", link: draft.organizerLink ?? "" }],
+          { shouldDirty: true },
+        );
+      }
+    }
+
+    // Scraper sources (Grabo, Ruse on the Danube) set clearOrganizerLink so
+    // the profile website URL pre-filled in organizers[0].link gets removed —
+    // those events belong to third parties, not the current user's profile.
+    if (draft.clearOrganizerLink) {
+      const currentOrganizers = form.getValues("organizers");
+      if (currentOrganizers.length > 0) {
+        form.setValue("organizers.0.link", "", { shouldDirty: true });
+      }
+    }
+
+    // Match suggested tag names against available tags (case-insensitive)
+    if (draft.suggestedTagNames && draft.suggestedTagNames.length > 0) {
+      const currentTagIds = form.getValues("tagIds") ?? [];
+      const matched = draft.suggestedTagNames
+        .flatMap((name) => {
+          const norm = name.toLowerCase().trim();
+          const match = tags.find(
+            (t) =>
+              t.title.toLowerCase().includes(norm) ||
+              norm.includes(t.title.toLowerCase()),
+          );
+          return match ? [match.id] : [];
+        })
+        .filter((id) => !currentTagIds.includes(id));
+
+      if (matched.length > 0) {
+        form.setValue("tagIds", [...currentTagIds, ...matched], {
+          shouldDirty: true,
+        });
+      }
+    }
+
+    // Default end date to start when importer only provides one date
+    if (draft.startDate && !draft.endDate) {
+      form.setValue("endDate", draft.startDate, { shouldDirty: true });
+    }
+
+    // Prepend draft image to the images list (avoid duplicates)
+    if (draft.image) {
+      setImages((prev) => {
+        if (prev.some((img) => img.storedPath === draft.image)) return prev;
+        return [
+          {
+            id: crypto.randomUUID(),
+            previewUrl: getEventImageUrl(draft.image!),
+            storedPath: draft.image,
+          },
+          ...prev,
+        ];
+      });
+    }
+  }
+
+  const isAdminUser =
+    typeof process !== "undefined"
+      ? userId === process.env.NEXT_PUBLIC_ADMIN_USER_ID
+      : false;
+
   return (
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* ── Smart Fill ─────────────────────────────────────────────── */}
+          <SmartFillPanel onApply={handleDraftApply} isAdmin={isAdminUser} />
+
           {/* ── Basic info ─────────────────────────────────────────────── */}
           <Card>
             <CardHeader>
@@ -520,31 +731,41 @@ export function EventForm({
               </CardTitle>
             </CardHeader>
             <CardContent variant="section">
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  id="isMultiDay"
-                  checked={isMultiDay}
-                  onCheckedChange={(v: boolean | "indeterminate") =>
-                    setIsMultiDay(Boolean(v))
-                  }
-                />
-                <label
-                  htmlFor="isMultiDay"
-                  className="cursor-pointer text-sm leading-none font-medium"
-                >
-                  {t("rangeDateCheckbox")}
-                </label>
-              </div>
+              {/* Recurring toggle — only in create / duplicate mode */}
+              {mode !== "edit" && (
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="isRecurring"
+                    checked={isRecurring}
+                    onCheckedChange={(v: boolean | "indeterminate") => {
+                      const next = Boolean(v);
+                      setIsRecurring(next);
+                      if (!next) {
+                        setRecurrencePeriodEnd("");
+                      } else if (!recurrencePeriodEnd) {
+                        const fallback =
+                          form.getValues("endDate") || startDate || "";
+                        if (fallback) setRecurrencePeriodEnd(fallback);
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor="isRecurring"
+                    className="flex cursor-pointer items-center gap-1.5 text-sm leading-none font-medium"
+                  >
+                    {t("recurringEvent")}
+                  </label>
+                </div>
+              )}
 
+              {/* Date pickers */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="startDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        {isMultiDay ? t("fromDate") : t("eventDate")}
-                      </FormLabel>
+                      <FormLabel>{t("fromDate")}</FormLabel>
                       <FormControl>
                         <DatePopover
                           id={field.name}
@@ -561,7 +782,22 @@ export function EventForm({
                   )}
                 />
 
-                {isMultiDay && (
+                {isRecurring ? (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm leading-none font-medium">
+                      {t("recurrenceSeriesEndDate")}
+                    </label>
+                    <DatePopover
+                      id="recurrencePeriodEnd"
+                      value={recurrencePeriodEnd}
+                      onChange={setRecurrencePeriodEnd}
+                      placeholder={t("pickDate")}
+                      clearLabel={t("clearDate")}
+                      disableBefore={startDate}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                ) : (
                   <FormField
                     control={form.control}
                     name="endDate"
@@ -587,6 +823,75 @@ export function EventForm({
                 )}
               </div>
 
+              {/* Recurrence pattern + preview */}
+              {isRecurring && (
+                <div className="bg-muted/40 space-y-4 rounded-lg border p-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label
+                      htmlFor="recurrencePattern"
+                      className="text-sm font-medium"
+                    >
+                      {t("recurrencePattern")}
+                    </label>
+                    <Select
+                      value={recurrencePattern}
+                      onValueChange={(v) =>
+                        setRecurrencePattern(v as RecurrencePattern)
+                      }
+                      disabled={isSubmitting}
+                    >
+                      <SelectTrigger id="recurrencePattern" className="w-full sm:w-64">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">
+                          {t("recurrencePatternDaily")}
+                        </SelectItem>
+                        <SelectItem value="weekly">
+                          {t("recurrencePatternWeekly")}
+                        </SelectItem>
+                        <SelectItem value="monthly">
+                          {t("recurrencePatternMonthly")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Occurrence count preview */}
+                  {(() => {
+                    if (!startDate || !recurrencePeriodEnd) return null;
+                    const dates = generateOccurrenceDates(
+                      startDate,
+                      recurrencePattern,
+                      recurrencePeriodEnd,
+                    );
+                    if (dates.length === 0) {
+                      return (
+                        <p className="text-muted-foreground text-sm">
+                          {t("recurrenceNoOccurrences")}
+                        </p>
+                      );
+                    }
+                    const hitCap = dates.length >= MAX_OCCURRENCES;
+                    return (
+                      <div className="flex items-center gap-2">
+                        <Badge variant={hitCap ? "destructive" : "secondary"}>
+                          {hitCap
+                            ? t("recurrenceMaxExceeded")
+                            : t("recurrencePreview", { count: dates.length })}
+                        </Badge>
+                        {!hitCap && (
+                          <span className="text-muted-foreground text-xs">
+                            {dates[0]} → {dates[dates.length - 1]}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* Time pickers */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -609,7 +914,17 @@ export function EventForm({
                     <FormItem>
                       <FormLabel>{t("toTime")}</FormLabel>
                       <FormControl>
-                        <Input type="time" {...field} />
+                        <Input
+                          type="time"
+                          min={
+                            startDate &&
+                            endDate === startDate &&
+                            startTime
+                              ? startTime
+                              : undefined
+                          }
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -627,20 +942,7 @@ export function EventForm({
                 {t("address")}
               </CardTitle>
             </CardHeader>
-            <CardContent variant="section">
-              <FormField
-                control={form.control}
-                name="town"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("town")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Русе" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <CardContent variant="section" className="grid gap-3 md:grid-cols-3">
 
               <FormField
                 control={form.control}
@@ -669,10 +971,24 @@ export function EventForm({
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="town"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("town")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Русе" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
-          {/* ── Organizers ──────────────────────────────────────────────── */}
+          {/* ── Hosts ──────────────────────────────────────────────── */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -758,36 +1074,125 @@ export function EventForm({
               </CardTitle>
             </CardHeader>
             <CardContent variant="section">
-              <div className="flex items-center gap-3">
-                <Switch
-                  id="isFree"
-                  checked={isFree}
-                  onCheckedChange={(v) => {
-                    setIsFree(v);
-                    if (v) form.setValue("price", "");
-                  }}
-                />
-                <label
-                  htmlFor="isFree"
-                  className="cursor-pointer text-sm font-medium"
-                >
-                  {t("freeEvent")}
-                </label>
-              </div>
-
-              {!isFree && (
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("price")}</FormLabel>
+            <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("price")}</FormLabel>
+                    <div className="grid grid-cols-2 items-center gap-3">
                       <FormControl>
                         <Input
                           type="number"
                           min="0"
                           step="0.01"
-                          placeholder={t("enterPrice")}
+                          placeholder="10-20"
+                          disabled={isFree}
+                          {...field}
+                        />
+                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="isFree"
+                          checked={isFree}
+                          onCheckedChange={(v) => {
+                            setIsFree(v);
+                            if (v) form.setValue("price", "");
+                          }}
+                        />
+                        <label
+                          htmlFor="isFree"
+                          className="cursor-pointer text-sm font-medium"
+                        >
+                          {t("freeEvent")}
+                        </label>
+                      </div>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="ticketsLink"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("ticketsLink")}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t("enterTicketsLink")} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="fbLink"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("fbLink")}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t("enterFbLink")} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── Contact ─────────────────────────────────────────────────── */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Phone className="text-primary size-5" />
+                  {t("contactInfo")}
+                </CardTitle>
+                {isAdminUser && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      form.setValue("phoneNumber", "", { shouldDirty: true });
+                      form.setValue("email", "", { shouldDirty: true });
+                    }}
+                    className="text-muted-foreground hover:text-foreground text-xs underline"
+                  >
+                    {t("clearContacts")}
+                  </button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent variant="section">
+            <div className="grid gap-3 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("phoneNumber")}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t("enterPhoneNumber")} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("email")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder={t("enterEmail")}
                           {...field}
                         />
                       </FormControl>
@@ -795,78 +1200,7 @@ export function EventForm({
                     </FormItem>
                   )}
                 />
-              )}
-
-              <FormField
-                control={form.control}
-                name="ticketsLink"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("ticketsLink")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("enterTicketsLink")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="fbLink"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("fbLink")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("enterFbLink")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* ── Contact ─────────────────────────────────────────────────── */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Phone className="text-primary size-5" />
-                {t("contactInfo")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent variant="section">
-              <FormField
-                control={form.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("phoneNumber")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("enterPhoneNumber")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("email")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder={t("enterEmail")}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              </div>
             </CardContent>
           </Card>
 
@@ -891,9 +1225,16 @@ export function EventForm({
                             tag.id,
                           );
                           return (
-                            <button
+                            <EventTag
                               key={tag.id}
-                              type="button"
+                              title={tag.title}
+                              label={localizedEventTagTitle(
+                                tag.title,
+                                eventTagLabels,
+                              )}
+                              size="md"
+                              interactive
+                              selected={isSelected}
                               onClick={() => {
                                 const current = field.value ?? [];
                                 field.onChange(
@@ -902,14 +1243,7 @@ export function EventForm({
                                     : [...current, tag.id],
                                 );
                               }}
-                              className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm font-medium transition-all ${
-                                isSelected
-                                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                                  : "bg-muted/50 border-border text-muted-foreground hover:border-primary/50 hover:bg-muted hover:text-foreground"
-                              }`}
-                            >
-                              {localizedEventTagTitle(tag.title, eventTagLabels)}
-                            </button>
+                            />
                           );
                         })}
                       </div>
