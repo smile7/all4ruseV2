@@ -29,6 +29,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { PasswordInput } from "~/components/ui/password-input";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
+import { SocialAuthButtons } from "~/components/auth/SocialAuthButtons";
 
 function makeSignupSchema(passwordLengthMsg: string, matchMsg: string, termsMsg: string) {
   return z
@@ -133,7 +134,9 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="space-y-4">
+          <SocialAuthButtons next={`/${locale}`} />
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
