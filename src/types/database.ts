@@ -66,6 +66,7 @@ export type Database = {
           place: string | null
           price: string | null
           seriesId: string | null
+          show_saved_events: boolean | null
           slug: string | null
           startDate: string
           startTime: string
@@ -95,6 +96,7 @@ export type Database = {
           place?: string | null
           price?: string | null
           seriesId?: string | null
+          show_saved_events?: boolean | null
           slug?: string | null
           startDate: string
           startTime: string
@@ -124,6 +126,7 @@ export type Database = {
           place?: string | null
           price?: string | null
           seriesId?: string | null
+          show_saved_events?: boolean | null
           slug?: string | null
           startDate?: string
           startTime?: string

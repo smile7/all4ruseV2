@@ -5,9 +5,11 @@ import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 /**
  * Supabase PKCE auth callback.
- * Handles two flows:
+ * Handles three flows:
  *   - Email confirmation (signup) → redirects to locale home
  *   - Password reset → emailRedirectTo includes ?next=/[locale]/auth/update-password
+ *   - OAuth (Google, Facebook) → same code exchange; also syncs provider avatar
+ *     into profiles.avatar_url on first login (when avatar_url is still null).
  *
  * Supabase dashboard must have this URL in the "Redirect URLs" allowlist:
  *   http://localhost:3000/auth/callback   (dev)
@@ -24,6 +26,29 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // Sync OAuth avatar into profiles.avatar_url on first login.
+      // Only runs when the provider supplied an avatar and the profile row
+      // hasn't had one set yet (so manual uploads are never overwritten).
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const providerAvatar = user?.user_metadata?.avatar_url as string | undefined;
+        if (user && providerAvatar) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("avatar_url")
+            .eq("id", user.id)
+            .single();
+          if (profile && !profile.avatar_url) {
+            await supabase
+              .from("profiles")
+              .update({ avatar_url: providerAvatar })
+              .eq("id", user.id);
+          }
+        }
+      } catch {
+        // Non-fatal — avatar sync failure should not block the redirect
+      }
+
       // Prefer the forwarded host in production (e.g. behind a reverse proxy)
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocal = process.env.NODE_ENV === "development";

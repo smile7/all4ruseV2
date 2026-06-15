@@ -107,6 +107,30 @@ export const profilesApi = {
     return (data ?? []).map(mapEvent);
   },
 
+  /** Saved events for a profile — used on the public profile page. */
+  async getPublicProfileSavedEvents(
+    client: Client,
+    userId: string,
+  ): Promise<Event[]> {
+    const today = todayStr();
+    const { data, error } = await client
+      .from("saved_events")
+      .select("events!inner(*, event_tags(tags(id, title)))")
+      .eq("user_id", userId)
+      .gte("events.endDate", today)
+      .order("events(startDate)", { ascending: true });
+
+    if (error) throw error;
+    return (data ?? [])
+      .map((row: unknown) => {
+        if (row && typeof row === "object" && "events" in row) {
+          return mapEvent((row as { events: unknown }).events);
+        }
+        return null;
+      })
+      .filter((e): e is Event => e !== null);
+  },
+
   async updateProfile(client: Client, userId: string, values: ProfileUpdatePayload) {
     // header_url is cast via `any` because the DB column may not exist yet.
     // Once the column is added and `npm run db:types` is run, this cast can be removed.

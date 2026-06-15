@@ -92,10 +92,15 @@ export default async function PublicProfilePage({
 
   if (!profile) notFound();
 
-  const { upcoming, total } = await profilesApi.getPublicProfileUpcomingEvents(
-    supabase,
-    profile.id,
-  );
+  const showSavedEvents =
+    (profile as Profile & { show_saved_events?: boolean | null }).show_saved_events ?? false;
+
+  const [{ upcoming, total }, savedEvents] = await Promise.all([
+    profilesApi.getPublicProfileUpcomingEvents(supabase, profile.id),
+    showSavedEvents
+      ? profilesApi.getPublicProfileSavedEvents(supabase, profile.id)
+      : Promise.resolve([]),
+  ]);
 
   const isHost = total > 0;
   const color = safeColor(profile.color);
@@ -416,10 +421,52 @@ export default async function PublicProfilePage({
               <ProfilePastEvents userId={profile.id} />
             </RevealOnScroll>
           </section>
+
+          {/* Saved Events (optional, shown when enabled) */}
+          {showSavedEvents && savedEvents.length > 0 && (
+            <section className="group/section mx-auto mt-32 max-w-7xl px-4 sm:px-8">
+              <RevealOnScroll>
+                <ProfileSectionHeader
+                  title={t("savedEventsSection")}
+                  color={color}
+                  align="start"
+                  muted
+                />
+              </RevealOnScroll>
+              <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {savedEvents.map((event, i) => (
+                  <RevealOnScroll key={event.id} delay={i * 80} from="scale">
+                    <EventCard event={event} />
+                  </RevealOnScroll>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       )}
 
-      {!isHost && <div className="pb-32" />}
+      {/* Non-host: show saved events if enabled */}
+      {!isHost && showSavedEvents && savedEvents.length > 0 && (
+        <div className="pt-24 pb-32">
+          <section className="group/section mx-auto max-w-7xl px-4 sm:px-8">
+            <RevealOnScroll>
+              <ProfileSectionHeader
+                title={t("savedEventsSection")}
+                color={color}
+              />
+            </RevealOnScroll>
+            <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {savedEvents.map((event, i) => (
+                <RevealOnScroll key={event.id} delay={i * 80} from="scale">
+                  <EventCard event={event} />
+                </RevealOnScroll>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {!isHost && (!showSavedEvents || savedEvents.length === 0) && <div className="pb-32" />}
     </>
   );
 }

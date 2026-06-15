@@ -106,6 +106,7 @@ export const updateProfileSchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/, "Невалиден цвят")
     .optional()
     .or(z.literal("")),
+  show_saved_events: z.boolean().optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
