@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import { SocialAuthButtons } from "~/components/auth/SocialAuthButtons";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -91,7 +92,9 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="space-y-4">
+          <SocialAuthButtons next={next} />
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
