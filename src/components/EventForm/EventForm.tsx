@@ -398,6 +398,16 @@ function buildDefaultValues(
   };
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function RequiredMark() {
+  return (
+    <span className="text-destructive ml-0.5" aria-hidden="true">
+      *
+    </span>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function EventForm({
@@ -414,7 +424,7 @@ export function EventForm({
   const router = useRouter();
   const navigateGuarded = useUnsavedChangesNavigate();
 
-  const formSchema = makeFormSchema(t);
+  const formSchema = useMemo(() => makeFormSchema(t), [t]);
 
   // ── UI-only state (not part of DB schema) ──────────────────────────────────
   const [isFree, setIsFree] = useState<boolean>(() => {
@@ -782,10 +792,7 @@ export function EventForm({
     }
   }
 
-  const isAdminUser =
-    typeof process !== "undefined"
-      ? userId === process.env.NEXT_PUBLIC_ADMIN_USER_ID
-      : false;
+  const isAdminUser = userId === process.env.NEXT_PUBLIC_ADMIN_USER_ID;
 
   return (
     <>
@@ -808,7 +815,7 @@ export function EventForm({
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("title")}</FormLabel>
+                    <FormLabel>{t("title")}<RequiredMark /></FormLabel>
                     <FormControl>
                       <Input placeholder={t("enterTitle")} {...field} />
                     </FormControl>
@@ -822,7 +829,7 @@ export function EventForm({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("description")}</FormLabel>
+                    <FormLabel>{t("description")}<RequiredMark /></FormLabel>
                     <FormControl>
                       <EventDescriptionEditor
                         key={descriptionEditorKey}
@@ -908,7 +915,7 @@ export function EventForm({
                   name="startDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("fromDate")}</FormLabel>
+                      <FormLabel>{t("fromDate")}<RequiredMark /></FormLabel>
                       <FormControl>
                         <DatePopover
                           id={field.name}
@@ -1081,7 +1088,7 @@ export function EventForm({
                   name="startTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("fromTime")}</FormLabel>
+                      <FormLabel>{t("fromTime")}<RequiredMark /></FormLabel>
                       <FormControl>
                         <Input type="time" {...field} />
                       </FormControl>
@@ -1132,7 +1139,7 @@ export function EventForm({
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("address")}</FormLabel>
+                    <FormLabel>{t("address")}<RequiredMark /></FormLabel>
                     <FormControl>
                       <Input placeholder={t("enterAddress")} {...field} />
                     </FormControl>
@@ -1189,7 +1196,10 @@ export function EventForm({
                       name={`organizers.${index}.name`}
                       render={({ field: f }) => (
                         <FormItem>
-                          <FormLabel>{t("organizerName")}</FormLabel>
+                          <FormLabel>
+                            {t("organizerName")}
+                            {index === 0 && <RequiredMark />}
+                          </FormLabel>
                           <FormControl>
                             <Input
                               placeholder={t("enterOrganizerName")}
@@ -1266,9 +1276,8 @@ export function EventForm({
                     <div className="grid grid-cols-2 items-center gap-3">
                       <FormControl>
                         <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
+                          type="text"
+                          inputMode="text"
                           placeholder="10-20"
                           disabled={isFree}
                           {...field}
@@ -1452,7 +1461,7 @@ export function EventForm({
           </Card>
 
           {/* ── Actions ─────────────────────────────────────────────────── */}
-          <div className="bg-background/80 sticky bottom-4 z-10 mt-8 flex items-center justify-end gap-3 rounded-xl border p-4 shadow-lg backdrop-blur-md">
+          <div className="bg-background/80 sticky bottom-12 z-10 mt-8 flex items-center justify-end gap-3 rounded-xl border p-4 shadow-lg backdrop-blur-md md:bottom-4">
             {mode === "edit" && (
               <Button
                 type="button"
@@ -1471,7 +1480,7 @@ export function EventForm({
               onClick={() => navigateGuarded(() => router.back())}
               disabled={isSubmitting}
             >
-              {t("cancel") || "Cancel"}
+              {t("cancel")}
             </Button>
             <Button type="submit" disabled={isSubmitting} className="min-w-32">
               {isSubmitting ? "..." : t("submitButton")}

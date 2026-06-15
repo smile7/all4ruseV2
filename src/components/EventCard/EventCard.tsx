@@ -16,6 +16,7 @@ import {
   getFirstHostName,
   isLiveNow,
 } from "~/lib/event-utils";
+import { cn } from "~/lib/utils";
 import type { Event } from "~/types";
 
 import { EventSaveButton } from "./EventSaveButton";
@@ -102,21 +103,16 @@ export function EventCard({
 
           {/* Date + time badge — top left */}
           <div className="bg-background/50 absolute top-2.5 left-2.5 z-20 min-w-14 rounded-xl px-2.5 py-2 text-center shadow backdrop-blur-sm">
-            <p
-              className={
-                dateBadge.secondary
-                  ? "text-xl leading-none font-bold"
-                  : "text-sm leading-none font-bold tracking-wide capitalize"
-              }
-            >
+            {/* Today/tomorrow → single large label; other days → "11 ЮНИ" + weekday */}
+            <p className={cn("leading-none font-bold tracking-wide", dateBadge.secondary ? "text-sm" : "text-base")}>
               {dateBadge.primary}
             </p>
             {dateBadge.secondary && (
-              <p className="text-muted-foreground mt-1 text-xs leading-none tracking-widest uppercase">
+              <p className="text-muted-foreground mt-1 text-[11px] leading-none">
                 {dateBadge.secondary}
               </p>
             )}
-            <p className="mt-1.5 text-sm leading-none font-semibold tabular-nums">
+            <p className="mt-2 text-sm leading-none font-semibold tabular-nums">
               {event.startTime.slice(0, 5)}
             </p>
           </div>
@@ -156,7 +152,7 @@ export function EventCard({
                   type="button"
                   onClick={handleEdit}
                   aria-label={tHome("edit")}
-                  className="flex w-full max-w-52 cursor-pointer items-center justify-center gap-2 rounded-xl bg-background/95 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg ring-1 ring-black/10 backdrop-blur-sm transition-colors hover:bg-background dark:ring-white/15"
+                  className="flex w-full max-w-52 cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
                 >
                   <Pencil className="size-4 shrink-0" />
                   {tHome("edit")}
@@ -174,11 +170,13 @@ export function EventCard({
             </>
           )}
 
-          <EventSaveButton
-            eventId={event.id}
-            initialSaved={initialSaved}
-            onUnsaveSuccess={onUnsaveSuccess}
-          />
+          {!showManageActions && (
+            <EventSaveButton
+              eventId={event.id}
+              initialSaved={initialSaved}
+              onUnsaveSuccess={onUnsaveSuccess}
+            />
+          )}
         </div>
       </ViewTransition>
 

@@ -75,22 +75,13 @@ async function saveEvent(
   userId: string,
   eventId: number,
 ): Promise<void> {
-  const { data: existing, error: existingError } = await client
-    .from("saved_events")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("event_id", eventId)
-    .maybeSingle();
-
-  if (existingError) throw existingError;
-  if (existing) return;
-
   const { error } = await client.from("saved_events").insert({
     event_id: eventId,
     user_id: userId,
   });
 
-  if (error) throw error;
+  // 23505 = unique_violation: row already saved — treat as success.
+  if (error && error.code !== "23505") throw error;
 }
 
 async function unsaveEvent(

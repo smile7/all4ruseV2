@@ -10,20 +10,13 @@ export type EventSchedule = {
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
-const BG_MONTHS_SHORT = [
-  "яну",
-  "фев",
-  "мар",
-  "апр",
-  "май",
-  "юни",
-  "юли",
-  "авг",
-  "сеп",
-  "окт",
-  "ное",
-  "дек",
-] as const;
+/** 3-letter uppercase month abbreviations per locale — used in the EventCard badge. */
+const MONTH_ABBREVS: Record<string, readonly string[]> = {
+  "bg-BG": ["ЯНУ", "ФЕВ", "МАР", "АПР", "МАЙ", "ЮНИ", "ЮЛИ", "АВГ", "СЕП", "ОКТ", "НОЕ", "ДЕК"],
+  "en-GB": ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+  "uk-UA": ["СІЧ", "ЛЮТ", "БЕР", "КВІ", "ТРА", "ЧЕР", "ЛИП", "СЕР", "ВЕР", "ЖОВ", "ЛИС", "ГРУ"],
+  "ro-RO": ["IAN", "FEB", "MAR", "APR", "MAI", "IUN", "IUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+};
 
 const localeMap: Record<string, string> = {
   bg: "bg-BG",
@@ -89,7 +82,11 @@ function formatRelativeDateLabel(
   return null;
 }
 
-/** Returns the localized date badge content displayed on an EventCard. */
+/**
+ * Returns the localized date badge content displayed on an EventCard.
+ * - Today / tomorrow → `{ primary: "ДНЕС" | "УТРЕ", secondary: null }` (time still shown separately).
+ * - All other dates  → `{ primary: "11 ЮНИ", secondary: "ЧЕТВЪРТЪК" }`.
+ */
 export function formatDateBadge(
   dateStr: string,
   locale = "bg",
@@ -98,19 +95,26 @@ export function formatDateBadge(
   primary: string;
   secondary: string | null;
 } {
-  const relativeLabel = formatRelativeDateLabel(dateStr, locale, labels);
-  if (relativeLabel) {
-    return {
-      primary: relativeLabel,
-      secondary: null,
-    };
+  const date = parseLocalDate(dateStr);
+  const intlLocale = getIntlLocale(locale);
+
+  // Today / tomorrow: single uppercase label, no weekday line
+  if (labels) {
+    const dayDiff = getCalendarDayDiff(date, new Date());
+    if (dayDiff === 0) return { primary: labels.today.toLocaleUpperCase(intlLocale), secondary: null };
+    if (dayDiff === 1) return { primary: labels.tomorrow.toLocaleUpperCase(intlLocale), secondary: null };
   }
 
-  const date = parseLocalDate(dateStr);
-  return {
-    primary: String(date.getDate()),
-    secondary: BG_MONTHS_SHORT[date.getMonth()]!,
-  };
+  const day = date.getDate();
+  // Hardcoded 3-letter arrays: Intl month:"short" returns numeric "06" in limited-ICU Node.js builds
+  const monthAbbrevs = MONTH_ABBREVS[intlLocale] ?? MONTH_ABBREVS["bg-BG"]!;
+  const primary = `${day} ${monthAbbrevs[date.getMonth()]!}`;
+
+  // Full weekday name, uppercase (e.g. "ЧЕТВЪРТЪК") — long weekday works in all environments
+  const weekday = new Intl.DateTimeFormat(intlLocale, { weekday: "long" }).format(date);
+  const secondary = weekday.toLocaleUpperCase(intlLocale);
+
+  return { primary, secondary };
 }
 
 /**
