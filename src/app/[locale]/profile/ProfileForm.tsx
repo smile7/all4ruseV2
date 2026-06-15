@@ -12,6 +12,7 @@ import { useRegisterUnsavedChanges } from "~/components/layout/UnsavedChangesGua
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -59,23 +60,33 @@ type Props = {
   profile: Profile | null;
   userEmail: string;
   userId: string;
+  hasEmailAuth: boolean;
+  hasCreatedEvents: boolean;
 };
 
-function toFormDefaults(profile: Profile | null): UpdateProfileInput {
+function toFormDefaults(
+  profile: Profile | null,
+  hasCreatedEvents: boolean,
+): UpdateProfileInput {
+  // show_saved_events will be properly typed once the DB column is on profiles
+  // and db:types is re-run. Until then we use a cast.
+  const p = profile as (Profile & { show_saved_events?: boolean | null }) | null;
   return {
-    full_name: profile?.full_name ?? "",
-    username: profile?.username ?? "",
-    bio: profile?.bio ?? "",
-    name_to_show: profile?.name_to_show ?? "",
-    phone: profile?.phone ?? "",
-    place: profile?.place ?? "",
-    address_physical: profile?.address_physical ?? "",
-    email_to_show: profile?.email_to_show ?? "",
-    website: profile?.website ?? "",
-    fb: profile?.fb ?? "",
-    instagram: profile?.instagram ?? "",
-    tiktok: profile?.tiktok ?? "",
-    color: profile?.color ?? "",
+    full_name: p?.full_name ?? "",
+    username: p?.username ?? "",
+    bio: p?.bio ?? "",
+    name_to_show: p?.name_to_show ?? "",
+    phone: p?.phone ?? "",
+    place: p?.place ?? "",
+    address_physical: p?.address_physical ?? "",
+    email_to_show: p?.email_to_show ?? "",
+    website: p?.website ?? "",
+    fb: p?.fb ?? "",
+    instagram: p?.instagram ?? "",
+    tiktok: p?.tiktok ?? "",
+    color: p?.color ?? "",
+    // Default: checked when user has no created events
+    show_saved_events: p?.show_saved_events ?? !hasCreatedEvents,
   };
 }
 
@@ -84,7 +95,7 @@ function avatarFallbackLetter(fullName: string | undefined, email: string): stri
   return raw.charAt(0).toUpperCase() || "?";
 }
 
-export function ProfileForm({ profile, userEmail, userId }: Props) {
+export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreatedEvents }: Props) {
   const t = useTranslations("Profile");
   const tPub = useTranslations("PublicProfile");
   const locale = useLocale();
@@ -159,7 +170,7 @@ export function ProfileForm({ profile, userEmail, userId }: Props) {
   // ── Form ─────────────────────────────────────────────────────────────────────
   const form = useForm<UpdateProfileInput>({
     resolver: zodResolver(updateProfileSchema),
-    defaultValues: toFormDefaults(profile),
+    defaultValues: toFormDefaults(profile, hasCreatedEvents),
   });
 
   const watchUsername = useWatch({ control: form.control, name: "username" });
@@ -597,6 +608,33 @@ export function ProfileForm({ profile, userEmail, userId }: Props) {
             <CardDescription>{tPub("publicProfileCardDescr")}</CardDescription>
           </CardHeader>
           <CardContent variant="section">
+            {/* Show saved events toggle */}
+            <FormField
+              control={form.control}
+              name="show_saved_events"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-start gap-3">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value ?? false}
+                        onCheckedChange={field.onChange}
+                        className="mt-0.5"
+                      />
+                    </FormControl>
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-sm font-medium leading-snug">
+                        {tPub("showSavedEventsLabel")}
+                      </FormLabel>
+                      {/* <p className="text-muted-foreground text-xs">
+                        {tPub("showSavedEventsHint")}
+                      </p> */}
+                    </div>
+                  </div>
+                </FormItem>
+              )}
+            />
+
             {/* Color swatches */}
             <div className="space-y-3">
               <div>
@@ -913,7 +951,7 @@ export function ProfileForm({ profile, userEmail, userId }: Props) {
       </TabsContent>
 
       <TabsContent value="security" className="mt-0">
-        <ProfileAccountSecurity />
+        <ProfileAccountSecurity hasEmailAuth={hasEmailAuth} />
       </TabsContent>
     </Tabs>
   );
