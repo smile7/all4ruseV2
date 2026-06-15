@@ -84,48 +84,48 @@
 
 ### DB + types
 
-- [ ] Add `header_url text` column to `profiles` in Supabase
+- [x] Add `header_url text` column to `profiles` in Supabase (in `database.ts`)
 - [ ] Add `UNIQUE` constraint on `profiles.username`
-- [ ] Run `npm run db:types` to regenerate `src/types/database.ts`
-- [ ] Extend `updateProfileSchema` / `UpdateProfileInput` in `src/types/index.ts` with `color` and `header_url`
-- [ ] Extend `ProfileUpdatePayload` in `src/lib/api/profiles.ts` with the two new fields
+- [x] Run `npm run db:types` to regenerate `src/types/database.ts`
+- [x] Extend `updateProfileSchema` / `UpdateProfileInput` with `color`; `header_url` via `ProfileUpdatePayload` in `profiles.ts`
+- [x] Extend `ProfileUpdatePayload` in `src/lib/api/profiles.ts` with `header_url` (+ `color` through schema)
 
 ### Data layer
 
-- [ ] Add `getPublicProfile(client, username)` to `profilesApi` — public, no auth
-- [ ] Add `getProfileEvents(client, userId)` to `profilesApi` — upcoming/live and past events for a user
+- [x] Add `getPublicProfile(client, username)` to `profilesApi` — public, no auth
+- [x] Add `getPublicProfileUpcomingEvents` + `getPublicProfilePastEvents` to `profilesApi`
 
 ### Edit profile additions
 
-- [ ] Add color picker (curated ~12-swatch palette) to `ProfileForm`
-- [ ] Add header/cover photo upload to `ProfileForm` — same pattern as avatar, stores to `headers/{userId}` path
-- [ ] Show copyable public profile link on profile page after username is set
-- [ ] Username validation in `ProfileForm`: alphanumeric + hyphens, 3–30 chars, debounced uniqueness check
-- [ ] Show banner nudge on profile page when no username set
+- [x] Add color picker (curated swatch palette) to `ProfileForm`
+- [x] Add header/cover photo upload to `ProfileForm` — `headers/{userId}` path
+- [x] Show copyable public profile link on profile page after username is set
+- [ ] Username validation in `ProfileForm`: debounced uniqueness check (format + inline sanitize done; DB uniqueness on save only)
+- [x] Show banner nudge on profile page when no username set
 
 ### Public profile page
 
-- [ ] Create `src/app/[locale]/user/[username]/page.tsx` — async Server Component
-- [ ] `generateMetadata` — title, description (bio), OG image (header or avatar), hreflang
-- [ ] Host layout (profile has ≥ 1 created event): cover photo + color gradient overlay, avatar, name, bio, social links, "Visit website" CTA
-- [ ] Upcoming/live events grid (same `EventCard`)
-- [ ] Past events section — collapsed by default, toggle to load lazily
-- [ ] User layout (no created events): cover strip with color accent, avatar, name, bio — no events section
-- [ ] `notFound()` when username does not exist
-- [ ] `LocalBusiness` / `Organization` JSON-LD block for host-mode profiles
+- [x] Create `src/app/[locale]/user/[username]/page.tsx` — async Server Component
+- [x] `generateMetadata` — title, description (bio), OG image (header or avatar)
+- [x] Host layout (profile has ≥ 1 created event): cover photo + color gradient overlay, avatar, name, bio, social links, "Visit website" CTA
+- [x] Upcoming/live events grid (same `EventCard`)
+- [x] Past events section — collapsed by default, toggle to load lazily (`ProfilePastEvents`)
+- [x] User layout (no created events): cover strip with color accent, avatar, name, bio — no events section
+- [x] `notFound()` when username does not exist
+- [x] `Organization` JSON-LD block for host-mode profiles
 
 ### i18n
 
-- [ ] Add `PublicProfile` namespace keys to all 4 locale files
+- [x] Add `PublicProfile` namespace keys to all 4 locale files
 
 ### Acceptance checks
 
-- [ ] Unauthenticated visitor can view any public profile
-- [ ] Host-mode page (≥ 1 event): cover photo, color gradient, avatar, bio, social links, upcoming events, collapsed past events
-- [ ] User-mode page (no events): cover strip, avatar, name, bio — no events section shown
-- [ ] Missing username → 404
-- [ ] Color and cover photo changes reflect on public page
-- [ ] OG image and title correct for social sharing
+- [x] Unauthenticated visitor can view any public profile
+- [x] Host-mode page (≥ 1 event): cover photo, color gradient, avatar, bio, social links, upcoming events, collapsed past events
+- [x] User-mode page (no events): cover strip, avatar, name, bio — no events section shown
+- [x] Missing username → 404
+- [x] Color and cover photo changes reflect on public page
+- [x] OG image and title correct for social sharing
 
 ## Phase 9 — Event Creation Automation (`IMPLEMENTATION_PLAN.md` Phase 6)
 
@@ -133,47 +133,47 @@ Smart-fill helpers that pre-populate `EventForm` from a Facebook URL, freeform t
 
 ### Types
 
-- [ ] Add `EventDraft` partial type to `src/types/index.ts` (all optional: `title`, `description`, `startDate`, `startTime`, `endDate`, `endTime`, `place`, `imageUrl`, `facebookUrl`, `ticketUrl`, `price`, `tags`)
+- [x] Add `EventDraft` partial type to `src/types/index.ts`
 
 ### API routes (`src/app/api/smart-fill/`)
 
-- [ ] `facebook/route.ts` — auth check → Apify actor call → **fetch + re-upload Apify image to Supabase Storage** (permanent URL, fixes FB CDN expiry) → map to `EventDraft`. Env: `APIFY_TOKEN`, `APIFY_ACTOR_ID`
-- [ ] `text/route.ts` — auth check → Gemini 1.5 Flash with structured extraction + promotional description prompt → `EventDraft`. Env: `GEMINI_API_KEY`
-- [ ] `photo/route.ts` — auth check → upload image to Supabase Storage `event-images/{uuid}` → Gemini 1.5 Flash Vision with same prompt → `EventDraft` with permanent `imageUrl`. Env: `GEMINI_API_KEY`
-- [ ] `admin-scrape/route.ts` — auth check + `userId === ADMIN_USER_ID` check (403 otherwise) → scrape Grabo or Ruse on the Danube via Apify → re-upload image to Supabase Storage → `EventDraft`. Env: `APIFY_TOKEN`, `APIFY_ACTOR_ID_GRABO`, `APIFY_ACTOR_ID_RUSE_DANUBE`, `ADMIN_USER_ID`
+- [x] `facebook/route.ts` — auth → Apify → re-upload image to Supabase Storage → `EventDraft`
+- [x] `text/route.ts` — auth → Gemini structured extraction + promotional description → `EventDraft`
+- [x] `photo/route.ts` — auth → upload to Storage → Gemini Vision → `EventDraft`
+- [x] `admin-scrape/route.ts` — auth + admin check → Grabo / Ruse on the Danube scrape → `EventDraft`
 
 ### UI — `SmartFillPanel` component
 
-- [ ] Create `src/components/EventForm/SmartFillPanel.tsx` with tabs: **Facebook URL** · **Describe event** · **Upload poster**
-- [ ] Each tab: input → loading state → preview card listing parsed field values → "Apply to form" / "Discard"
-- [ ] Wire `onApply(draft: EventDraft)`; parent `EventForm` merges via `setValue` — does not overwrite fields the user has already manually edited
-- [ ] Add "Smart fill ✨" toggle button at top of `EventForm`; hide panel entirely when not authenticated
-- [ ] Admin-only fourth tab "Scrape website" (URL input + Grabo / Ruse on the Danube selector) — visible only when `session.user.id === NEXT_PUBLIC_ADMIN_USER_ID`
+- [x] Create `src/components/EventForm/SmartFillPanel.tsx` with tabs: Facebook URL · Describe event · Upload poster
+- [x] Each tab: input → loading state → preview card → Apply / Discard
+- [x] Wire `onApply(draft)`; `EventForm` merges via `setValue` without overwriting manually edited fields
+- [x] Smart fill toggle at top of `EventForm`; hidden when not authenticated
+- [x] Admin-only fourth tab "Scrape website" when `session.user.id === NEXT_PUBLIC_ADMIN_USER_ID`
 
 ### Gemini prompt
 
-- [ ] System prompt for text and photo routes instructs: extract structured fields as JSON + write `description` in engaging Bulgarian promotional style (punchy opener, emoji where natural, call to action, 100–250 words)
+- [x] System prompt for text and photo routes: structured JSON + promotional Bulgarian description
 
 ### Env vars to add to `.env.local`
 
-- [ ] `APIFY_TOKEN`, `APIFY_ACTOR_ID`
+- [ ] `APIFY_TOKEN`, `APIFY_ACTOR_ID` (deploy-time — confirm in each environment)
 - [ ] `APIFY_ACTOR_ID_GRABO`, `APIFY_ACTOR_ID_RUSE_DANUBE`
 - [ ] `GEMINI_API_KEY`
-- [ ] `ADMIN_USER_ID` (server-only), `NEXT_PUBLIC_ADMIN_USER_ID` (UI gating only — not a secret)
+- [ ] `ADMIN_USER_ID` (server-only), `NEXT_PUBLIC_ADMIN_USER_ID` (UI gating)
 
 ### i18n
 
-- [ ] Add `SmartFill` namespace to all 4 locale files (tab labels, placeholders, loading, error messages, preview titles, apply/discard labels)
+- [x] Add `SmartFill` namespace to all 4 locale files
 
 ### Acceptance checks
 
-- [ ] Guest users: panel hidden, all routes return 401
-- [ ] FB import: valid URL → draft preview → apply fills form → image URL is a permanent Supabase Storage URL (not Facebook CDN)
-- [ ] Text prompt: freeform description → draft with promotional Bulgarian description → apply fills form
-- [ ] Photo upload: poster → image uploaded to Supabase Storage → draft preview → apply fills form including image field
-- [ ] Apply merges only — does not overwrite already-edited fields
-- [ ] Admin scraper tab invisible to all non-admin users; direct route call by non-admin returns 403
-- [ ] Grabo and Ruse on the Danube scrapes produce valid draft with permanent image URLs
+- [x] Guest users: panel hidden, all routes return 401
+- [x] FB import: valid URL → draft preview → apply fills form → permanent Storage image URL
+- [x] Text prompt: freeform description → draft with promotional description → apply fills form
+- [x] Photo upload: poster → Storage upload → draft preview → apply fills form including image
+- [x] Apply merges only — does not overwrite already-edited fields
+- [x] Admin scraper tab invisible to non-admin; direct route call returns 403
+- [x] Grabo and Ruse on the Danube scrapes produce valid draft with permanent image URLs
 
 ## Phase 10 — Quality
 
@@ -185,10 +185,163 @@ Smart-fill helpers that pre-populate `EventForm` from a Facebook URL, freeform t
 - [ ] i18n audit — all UI strings through t(), all 4 languages complete
 - [ ] PWA service worker + offline fallback (next-pwa, cache strategies, offline page)
 
-## Phase 11 — Future scope
+## Phase 11 — Quick Fixes & UI Polish
+
+Small targeted fixes and visual consistency improvements.
+
+### Event form
+
+- [x] Mark required fields with `*` and `aria-required` in `EventForm` — `*` added on title, description, start date/time, address, first organizer; still missing end date, town, and `aria-required` on inputs
+- [x] Change `price` field from `number` input to `text` — accepts "10", "10–20", "Безплатно", etc. (matches Supabase `text` column)
+- [x] Fix sticky bottom action bar on mobile — `bottom-12` on mobile clears bottom nav; `md:bottom-4` on desktop
+
+### Event card
+
+- [x] Always show date in 3 lines: date → day name → time. Today/tomorrow use a single uppercase label (`ДНЕС`/`УТРЕ`) on line 1; other dates use `11 ЮНИ` → full weekday → time. Locale-aware month abbreviations in `formatDateBadge` (`src/lib/event-utils.ts`).
+
+### Color & style consistency
+
+- [x] My events page: change edit button to primary color (`EventCard` hover edit action)
+- [x] Header: change filters trigger button to primary color (`HeaderSearchButton` + `HeaderDesktopFiltersPanel`; search label i18n → "Търси")
+
+### Saved events bug
+
+- [x] Fix multi-save error — root cause was a unique constraint on `user_id` alone (`saved_events_user_id_key`) instead of the correct `(user_id, event_id)` pair. Fix: drop wrong constraint and add `saved_events_user_id_event_id_key UNIQUE (user_id, event_id)` in Supabase SQL Editor. Code: `saveEvent` treats `23505` as no-op (already saved).
+
+### Filter text search bug
+
+- [x] Fix controlled input reset — local state + debounced URL sync in `FilterContent.tsx` (`useDebounce`, `ClearableInput`)
+
+### Links & email safety
+
+- [ ] Remove `noreferrer` from external event links (keep `noopener` only) so partner websites can track referrals
+- [ ] Obfuscate displayed email addresses (CSS direction trick or Unicode encoding) to prevent scraper spam
+
+### Smart Fill loading UX (Phase 9 extension)
+
+- [ ] Replace plain spinner in `SmartFillPanel` with a full-screen tetris animation overlay (falling/stacking tetromino pieces) during AI/FB/URL import
+- [ ] Add "Откажи" (cancel) button on overlay to abort the request and close
+
+### Host display on event detail
+
+- [ ] Add host section on single event page: avatar + name + link to `/[locale]/user/[username]` if they have a username
+- [ ] Only show when `event.created_by !== ADMIN_USER_ID`; if host has no username, show name without link
+
+## Phase 12 — Auth Enhancements
+
+### Social OAuth
+
+- [ ] Add Facebook login/signup via Supabase Auth (`supabase.auth.signInWithOAuth({ provider: 'facebook' })`)
+- [ ] Add Google login/signup via Supabase Auth (`supabase.auth.signInWithOAuth({ provider: 'google' })`)
+- [ ] Add provider buttons to both login and signup pages (consistent styling)
+- [ ] Verify `/auth/callback` route handles OAuth redirect correctly (it already does PKCE — confirm OAuth flow works too)
+
+### Login UX
+
+- [ ] Add "Запомни ме" (Remember me) checkbox to login form — when unchecked, use `persistSession: false`
+- [ ] Handle "User already registered" error on signup with a specific translated message and a link to login
+
+### Security
+
+- [ ] Add Google reCAPTCHA v3 to signup and login forms — server-side token verification before Supabase auth call
+- [ ] Env: `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY`
+
+### Registration
+
+- [ ] Verify/add "Съгласен съм с Условията за ползване" checkbox on signup form — must be checked to submit (zod validation + link to terms)
+
+### Profile navigation
+
+- [ ] Add "Виж публичния профил" to avatar dropdown (desktop) and Profile sheet (mobile) — shows only when `username` is set; otherwise shows "Задай потребителско име"
+
+## Phase 13 — Event Interactions
+
+### Claim event
+
+- [ ] DB: create `event_claims` table (`id`, `event_id`, `claimant_id`, `status` pending/approved/declined, `message`, `created_at`) + RLS
+- [ ] Add "Претендирам за събитието" button on event detail (hidden if already owner, hidden if pending claim exists)
+- [ ] Clicking opens dialog: explanation + optional message + submit
+- [ ] On submit: save to DB + send email to admin (event link, claimant info, approve/decline API action links)
+- [ ] Approve/decline API routes update `status` + send result email to claimant
+
+### Report event
+
+- [ ] DB: create `event_reports` table (`id`, `event_id`, `reporter_id` nullable, `reason` text, `status` new/reviewed, `created_at`) + RLS
+- [ ] Add "Докладвай събитието" button on event detail
+- [ ] Clicking opens dialog: required reason textarea + submit
+- [ ] On submit: save to DB + send email to admin with event info + reason
+- [ ] Show success toast to reporter
+
+## Phase 14 — Homepage Hero & Calendar View
+
+### Homepage create event CTA
+
+- [ ] Add hero section above event list: "СЪБИТИЯ В РУСЕ" heading + short subtitle
+- [ ] Prominent "Създай събитие +" button always visible
+- [ ] If guest: clicking → login page with `next=/create-event` param
+
+### Calendar view
+
+- [ ] Add view toggle on events listing page: "Карти" (grid) ↔ "Календар" (week view)
+- [ ] Week view: starts Monday, shows event chips per day column
+- [ ] Navigation: prev week / next week + "Тази седмица" reset
+- [ ] Mobile: horizontally scrollable week strip
+- [ ] Click on event chip → event detail page
+- [ ] Custom implementation (no heavy calendar library)
+
+## Phase 15 — Notifications
+
+### In-app notification system
+
+- [ ] DB: create `notifications` table (`id`, `user_id`, `type`, `event_id` nullable, `message`, `read` bool, `created_at`) + RLS (user reads/updates own rows only)
+- [ ] Bell icon in header: desktop = dropdown, mobile = sheet
+- [ ] Unread badge count on bell icon
+- [ ] Notification types (v1): "saved event is today", "saved event is tomorrow"
+- [ ] Mark notifications as read on open; "Mark all as read" action
+- [ ] Supabase Edge Function or scheduled cron: runs daily, creates notifications for users with saved events starting today/tomorrow (respects user preference)
+
+### PWA push notifications
+
+- [ ] Service worker setup (next-pwa or custom)
+- [ ] Web Push subscription flow: request permission when user first installs PWA or opts in
+- [ ] DB: create `push_subscriptions` table (`user_id`, `endpoint`, `p256dh`, `auth`, `created_at`) + RLS
+- [ ] Supabase Edge Function triggered by daily cron: sends push payload to subscriptions for relevant events
+- [ ] Env: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
+
+### Notification preferences in profile
+
+- [ ] DB: add `notification_reminders boolean default true` column to `profiles`
+- [ ] Add toggle in profile page: "Напомни ми за запазени събития"
+- [ ] Cron/Edge Function respects this preference before generating notifications
+
+## Phase 16 — Email Marketing (Brevo)
+
+- [ ] Add `BREVO_API_KEY` to env
+- [ ] Create API route `src/app/api/newsletter/subscribe/route.ts` — accepts email + selected tag IDs, upserts Brevo contact with tag attributes
+- [ ] Tag subscription section in profile page: checkboxes for all available tags
+- [ ] On tag save: sync preferences to Brevo contact attributes
+- [ ] Footer or profile: "Абонирай се за любими тагове" CTA → profile page if logged in, signup if guest
+
+## Phase 17 — Advertisement & Support
+
+### Sponsorship page
+
+- [ ] Create `src/app/[locale]/advertise/page.tsx` — clean static page: what All4Ruse is, audience, why sponsor, sponsorship tiers (visual cards), contact CTA
+- [ ] Add to footer navigation and "More" mobile sheet
+
+### Revolut support button
+
+- [ ] Add "Подкрепи ни" button/chip linking to `https://revolut.me/silvenamiteva` in footer and "More" mobile sheet
+- [ ] Tasteful placement — not intrusive
+
+## Phase 18 — Advanced Filters & Premium
+
+- [ ] Filter by place: multi-select with popular Ruse venues (Доходно, Блок 14, РИУ Сити Сентър, etc.) as preset chips + free text fallback; apply as `place ILIKE %value%`
+- [ ] Filter by premium events: confirm `premium` column exists, add "Premium" toggle chip to filters panel
+
+## Future scope (deferred)
 
 - [ ] Event content auto-translation via Google Translate API
-- [ ] Premium and featured listings
-- [ ] Sponsorship placements
 - [ ] Ticket-related flows
-- [ ] Push notifications — Web Push API subscription + Supabase Edge Function for delivery + user notification preferences in profile (by tag, by event reminder)
+- [ ] Update terms page content (pending new content from owner)
+- [ ] Email marketing campaign management (Brevo automation flows beyond basic subscribe)

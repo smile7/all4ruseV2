@@ -27,23 +27,23 @@ export function HeaderSearchButton({ variant = "desktop" }: Props) {
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="default"
       aria-label={t("filters")}
       aria-expanded={isOpen}
       onClick={toggle}
       className={cn(
-        "relative h-auto rounded-full bg-accent text-muted-foreground text-xs font-medium tracking-wider uppercase transition-colors hover:bg-accent/80",
-        isOpen && "ring-2 ring-primary/40",
+        "relative h-auto rounded-full text-xs font-medium tracking-wider uppercase transition-colors",
+        isOpen && "ring-2 ring-primary/40 ring-offset-1",
         isMobile
-          ? "w-full justify-center p-3"
+          ? "w-full justify-center py-2 px-4"
           : "w-full max-w-sm justify-center px-4 py-2",
       )}
     >
-      <Search className="size-4 shrink-0 text-primary" />
+      <Search className="size-4 shrink-0" />
       <span>{t("searchButtonText")}</span>
 
       {activeCount > 0 && (
-        <span className="bg-primary text-primary-foreground absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full text-[9px] font-bold leading-none">
+        <span className="bg-background text-primary ring-primary/20 absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full text-[9px] font-bold leading-none ring-1">
           {activeCount}
         </span>
       )}
