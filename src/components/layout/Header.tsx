@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Link } from "~/i18n/navigation";
+import { profilesApi } from "~/lib/api";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 import { HeaderAuthButton } from "./HeaderAuthButton";
@@ -19,6 +20,10 @@ export async function Header() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const username = user
+    ? (await profilesApi.getProfile(supabase, user.id)).data?.username ?? undefined
+    : undefined;
 
   return (
     <header className="border-border/60 bg-secondary/85 sticky top-0 z-50 w-full backdrop-blur-md">
@@ -63,7 +68,7 @@ export async function Header() {
           <LocaleSwitcher />
           <ThemeToggle />
           <div className="bg-border mx-1 h-5 w-px" aria-hidden />
-          <HeaderAuthButton user={user} />
+          <HeaderAuthButton user={user} username={username} />
         </div>
       </div>
     </header>

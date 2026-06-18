@@ -56,6 +56,7 @@
     "events": "събития",
     "allEventsSummary": "Всички събития: {count}",
     "filteredEventsSummary": "Филтрирани събития: {filtered}/{total}",
+    "viewPublicProfile": "Виж публичния си профил",
     "publishedEvents": "Публикувани събития",
     "waitingForApproval": "Чакащи одобрение",
     "noEventsFound": "Няма намерени събития.",
@@ -232,7 +233,8 @@
     "shareOnFacebook": "Сподели",
     "email": "Имейл",
     "youtubeVideo": "YouTube видео",
-    "editEvent": "Редактирай"
+    "editEvent": "Редактирай",
+    "organizer": "Организатор"
   },
   "CurrentEvents": {
     "createEvent": "Създай Събитие",
@@ -516,12 +518,16 @@
     "removePhoto": "Премахни снимката",
     "parseButton": "Импортирай",
     "parsing": "Импортиране...",
-    "parsingHint": "Обикновено отнема около 20-60 секунди.",
+    "parsingHint": "Обикновено отнема около 20-90 секунди.",
+    "loadingCancel": "Отказ от импорта",
+    "loadingLeave": "Моите събития",
+    "loadingLeaveHint": "Можете да напуснете страницата — импортът ще бъде прекратен.",
     "applied": "Попълнено успешно",
     "appliedImageOnly": "Снимката беше запазена, но детайлите не можаха да бъдат извлечени автоматично. Моля попълнете ги ръчно.",
     "errorNoPhoto": "Моля избери снимка.",
     "errorGeneric": "Неуспешно. Опитайте отново или попълнете ръчно.",
     "errorQuota": "Лимитът на AI заявките е изчерпан. Опитайте отново след малко или попълнете ръчно.",
+    "errorDailyLimit": "Достигнахте дневния лимит от 7 импорта. Опитайте отново утре или попълнете ръчно.",
     "previewTitle": "Намерено",
     "previewImageAlt": "Снимка на събитието",
     "previewEmpty": "Не бяха намерени достатъчно детайли.",
@@ -537,6 +543,14 @@
     "fieldTicketsLink": "Билети",
     "fieldFbLink": "Facebook",
     "fieldDescription": "Описание",
-    "fieldDescriptionReady": "Готово ✓"
+    "fieldDescriptionReady": "Готово ✓",
+    "fbCheckButton": "Провери дали е публично",
+    "fbCheckChecking": "Проверка...",
+    "fbCheckPublic": "Събитието изглежда публично — импортът би трябвало да работи.",
+    "fbCheckPublicWithTitle": "Публично събитие: {title}",
+    "fbCheckPrivate": "Събитието не изглежда публично. Направете го публично във Facebook и опитайте отново.",
+    "fbCheckUnknown": "Не успяхме да потвърдим видимостта. Можете все пак да опитате импорт.",
+    "fbCheckInvalidUrl": "Първо въведете валиден facebook.com/events/... URL.",
+    "fbCheckError": "Проверката не успя. Опитайте отново след малко."
   }
 }

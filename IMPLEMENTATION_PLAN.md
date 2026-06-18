@@ -464,6 +464,7 @@ Small, targeted fixes to improve consistency and resolve reported bugs. Each sub
 Root cause: concurrent saves shared one optimistic cache; `onError` restored a stale full snapshot and wiped other in-flight saves. Inserts could also race on the `(user_id, event_id)` unique constraint.
 
 Fixes in `src/lib/api/saved-events.ts` and `src/hooks/query/saved-events.ts`:
+
 - `saveEvent` — pre-check for existing row; treat Postgres `23505` unique violation as no-op on insert.
 - `useToggleSavedEvent` — `onError` reverts only the failed event id (not the whole ids array); `onSettled` still invalidates ids + list queries.
 - `EventSaveButton` — `isSaved` uses `initialSaved` only while `savedIds` query is loading (`undefined`), not when the loaded list is empty.
@@ -487,7 +488,7 @@ Replaces the plain loading spinner in `SmartFillPanel` (Phase 6) during the AI/A
 - "Откажи" button in the center — calls `AbortController.abort()` on the fetch request and closes the overlay.
 - On success: overlay dismisses automatically before the preview card is shown.
 
-### 8.8 Host section on event detail
+### 8.8 Host section on event detail ✅
 
 Below the event details (after ticket/facebook links), add a "Организатор" section:
 
@@ -500,16 +501,17 @@ Below the event details (after ticket/facebook links), add a "Организат
 
 ## Phase 9 — Auth Enhancements
 
-### 9.1 Social OAuth (Facebook + Google)
+### 9.1 Social OAuth (Facebook + Google) ✅
 
 Supabase Auth handles the OAuth flow. Reference: https://supabase.com/ui/docs/nextjs/social-auth
 
 - **Facebook**: enable in Supabase Dashboard → Auth → Providers. Requires a Facebook App with `https://<project>.supabase.co/auth/v1/callback` as the OAuth redirect URI.
 - **Google**: enable in Supabase Dashboard → Auth → Providers. Requires a Google Cloud OAuth 2.0 client.
 - Both use `supabase.auth.signInWithOAuth({ provider: 'facebook' | 'google', options: { redirectTo: '/auth/callback' } })`.
-- The existing `/auth/callback` route (`exchangeCodeForSession`) already handles this flow — no changes needed there.
-- Add provider buttons to `LoginPage` and `SignupPage` below the email form, separated by an "або" divider. Style: outline variant, provider icon + label ("Влез с Facebook", "Влез с Google").
-- Handle the case where a user who previously signed up with email tries to OAuth with the same address — Supabase returns a specific error; map it to a friendly message.
+- `/auth/callback` route handles OAuth code exchange; syncs provider `avatar_url` into `profiles.avatar_url` on first login using a single atomic `UPDATE … WHERE avatar_url IS NULL` (no manual upload overwrite risk).
+- `SocialAuthButtons` component on both `LoginPage` and `SignupPage` — outline variant, inline SVG provider icons ("Влез с Facebook", "Влез с Google"), separated by an "или" divider.
+- Profile page auto-corrects email-based usernames inserted by the DB trigger (detects `@` in username, derives clean slug from email prefix on first visit).
+- Duplicate email error on signup mapped to translated message with a link to login.
 
 ### 9.2 Remember me
 
@@ -517,13 +519,13 @@ Supabase Auth handles the OAuth flow. Reference: https://supabase.com/ui/docs/ne
 - Supabase JS `createBrowserClient` persists session in `localStorage` by default. When "Remember me" is unchecked, instead use `persistSession: false` by passing it to `signInWithPassword` options — this stores the session only in memory, not in `localStorage`.
 - Default state: unchecked (session-only). This matches what most users expect.
 
-### 9.3 Duplicate email error on signup
+### 9.3 Duplicate email error on signup ✅
 
 Supabase returns `"User already registered"` or a 422 when the email already exists. Map this in the signup form error handler:
 
 ```ts
-if (error.message.includes('already registered')) {
-  setError('root', { message: t('auth.emailAlreadyRegistered') })
+if (error.message.includes("already registered")) {
+  setError("root", { message: t("auth.emailAlreadyRegistered") });
 }
 ```
 
@@ -541,15 +543,15 @@ reCAPTCHA v3 is invisible and score-based. Integration:
 
 Keep the verification route thin — just the captcha check. Supabase auth call stays in the client component.
 
-### 9.5 Terms checkbox on signup
+### 9.5 Terms checkbox on signup ✅
 
-Confirm or add: the signup form must include a checkbox `agreeTerms: z.literal(true)` in the zod schema. Label: "Съгласен/а съм с [Условията за ползване]" where the bracketed part is a link to `/[locale]/legal/terms` (opens in new tab). The form submit button is disabled until this checkbox is checked.
+Signup form includes `acceptTerms: z.boolean()` with a `.refine` rule enforcing `true`. Label links to `/[locale]/legal/terms` (opens in new tab). Submit button is disabled until the checkbox is checked.
 
-### 9.6 "See public profile" in navigation
+### 9.6 "See public profile" in navigation ✅
 
-- **Desktop avatar dropdown**: add "Виж публичния профил →" as the first item, linking to `/[locale]/user/[username]`. Show it only when `profile.username` is set. When no username is set, show "Задай потребителско име →" linking to `/[locale]/profile`.
-- **Mobile Profile sheet**: same link in the profile info section.
-- Both items are already auth-gated (they only appear when the user is logged in).
+- **Desktop avatar dropdown**: "Виж публичния си профил" as the first item (with separator below), linking to `/[locale]/user/[username]`. `Header` (Server Component) fetches the profile and passes `username` down to `HeaderAuthButton`. Shown whenever `username` is set (always, since profile page auto-derives it).
+- **Mobile Profile sheet**: same link appears above "Създай събитие" in the authenticated state of `MobileBottomNav`. Username is fetched client-side in a `useEffect` alongside `getUser`.
+- Both items are auth-gated — only appear when the user is logged in.
 
 ---
 
@@ -605,6 +607,7 @@ create table public.event_reports (
 RLS: INSERT for anyone (including guests via service role or anon key); SELECT restricted to admin via service role in API route.
 
 **API route `POST /api/events/report`:**
+
 - No auth required (guests can report).
 - Rate-limit by IP using a simple in-memory or Redis check — or accept the low risk at this scale.
 - Insert report → send email to admin with event details, reporter info, reason.
@@ -770,6 +773,7 @@ When a new event with a followed tag is published (future automation, manual for
 Route: `src/app/[locale]/advertise/page.tsx` — static Server Component.
 
 Sections:
+
 1. **Hero**: "Рекламирай в All4Ruse" — headline + 1-sentence value prop.
 2. **Аудитория**: audience size, demographics, growth (keep honest and current; update numbers manually).
 3. **Защо да рекламирате**: 3–4 benefit cards (reach, targeted audience, affordable, local).
@@ -784,6 +788,7 @@ Add `generateMetadata` with SEO title/description.
 Revolut link: `https://revolut.me/silvenamiteva`.
 
 Placement:
+
 - Desktop footer: small "☕ Подкрепи ни" text link, rightmost position.
 - Mobile "More" sheet: listed item with a coffee emoji icon.
 - (Optional) Profile page dropdown: subtle link in the "About" section.

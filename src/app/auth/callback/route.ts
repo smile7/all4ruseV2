@@ -8,8 +8,8 @@ import { createSupabaseServerClient } from "~/lib/supabase/server";
  * Handles three flows:
  *   - Email confirmation (signup) → redirects to locale home
  *   - Password reset → emailRedirectTo includes ?next=/[locale]/auth/update-password
- *   - OAuth (Google, Facebook) → same code exchange; also syncs provider avatar
- *     into profiles.avatar_url on first login (when avatar_url is still null).
+ *   - OAuth (Google, Facebook) → same code exchange; syncs provider avatar_url
+ *     into profiles on first login (only when avatar_url is still null).
  *
  * Supabase dashboard must have this URL in the "Redirect URLs" allowlist:
  *   http://localhost:3000/auth/callback   (dev)
@@ -26,24 +26,18 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Sync OAuth avatar into profiles.avatar_url on first login.
-      // Only runs when the provider supplied an avatar and the profile row
-      // hasn't had one set yet (so manual uploads are never overwritten).
+      // Sync OAuth provider avatar into profiles.avatar_url on first login.
+      // Uses a single UPDATE with .is("avatar_url", null) so the DB checks
+      // atomically — no pre-query needed, no risk of overwriting a manual upload.
       try {
         const { data: { user } } = await supabase.auth.getUser();
         const providerAvatar = user?.user_metadata?.avatar_url as string | undefined;
         if (user && providerAvatar) {
-          const { data: profile } = await supabase
+          await supabase
             .from("profiles")
-            .select("avatar_url")
+            .update({ avatar_url: providerAvatar })
             .eq("id", user.id)
-            .single();
-          if (profile && !profile.avatar_url) {
-            await supabase
-              .from("profiles")
-              .update({ avatar_url: providerAvatar })
-              .eq("id", user.id);
-          }
+            .is("avatar_url", null);
         }
       } catch {
         // Non-fatal — avatar sync failure should not block the redirect

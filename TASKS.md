@@ -224,22 +224,23 @@ Small targeted fixes and visual consistency improvements.
 
 ### Host display on event detail
 
-- [ ] Add host section on single event page: avatar + name + link to `/[locale]/user/[username]` if they have a username
-- [ ] Only show when `event.created_by !== ADMIN_USER_ID`; if host has no username, show name without link
+- [x] Add host section on single event page: avatar + name + link to `/[locale]/user/[username]` if they have a username
+- [x] Only show when `event.created_by !== ADMIN_USER_ID`; if host has no username, show name without link
 
 ## Phase 12 — Auth Enhancements
 
 ### Social OAuth
 
-- [ ] Add Facebook login/signup via Supabase Auth (`supabase.auth.signInWithOAuth({ provider: 'facebook' })`)
-- [ ] Add Google login/signup via Supabase Auth (`supabase.auth.signInWithOAuth({ provider: 'google' })`)
-- [ ] Add provider buttons to both login and signup pages (consistent styling)
-- [ ] Verify `/auth/callback` route handles OAuth redirect correctly (it already does PKCE — confirm OAuth flow works too)
+- [x] Add Facebook login/signup via Supabase Auth (`supabase.auth.signInWithOAuth({ provider: 'facebook' })`)
+- [x] Add Google login/signup via Supabase Auth (`supabase.auth.signInWithOAuth({ provider: 'google' })`)
+- [x] Add provider buttons to both login and signup pages — `SocialAuthButtons` component with outline variant + provider icons
+- [x] `/auth/callback` route handles OAuth redirect correctly; syncs provider `avatar_url` into profiles on first login (atomically, no overwrite of manual uploads)
+- [x] Profile page auto-fixes email-based usernames (from DB trigger) on first visit — derives clean slug from email prefix
 
 ### Login UX
 
 - [ ] Add "Запомни ме" (Remember me) checkbox to login form — when unchecked, use `persistSession: false`
-- [ ] Handle "User already registered" error on signup with a specific translated message and a link to login
+- [x] Handle "User already registered" error on signup with a specific translated message and a link to login
 
 ### Security
 
@@ -248,11 +249,11 @@ Small targeted fixes and visual consistency improvements.
 
 ### Registration
 
-- [ ] Verify/add "Съгласен съм с Условията за ползване" checkbox on signup form — must be checked to submit (zod validation + link to terms)
+- [x] "Съгласен съм с Условията за ползване" checkbox on signup form — `acceptTerms: z.boolean()` + `.refine` in zod schema; links to terms page
 
 ### Profile navigation
 
-- [ ] Add "Виж публичния профил" to avatar dropdown (desktop) and Profile sheet (mobile) — shows only when `username` is set; otherwise shows "Задай потребителско име"
+- [x] Add "Виж публичния си профил" to avatar dropdown (desktop) and Profile sheet (mobile) — always shown (username is always set); links to `/user/[username]`
 
 ## Phase 13 — Event Interactions
 

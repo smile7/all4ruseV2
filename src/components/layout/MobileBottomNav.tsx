@@ -10,6 +10,7 @@ import {
   CalendarClock,
   CalendarDays,
   Cookie,
+  ExternalLink,
   History,
   Info,
   LogOut,
@@ -51,16 +52,30 @@ export function MobileBottomNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [username, setUsername] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
 
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+      if (data.user) {
+        supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", data.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            setUsername(profile?.username ?? undefined);
+          });
+      }
+    });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null);
+      if (!session?.user) setUsername(undefined);
     });
 
     return () => subscription.unsubscribe();
@@ -323,6 +338,17 @@ export function MobileBottomNav() {
                 </div>
                 
                 <Separator className="my-3" />
+
+                {username && (
+                  <Link
+                    href={`/user/${username}`}
+                    className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <ExternalLink className="text-muted-foreground size-4 shrink-0" />
+                    <span>{t("viewPublicProfile")}</span>
+                  </Link>
+                )}
 
                 <Link 
                   href="/create-event" 

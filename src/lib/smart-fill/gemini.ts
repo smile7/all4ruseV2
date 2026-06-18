@@ -5,51 +5,50 @@ import {
 
 import type { EventDraft } from "~/types";
 
-const MODEL_NAME = "gemini-2.0-flash";
+/** Cheapest multimodal model — sufficient for structured extraction. */
+const MODEL_NAME = "gemini-2.5-flash-lite";
+/** Only used for transient rate limits, not billing depletion. */
 const FALLBACK_MODEL_NAME = "gemini-2.0-flash-lite";
-const MAX_EXTRACTION_ATTEMPTS = 3;
+const MAX_EXTRACTION_ATTEMPTS = 1;
 
-const GENERATION_CONFIG = {
-  temperature: 0.2,
-  maxOutputTokens: 2048,
-  responseMimeType: "application/json",
-} as const;
-
-// ─── Prompt ───────────────────────────────────────────────────────────────────
-
-const SYSTEM_PROMPT = `You are an event detail extractor for an event listing website in Ruse, Bulgaria.
-
-Extract event details from the provided input and return ONLY a valid JSON object — no markdown fences, no explanation, nothing else.
-
-For the "description" field: write in Bulgarian in the voice of a local event organizer or cultural journalist — someone who knows the city, cares about the event, and writes with calm enthusiasm. The tone is warm and engaged, but composed. Not a marketing flyer, not casual chat between friends.
-
-Structure: 2–3 paragraphs separated by a blank line (\\n\\n). Never write one long unbroken block.
-- Paragraph 1: Open with something concrete and specific about this event — what makes it worth attending. Avoid generic openers like "Елате на" or "Имаме удоволствието да".
-- Paragraph 2: Include the practical details (date, time, venue, price if known) naturally woven into sentences — not listed, not announced.
-- Paragraph 3 (short, optional): A grounded closing line or two. Not a tagline.
-
-Writing rules:
-- Vary sentence length. Not every sentence the same rhythm.
-- Use 1–2 emoji only where genuinely fitting — never decorative.
-- Avoid clichés that signal AI: "уникална възможност", "незабравимо изживяване", "не пропускайте шанса", "свидетели на", "невероятна атмосфера", "ви очаква", "потопете се", "специално за вас", "зарежда с енергия", "богата програма".
-- Do not use bullet points or headers inside the description.
-- Total length: 90–200 words.
-
-Return a JSON object with these optional fields (omit fields you cannot determine):
-{
+const JSON_FIELDS = `{
   "title": "string — event name",
-  "description": "string — promotional Bulgarian description as described above",
-  "startDate": "YYYY-MM-DD — use nearest future date if year not specified",
+  "description": "string",
+  "startDate": "YYYY-MM-DD — nearest future date if year omitted",
   "endDate": "YYYY-MM-DD — same as startDate for single-day events",
   "startTime": "HH:MM — 24-hour format",
   "endTime": "HH:MM — 24-hour format, optional",
   "address": "string — street address",
-  "town": "string — city name in Bulgarian, default Русе if the event is in Ruse",
-  "place": "string — venue or location name",
-  "price": "string — e.g. '10 лв', '5-15 лв', 'безплатно'; empty string if unknown",
-  "ticketsLink": "string — URL for ticket purchase, optional",
-  "fbLink": "string — Facebook event URL, optional"
+  "town": "string — city in Bulgarian, default Русе when in Ruse",
+  "place": "string — venue name",
+  "price": "string — e.g. '10 лв', 'безплатно'; empty if unknown",
+  "ticketsLink": "string — optional",
+  "fbLink": "string — optional"
 }`;
+
+const IMAGE_SYSTEM_PROMPT = `You extract event details from poster/flyer images for a Bulgarian events website in Ruse.
+
+Return ONLY valid JSON — no markdown, no explanation.
+
+Rules:
+- Read text visible on the poster (OCR). Do not invent dates, venues, or prices that are not visible or clearly implied.
+- For "description": transcribe or briefly summarize the poster text in Bulgarian (max 60 words). Plain text only.
+- Omit fields you cannot determine.
+
+Return a JSON object with these optional fields:
+${JSON_FIELDS}`;
+
+const TEXT_SYSTEM_PROMPT = `You extract event details from user-provided text for a Bulgarian events website in Ruse.
+
+Return ONLY valid JSON — no markdown, no explanation.
+
+Rules:
+- Extract structured fields from the input. Do not invent facts not present in the text.
+- For "description": reformat the user's text into 1–2 short paragraphs in Bulgarian (max 100 words). Keep their facts; light polish only — not a marketing rewrite.
+- Omit fields you cannot determine.
+
+Return a JSON object with these optional fields:
+${JSON_FIELDS}`;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -67,16 +66,37 @@ export class QuotaExceededError extends Error {
   }
 }
 
-function isQuotaError(err: unknown): boolean {
-  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
-  return msg.includes("429") || msg.includes("quota");
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
 }
 
-function createExtractionModel(modelName = MODEL_NAME) {
+function isBillingDepleted(err: unknown): boolean {
+  const msg = errorMessage(err).toLowerCase();
+  return (
+    msg.includes("credits are depleted") ||
+    msg.includes("prepayment") ||
+    msg.includes("billing")
+  );
+}
+
+function isRateLimitError(err: unknown): boolean {
+  const msg = errorMessage(err).toLowerCase();
+  return msg.includes("429") || msg.includes("resource exhausted");
+}
+
+function createExtractionModel(
+  modelName: string,
+  systemInstruction: string,
+  maxOutputTokens: number,
+) {
   return getClient().getGenerativeModel({
     model: modelName,
-    systemInstruction: SYSTEM_PROMPT,
-    generationConfig: GENERATION_CONFIG,
+    systemInstruction,
+    generationConfig: {
+      temperature: 0.1,
+      maxOutputTokens,
+      responseMimeType: "application/json",
+    },
   });
 }
 
@@ -91,12 +111,10 @@ async function withExtractionRetries<T>(
       return await fn();
     } catch (err) {
       lastError = err;
-      const message = err instanceof Error ? err.message : String(err);
       console.warn(
-        `[smart-fill/gemini] ${label} attempt ${attempt}/${MAX_EXTRACTION_ATTEMPTS} failed: ${message}`,
+        `[smart-fill/gemini] ${label} attempt ${attempt}/${MAX_EXTRACTION_ATTEMPTS} failed: ${errorMessage(err)}`,
       );
-      // Quota errors won't resolve with retries — bail immediately.
-      if (isQuotaError(err)) break;
+      if (isBillingDepleted(err) || isRateLimitError(err)) break;
       if (attempt < MAX_EXTRACTION_ATTEMPTS) {
         await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
       }
@@ -165,8 +183,6 @@ function parseDraftFromJson(raw: string): EventDraft {
   if (typeof parsed.fbLink === "string" && parsed.fbLink)
     draft.fbLink = parsed.fbLink;
 
-  // Guard: if nothing useful was extracted, throw so callers return a proper
-  // error rather than silently applying an empty draft and showing success.
   const hasMeaningfulContent =
     !!draft.title ||
     !!draft.description ||
@@ -181,10 +197,6 @@ function parseDraftFromJson(raw: string): EventDraft {
   return draft;
 }
 
-/**
- * Converts plain text with paragraph breaks into simple <p> HTML.
- * Gemini returns plain text; TipTap expects HTML.
- */
 function plainTextToHtml(text: string): string {
   return text
     .split(/\n{2,}/)
@@ -193,34 +205,48 @@ function plainTextToHtml(text: string): string {
     .join("");
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+type ExtractionContent =
+  | string
+  | Parameters<
+      ReturnType<typeof createExtractionModel>["generateContent"]
+    >[0];
 
 async function generateDraftFromContent(
-  content: string | Parameters<ReturnType<typeof createExtractionModel>["generateContent"]>[0],
+  content: ExtractionContent,
+  systemInstruction: string,
+  maxOutputTokens: number,
 ): Promise<EventDraft> {
-  try {
-    const model = createExtractionModel(MODEL_NAME);
-    return await withExtractionRetries("extract", async () => {
+  const run = (modelName: string) =>
+    withExtractionRetries(`extract:${modelName}`, async () => {
+      const model = createExtractionModel(
+        modelName,
+        systemInstruction,
+        maxOutputTokens,
+      );
       const result = await model.generateContent(content);
       return parseDraftFromJson(readModelText(result));
     });
-  } catch (primaryErr) {
-    if (!isQuotaError(primaryErr)) throw primaryErr;
 
-    // Primary model quota exhausted — retry with fallback model.
+  try {
+    return await run(MODEL_NAME);
+  } catch (primaryErr) {
+    if (isBillingDepleted(primaryErr)) {
+      throw new QuotaExceededError(
+        "Gemini API credits depleted. Add billing at https://aistudio.google.com/",
+      );
+    }
+
+    if (!isRateLimitError(primaryErr)) throw primaryErr;
+
     console.warn(
-      `[smart-fill/gemini] Primary model quota exceeded, falling back to ${FALLBACK_MODEL_NAME}`,
+      `[smart-fill/gemini] Primary model rate-limited, trying ${FALLBACK_MODEL_NAME}`,
     );
     try {
-      const fallback = createExtractionModel(FALLBACK_MODEL_NAME);
-      return await withExtractionRetries("extract-fallback", async () => {
-        const result = await fallback.generateContent(content);
-        return parseDraftFromJson(readModelText(result));
-      });
+      return await run(FALLBACK_MODEL_NAME);
     } catch (fallbackErr) {
-      if (isQuotaError(fallbackErr)) {
+      if (isBillingDepleted(fallbackErr) || isRateLimitError(fallbackErr)) {
         throw new QuotaExceededError(
-          "API quota exceeded on all available models. Please try again later.",
+          "API quota exceeded. Please try again later.",
         );
       }
       throw fallbackErr;
@@ -228,21 +254,27 @@ async function generateDraftFromContent(
   }
 }
 
+// ─── Public API ───────────────────────────────────────────────────────────────
+
 export async function extractDraftFromText(text: string): Promise<EventDraft> {
-  return generateDraftFromContent(text);
+  return generateDraftFromContent(text, TEXT_SYSTEM_PROMPT, 768);
 }
 
 export async function extractDraftFromImageBytes(
   imageBytes: Uint8Array,
   mimeType: string,
 ): Promise<EventDraft> {
-  return generateDraftFromContent([
-    {
-      inlineData: {
-        mimeType,
-        data: Buffer.from(imageBytes).toString("base64"),
+  return generateDraftFromContent(
+    [
+      {
+        inlineData: {
+          mimeType,
+          data: Buffer.from(imageBytes).toString("base64"),
+        },
       },
-    },
-    "Extract all visible event details from this image. Return structured JSON with title, dates, times, venue, address, and price when present.",
-  ]);
+      "Extract visible event details from this poster. Return JSON only.",
+    ],
+    IMAGE_SYSTEM_PROMPT,
+    512,
+  );
 }

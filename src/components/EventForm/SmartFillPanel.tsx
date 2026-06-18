@@ -1,13 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 import {
   FileImage,
   Link,
-  Loader2,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldQuestion,
   Sparkles,
   Type,
   X,
@@ -16,8 +19,11 @@ import {
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { Textarea } from "~/components/ui/textarea";
+import { compressImageForExtraction } from "~/lib/smart-fill/compress-image-client";
 import { cn } from "~/lib/utils";
 import type { EventDraft } from "~/types";
+
+import { SmartFillImportOverlay } from "./SmartFillImportOverlay";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,6 +41,16 @@ type ParseState =
   | { status: "partialApplied" }
   | { status: "error"; message: string };
 
+type VisibilityCheckState =
+  | { status: "idle" }
+  | { status: "checking" }
+  | {
+      status: "done";
+      visibility: "public" | "private" | "unknown";
+      title?: string;
+    }
+  | { status: "error"; message: string };
+
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -43,6 +59,9 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
 
   const [tab, setTab] = useState<Tab>("facebook");
   const [parseState, setParseState] = useState<ParseState>({ status: "idle" });
+  const [visibilityCheck, setVisibilityCheck] = useState<VisibilityCheckState>({
+    status: "idle",
+  });
 
   // Per-tab input state
   const [fbUrl, setFbUrl] = useState("");
@@ -53,14 +72,26 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
   const [ruseDanubeUrl, setRuseDanubeUrl] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   function resetState() {
     setParseState({ status: "idle" });
   }
 
+  function resetVisibilityCheck() {
+    setVisibilityCheck({ status: "idle" });
+  }
+
+  function cancelImport() {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    resetState();
+  }
+
   function handleTabChange(next: Tab) {
     setTab(next);
     resetState();
+    resetVisibilityCheck();
   }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -76,46 +107,104 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
     }
   }
 
+  async function handleCheckVisibility() {
+    if (!fbUrl.trim()) {
+      setVisibilityCheck({
+        status: "error",
+        message: t("fbCheckInvalidUrl"),
+      });
+      return;
+    }
+
+    setVisibilityCheck({ status: "checking" });
+
+    try {
+      const res = await fetch("/api/smart-fill/facebook/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: fbUrl }),
+      });
+
+      const json = (await res.json()) as {
+        visibility?: "public" | "private" | "unknown";
+        title?: string;
+        error?: string;
+      };
+
+      if (!res.ok || !json.visibility) {
+        setVisibilityCheck({
+          status: "error",
+          message: t("fbCheckError"),
+        });
+        return;
+      }
+
+      setVisibilityCheck({
+        status: "done",
+        visibility: json.visibility,
+        title: json.title,
+      });
+    } catch {
+      setVisibilityCheck({
+        status: "error",
+        message: t("fbCheckError"),
+      });
+    }
+  }
+
   async function handleParse() {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setParseState({ status: "loading" });
 
     try {
       let res: Response;
+      const fetchOptions = { signal: controller.signal };
 
       if (tab === "facebook") {
         res = await fetch("/api/smart-fill/facebook", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: fbUrl }),
+          ...fetchOptions,
         });
       } else if (tab === "text") {
         res = await fetch("/api/smart-fill/text", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: promptText }),
+          ...fetchOptions,
         });
       } else if (tab === "photo") {
         if (!photoFile) {
-          setParseState({ status: "error", message: t("errorNoPhoto") });
+          flushSync(() => {
+            setParseState({ status: "error", message: t("errorNoPhoto") });
+          });
           return;
         }
+        const compressedPhoto = await compressImageForExtraction(photoFile);
         const form = new FormData();
-        form.append("image", photoFile);
+        form.append("image", compressedPhoto);
         res = await fetch("/api/smart-fill/photo", {
           method: "POST",
           body: form,
+          ...fetchOptions,
         });
       } else if (tab === "grabo") {
         res = await fetch("/api/smart-fill/admin-scrape", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: graboUrl, source: "grabo" }),
+          ...fetchOptions,
         });
       } else {
         res = await fetch("/api/smart-fill/admin-scrape", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: ruseDanubeUrl, source: "ruse-on-the-danube" }),
+          ...fetchOptions,
         });
       }
 
@@ -128,35 +217,55 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
 
       if (!res.ok || !json.draft) {
         const message =
-          json.errorCode === "quota_exceeded"
-            ? t("errorQuota")
-            : t("errorGeneric");
-        setParseState({ status: "error", message });
+          json.errorCode === "daily_limit_exceeded"
+            ? t("errorDailyLimit")
+            : json.errorCode === "quota_exceeded"
+              ? t("errorQuota")
+              : t("errorGeneric");
+        flushSync(() => {
+          setParseState({ status: "error", message });
+        });
         return;
       }
 
-      // Auto-apply immediately — no confirm step needed
-      onApply(json.draft);
+      const isQuotaExceeded = json.errorCode === "quota_exceeded";
+      const nextState: ParseState = json.warning
+        ? isQuotaExceeded
+          ? { status: "error", message: t("errorQuota") }
+          : { status: "partialApplied" }
+        : { status: "applied" };
 
-      // A `warning` means the API applied a partial draft (e.g. image saved
-      // but text extraction failed). Show a softer message instead of success.
-      if (json.warning) {
-        setParseState({ status: "partialApplied" });
-      } else {
-        setParseState({ status: "applied" });
+      flushSync(() => {
+        setParseState(nextState);
+      });
+
+      // Auto-apply immediately — image may still be saved even when text extraction fails
+      onApply(json.draft);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
       }
-    } catch {
-      setParseState({ status: "error", message: t("errorGeneric") });
+      flushSync(() => {
+        setParseState({ status: "error", message: t("errorGeneric") });
+      });
+    } finally {
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
     }
   }
 
   const isLoading = parseState.status === "loading";
+  const isCheckingVisibility = visibilityCheck.status === "checking";
 
   // Admin tabs — Grabo and Ruse on the Danube
   const adminTabs: Tab[] = ["grabo", "ruse-danube"];
 
   return (
-    <div className="border-border bg-muted/20 rounded-lg border">
+    <>
+      {isLoading && <SmartFillImportOverlay onCancel={cancelImport} />}
+
+      <div className="border-border bg-muted/20 rounded-lg border">
       {/* Header — always visible, no toggle */}
       <div className="flex items-center gap-2 px-4 py-3">
         <Sparkles className="text-primary size-4 shrink-0" />
@@ -203,8 +312,11 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
           <UrlInput
             placeholder={t("fbPlaceholder")}
             value={fbUrl}
-            onChange={setFbUrl}
-            disabled={isLoading}
+            onChange={(value) => {
+              setFbUrl(value);
+              resetVisibilityCheck();
+            }}
+            disabled={isLoading || isCheckingVisibility}
           />
         )}
 
@@ -286,25 +398,38 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
         )}
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
+          {tab === "facebook" && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleCheckVisibility}
+              disabled={isLoading || isCheckingVisibility || !fbUrl.trim()}
+            >
+              {isCheckingVisibility ? t("fbCheckChecking") : t("fbCheckButton")}
+            </Button>
+          )}
           <Button
             type="button"
             size="sm"
             onClick={handleParse}
-            disabled={isLoading}
+            disabled={isLoading || isCheckingVisibility}
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-                {t("parsing")}
-              </>
-            ) : (
-              t("parseButton")
-            )}
+            {isLoading ? t("parsing") : t("parseButton")}
           </Button>
-          {isLoading && (
-            <span className="text-muted-foreground text-xs">{t("parsingHint")}</span>
-          )}
         </div>
+
+        {tab === "facebook" && visibilityCheck.status === "done" && (
+          <VisibilityCheckResult
+            visibility={visibilityCheck.visibility}
+            title={visibilityCheck.title}
+            t={t}
+          />
+        )}
+
+        {tab === "facebook" && visibilityCheck.status === "error" && (
+          <p className="text-destructive mt-2 text-xs">{visibilityCheck.message}</p>
+        )}
 
         {/* Error */}
         {parseState.status === "error" && (
@@ -326,6 +451,7 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
         )}
       </div>
     </div>
+    </>
   );
 }
 
@@ -356,6 +482,43 @@ function TabButton({
       {icon}
       {label}
     </button>
+  );
+}
+
+function VisibilityCheckResult({
+  visibility,
+  title,
+  t,
+}: {
+  visibility: "public" | "private" | "unknown";
+  title?: string;
+  t: ReturnType<typeof useTranslations<"SmartFill">>;
+}) {
+  if (visibility === "public") {
+    return (
+      <p className="mt-2 flex items-start gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+        <ShieldCheck className="mt-0.5 size-3.5 shrink-0" />
+        <span>
+          {title ? t("fbCheckPublicWithTitle", { title }) : t("fbCheckPublic")}
+        </span>
+      </p>
+    );
+  }
+
+  if (visibility === "private") {
+    return (
+      <p className="text-destructive mt-2 flex items-start gap-1.5 text-xs">
+        <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
+        <span>{t("fbCheckPrivate")}</span>
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-muted-foreground mt-2 flex items-start gap-1.5 text-xs">
+      <ShieldQuestion className="mt-0.5 size-3.5 shrink-0" />
+      <span>{t("fbCheckUnknown")}</span>
+    </p>
   );
 }
 
