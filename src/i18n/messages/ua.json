@@ -56,6 +56,7 @@
     "events": "події",
     "allEventsSummary": "Усі події: {count}",
     "filteredEventsSummary": "Відібрані події: {filtered}/{total}",
+    "viewPublicProfile": "Переглянути свій публічний профіль",
     "publishedEvents": "Опубліковані події",
     "waitingForApproval": "Очікують на підтвердження",
     "noEventsFound": "Подій не знайдено.",
@@ -231,7 +232,8 @@
     "shareOnFacebook": "Поділитися",
     "email": "Електронна пошта",
     "youtubeVideo": "Відео YouTube",
-    "editEvent": "Редагувати подію"
+    "editEvent": "Редагувати подію",
+    "organizer": "Організатор"
   },
   "CurrentEvents": {
     "createEvent": "Створити подію",
@@ -516,12 +518,16 @@
     "removePhoto": "Видалити фото",
     "parseButton": "Імпортувати",
     "parsing": "Імпортування...",
-    "parsingHint": "Зазвичай це займає приблизно 20-60 секунд.",
+    "parsingHint": "Зазвичай це займає приблизно 20-90 секунд.",
+    "loadingCancel": "Скасувати імпорт",
+    "loadingLeave": "Мої події",
+    "loadingLeaveHint": "Ви можете залишити сторінку — імпорт буде зупинено.",
     "applied": "Заповнено успішно",
     "appliedImageOnly": "Зображення збережено, але деталі не вдалося витягти автоматично. Заповніть їх вручну.",
     "errorNoPhoto": "Будь ласка, оберіть фото.",
     "errorGeneric": "Помилка. Спробуйте ще раз або заповніть вручну.",
     "errorQuota": "Ліміт AI-запитів вичерпано. Спробуйте ще раз за мить або заповніть вручну.",
+    "errorDailyLimit": "Ви досягли денного ліміту в 7 імпортів. Спробуйте знову завтра або заповніть вручну.",
     "previewTitle": "Знайдено",
     "previewImageAlt": "Зображення події",
     "previewEmpty": "Деталей виявилося недостатньо.",
@@ -537,6 +543,14 @@
     "fieldTicketsLink": "Квитки",
     "fieldFbLink": "Facebook",
     "fieldDescription": "Опис",
-    "fieldDescriptionReady": "Готово ✓"
+    "fieldDescriptionReady": "Готово ✓",
+    "fbCheckButton": "Перевірити публічність",
+    "fbCheckChecking": "Перевірка...",
+    "fbCheckPublic": "Подія виглядає публічною — імпорт має спрацювати.",
+    "fbCheckPublicWithTitle": "Публічна подія: {title}",
+    "fbCheckPrivate": "Подія не виглядає публічною. Зробіть її публічною у Facebook і спробуйте знову.",
+    "fbCheckUnknown": "Не вдалося підтвердити видимість. Ви все одно можете спробувати імпорт.",
+    "fbCheckInvalidUrl": "Спочатку введіть дійсний facebook.com/events/... URL.",
+    "fbCheckError": "Перевірку не вдалося виконати. Спробуйте ще раз за мить."
   }
 }

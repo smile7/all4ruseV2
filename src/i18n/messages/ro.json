@@ -56,6 +56,7 @@
     "events": "evenimente",
     "allEventsSummary": "Toate evenimentele: {count}",
     "filteredEventsSummary": "Evenimente filtrate: {filtered}/{total}",
+    "viewPublicProfile": "Vezi profilul tău public",
     "publishedEvents": "Evenimente publicate",
     "waitingForApproval": "În așteptarea aprobării",
     "noEventsFound": "Niciun eveniment găsit.",
@@ -231,7 +232,8 @@
     "shareOnFacebook": "Distribuie",
     "email": "Email",
     "youtubeVideo": "Video YouTube",
-    "editEvent": "Editează evenimentul"
+    "editEvent": "Editează evenimentul",
+    "organizer": "Organizator"
   },
   "CurrentEvents": {
     "createEvent": "Creează un eveniment",
@@ -516,12 +518,16 @@
     "removePhoto": "Elimină fotografia",
     "parseButton": "Importă",
     "parsing": "Importare...",
-    "parsingHint": "De obicei durează aproximativ 20-60 de secunde.",
+    "parsingHint": "De obicei durează aproximativ 20-90 de secunde.",
+    "loadingCancel": "Anulează importul",
+    "loadingLeave": "Evenimentele mele",
+    "loadingLeaveHint": "Poți părăsi pagina — importul va fi oprit.",
     "applied": "Completat cu succes",
     "appliedImageOnly": "Imaginea a fost salvată, dar detaliile nu au putut fi extrase automat. Completează-le manual.",
     "errorNoPhoto": "Te rugăm să selectezi o fotografie.",
     "errorGeneric": "Eroare. Încearcă din nou sau completează manual.",
     "errorQuota": "Limita de cereri AI a fost atinsă. Încearcă din nou peste puțin sau completează manual.",
+    "errorDailyLimit": "Ai atins limita zilnică de 7 importuri. Încearcă din nou mâine sau completează manual.",
     "previewTitle": "Găsit",
     "previewImageAlt": "Imaginea evenimentului",
     "previewEmpty": "Nu s-au găsit suficiente detalii.",
@@ -537,6 +543,14 @@
     "fieldTicketsLink": "Bilete",
     "fieldFbLink": "Facebook",
     "fieldDescription": "Descriere",
-    "fieldDescriptionReady": "Gata ✓"
+    "fieldDescriptionReady": "Gata ✓",
+    "fbCheckButton": "Verifică dacă e public",
+    "fbCheckChecking": "Se verifică...",
+    "fbCheckPublic": "Evenimentul pare public — importul ar trebui să funcționeze.",
+    "fbCheckPublicWithTitle": "Eveniment public: {title}",
+    "fbCheckPrivate": "Evenimentul nu pare public. Fă-l public pe Facebook, apoi încearcă din nou importul.",
+    "fbCheckUnknown": "Nu am putut confirma vizibilitatea. Poți încerca totuși importul.",
+    "fbCheckInvalidUrl": "Introdu mai întâi un URL valid facebook.com/events/...",
+    "fbCheckError": "Verificarea a eșuat. Încearcă din nou peste puțin."
   }
 }

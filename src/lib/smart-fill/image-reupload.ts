@@ -42,7 +42,14 @@ export async function reuploadImageFromUrl(
       return null;
     }
 
-    return storagePath;
+    // Return the full public URL so both the old and new app can display the
+    // image without needing to reconstruct it from a bare path.
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) {
+      console.error("[smart-fill] NEXT_PUBLIC_SUPABASE_URL is not set");
+      return storagePath;
+    }
+    return `${supabaseUrl}/storage/v1/object/public/${EVENTS_BUCKET}/${storagePath}`;
   } catch (err) {
     console.error("[smart-fill] image reupload error:", err);
     return null;

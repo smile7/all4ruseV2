@@ -57,6 +57,19 @@ type ApifyRunResponse = {
 // The Apify dataset items endpoint returns a direct JSON array, not wrapped.
 type ApifyDatasetItems = ApifyFacebookEventResult[];
 
+// ─── Errors ───────────────────────────────────────────────────────────────────
+
+/**
+ * Thrown when Apify ran successfully but the dataset was empty.
+ * Distinct from a hard actor failure — callers can decide whether to retry.
+ */
+export class EmptyDatasetError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EmptyDatasetError";
+  }
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getEnv() {
@@ -163,8 +176,19 @@ export async function scrapeApifyFacebookEvent(
   const items = (await dataRes.json()) as ApifyDatasetItems;
 
   if (!Array.isArray(items) || items.length === 0) {
-    console.error("[apify] dataset response:", JSON.stringify(items).slice(0, 500));
-    throw new Error("Apify returned no items for this URL");
+    console.error(
+      "[apify] empty dataset for URL:",
+      facebookUrl,
+      "run:",
+      runId,
+      "status:",
+      status,
+      "raw:",
+      JSON.stringify(items).slice(0, 500),
+    );
+    throw new EmptyDatasetError(
+      "Apify returned no items — the event may be private, removed, or Facebook rate-limited this request.",
+    );
   }
 
   const item = items[0]!;

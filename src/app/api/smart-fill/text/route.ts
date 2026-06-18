@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { extractDraftFromText, QuotaExceededError } from "~/lib/smart-fill/gemini";
+import {
+  SmartFillDailyLimitError,
+  smartFillDailyLimitResponse,
+  consumeSmartFillImport,
+} from "~/lib/smart-fill/rate-limit";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 const MAX_TEXT_LENGTH = 3000;
@@ -36,6 +41,15 @@ export async function POST(request: Request) {
 
   const trimmed =
     text.length > MAX_TEXT_LENGTH ? text.slice(0, MAX_TEXT_LENGTH) : text;
+
+  try {
+    await consumeSmartFillImport(user.id);
+  } catch (err) {
+    if (err instanceof SmartFillDailyLimitError) {
+      return smartFillDailyLimitResponse(err);
+    }
+    throw err;
+  }
 
   try {
     const draft = await extractDraftFromText(trimmed);

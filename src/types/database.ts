@@ -235,6 +235,24 @@ export type Database = {
         }
         Relationships: []
       }
+      smart_fill_daily_usage: {
+        Row: {
+          import_count: number
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          import_count?: number
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          import_count?: number
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tags: {
         Row: {
           created_at: string
@@ -258,7 +276,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      consume_smart_fill_import: {
+        Args: { p_daily_limit?: number; p_user_id: string }
+        Returns: {
+          allowed: boolean
+          remaining: number
+          used: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

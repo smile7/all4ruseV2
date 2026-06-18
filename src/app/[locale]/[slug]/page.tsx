@@ -13,6 +13,7 @@ import {
   Phone,
   Share2,
   Ticket,
+  User,
   Users,
 } from "lucide-react";
 
@@ -30,7 +31,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { type Locale, LOCALES } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
-import { eventsApi } from "~/lib/api";
+import { eventsApi, profilesApi } from "~/lib/api";
 import {
   EVENT_DESCRIPTION_BODY_CLASSES,
   plainTextFromHtml,
@@ -156,6 +157,12 @@ export default async function EventDetailPage({ params }: Props) {
     authClient.auth.getUser(),
   ]);
   if (!event) notFound();
+
+  const adminUserId = process.env.NEXT_PUBLIC_ADMIN_USER_ID ?? "";
+  const hostProfile =
+    event.createdBy && event.createdBy !== adminUserId
+      ? await profilesApi.getProfile(publicClient, event.createdBy).then((r) => r.data)
+      : null;
 
   const isEventCreator = Boolean(user && event.createdBy === user.id);
 
@@ -292,7 +299,7 @@ export default async function EventDetailPage({ params }: Props) {
         />
 
         {/* ── Page body ─────────────────────────────────────────────────── */}
-        <div className="mx-auto max-w-5xl px-4 pt-5 pb-4 sm:px-6 sm:pt-7 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 pt-5 pb-4 sm:px-6 sm:pt-7 lg:px-8">
 
           {/* Title + tags */}
           <div className="mb-6 sm:mb-8">
@@ -434,13 +441,21 @@ export default async function EventDetailPage({ params }: Props) {
                     </a>
                   </Button>
                 )}
+                <EventSaveButton eventId={event.id} variant="button" />
                 <Button variant="secondary" asChild className="w-full justify-start gap-2">
                   <a href={gcalUrl} target="_blank" rel="noopener noreferrer">
                     <CalendarPlus className="size-4 shrink-0" />
                     {t("addToCalendar")}
                   </a>
                 </Button>
-                <EventSaveButton eventId={event.id} variant="button" />
+                {hostProfile?.username && (
+                  <Button variant="secondary" asChild className="w-full justify-start gap-2">
+                    <a href={`/${locale}/user/${hostProfile.username}`}>
+                      <User className="size-4 shrink-0" />
+                      {t("organizer")}
+                    </a>
+                  </Button>
+                )}
                 <Button asChild className="w-full justify-start gap-2">
                   <a href={fbShareUrl} target="_blank" rel="noopener noreferrer">
                     <Share2 className="size-4 shrink-0" />
@@ -531,6 +546,14 @@ export default async function EventDetailPage({ params }: Props) {
                   {t("addToCalendar")}
                 </a>
               </Button>
+              {hostProfile?.username && (
+                <Button variant="secondary" asChild className="w-full justify-start gap-2">
+                  <a href={`/${locale}/user/${hostProfile.username}`}>
+                    <User className="size-4 shrink-0" />
+                    {t("organizer")}
+                  </a>
+                </Button>
+              )}
               <Button asChild className="w-full justify-start gap-2">
                 <a href={fbShareUrl} target="_blank" rel="noopener noreferrer">
                   <Share2 className="size-4 shrink-0" />

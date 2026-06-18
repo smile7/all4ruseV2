@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 
 import { extractDraftFromImageBytes, QuotaExceededError } from "~/lib/smart-fill/gemini";
+import { preprocessImageForExtraction } from "~/lib/smart-fill/image-preprocess";
+import {
+  consumeSmartFillImport,
+  SmartFillDailyLimitError,
+  smartFillDailyLimitResponse,
+} from "~/lib/smart-fill/rate-limit";
 import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import type { EventDraft } from "~/types";
@@ -49,6 +55,15 @@ export async function POST(request: Request) {
 
   const imageBytes = new Uint8Array(await file.arrayBuffer());
 
+  try {
+    await consumeSmartFillImport(user.id);
+  } catch (err) {
+    if (err instanceof SmartFillDailyLimitError) {
+      return smartFillDailyLimitResponse(err);
+    }
+    throw err;
+  }
+
   // Upload the image to permanent storage first
   const ext = mimeType.split("/")[1] ?? "jpg";
   const storagePath = `${SMART_FILL_PREFIX}/${crypto.randomUUID()}.${ext}`;
@@ -64,9 +79,12 @@ export async function POST(request: Request) {
   }
 
   try {
+    const { bytes: extractionBytes, mimeType: extractionMime } =
+      await preprocessImageForExtraction(imageBytes, mimeType);
+
     const draft: EventDraft = await extractDraftFromImageBytes(
-      imageBytes,
-      mimeType,
+      extractionBytes,
+      extractionMime,
     );
     draft.image = storagePath;
     return NextResponse.json({ draft });

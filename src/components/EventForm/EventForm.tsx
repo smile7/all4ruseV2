@@ -552,7 +552,9 @@ export function EventForm({
       .from(EVENTS_BUCKET)
       .upload(path, file, { cacheControl: "3600", upsert: false });
     if (error) throw error;
-    return path;
+    // Store the full public URL so both the old and new app can display the image
+    // without needing to know the Supabase base URL at render time.
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${EVENTS_BUCKET}/${path}`;
   }
 
   // ── Submit ────────────────────────────────────────────────────────────────

@@ -6,6 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import {
   Bookmark,
   CalendarDays,
+  ExternalLink,
   LogOut,
   Plus,
   User as UserIcon,
@@ -25,6 +26,7 @@ import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 
 type Props = {
   user: User | null;
+  username?: string;
 };
 
 function getAvatarFallback(user: User): string {
@@ -33,7 +35,7 @@ function getAvatarFallback(user: User): string {
   return name.charAt(0).toUpperCase();
 }
 
-export function HeaderAuthButton({ user }: Props) {
+export function HeaderAuthButton({ user, username }: Props) {
   const t = useTranslations("HomePage");
   const tSaved = useTranslations("SavedEvents");
   const tProfile = useTranslations("Profile");
@@ -74,6 +76,20 @@ export function HeaderAuthButton({ user }: Props) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-auto max-w-100 px-4 py-2">
+        {username && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link
+                href={`/user/${username}`}
+                className="flex cursor-pointer items-center gap-2"
+              >
+                <ExternalLink className="size-4" />
+                {t("viewPublicProfile")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem asChild>
           <Link href="/create-event" className="flex cursor-pointer items-center gap-2">
             <Plus className="size-4" />
