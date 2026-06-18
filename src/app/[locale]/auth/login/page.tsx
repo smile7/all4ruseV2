@@ -18,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -29,10 +30,12 @@ import {
 import { Input } from "~/components/ui/input";
 import { PasswordInput } from "~/components/ui/password-input";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
+import { setAuthRememberPreference } from "~/lib/supabase/session-persistence";
 
 const loginSchema = z.object({
   email: z.email(),
   password: z.string().min(1),
+  rememberMe: z.boolean(),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
@@ -59,13 +62,17 @@ export default function LoginPage() {
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "", password: "", rememberMe: false },
   });
 
   async function onSubmit(values: LoginValues) {
     setAuthError(null);
+    setAuthRememberPreference(values.rememberMe);
     const supabase = getSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithPassword(values);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: values.email,
+      password: values.password,
+    });
 
     if (error) {
       setAuthError(mapLoginError(error.message, t));
@@ -134,6 +141,28 @@ export default function LoginPage() {
                       <PasswordInput autoComplete="current-password" {...field} />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="rememberMe"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-3">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(checked) =>
+                            field.onChange(checked === true)
+                          }
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm font-normal">
+                        {t("rememberMe")}
+                      </FormLabel>
+                    </div>
                   </FormItem>
                 )}
               />

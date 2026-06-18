@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Typography } from "~/components/layout";
+import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { Link } from "~/i18n/navigation";
 
 export const metadata: Metadata = {
@@ -45,7 +46,7 @@ export default function LegalTermsPage() {
         <br />
         Имейл за контакт:{" "}
         <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
-          silvena.miteva.007@gmail.com
+          <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>
       </Typography.P>
       <Typography.H3>2. Приемане на условията</Typography.H3>
@@ -262,7 +263,7 @@ export default function LegalTermsPage() {
       <Typography.P>
         8.2. За да подадете сигнал, моля изпратете имейл на{" "}
         <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
-          silvena.miteva.007@gmail.com
+          <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>{" "}
         с:
       </Typography.P>
@@ -462,7 +463,7 @@ export default function LegalTermsPage() {
       <Typography.P>
         За въпроси относно тези Условия, моля свържете се с нас на:{" "}
         <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
-          silvena.miteva.007@gmail.com
+          <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>
         .
       </Typography.P>

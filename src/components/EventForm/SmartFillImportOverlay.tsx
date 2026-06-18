@@ -1,11 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 
 import { Button } from "~/components/ui/button";
 import { Link } from "~/i18n/navigation";
+import { cn } from "~/lib/utils";
+
+import "~/styles/smart-fill-arcade-loaders.css";
+
+const ARCADE_LOADER_COUNT = 10;
+
+function pickRandomLoaderIndex() {
+  return Math.floor(Math.random() * ARCADE_LOADER_COUNT) + 1;
+}
+
+function subscribeNoop() {
+  return () => {};
+}
+
+function getClientSnapshot() {
+  return true;
+}
+
+function getServerSnapshot() {
+  return false;
+}
 
 type Props = {
   onCancel: () => void;
@@ -13,10 +34,14 @@ type Props = {
 
 export function SmartFillImportOverlay({ onCancel }: Props) {
   const t = useTranslations("SmartFill");
-  const [mounted, setMounted] = useState(false);
+  const isClient = useSyncExternalStore(
+    subscribeNoop,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+  const [loaderIndex] = useState(pickRandomLoaderIndex);
 
   useEffect(() => {
-    setMounted(true);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -25,18 +50,23 @@ export function SmartFillImportOverlay({ onCancel }: Props) {
     };
   }, []);
 
-  if (!mounted) return null;
+  if (!isClient) return null;
 
   return createPortal(
     <div
-      className="bg-background/90 fixed inset-0 z-[200] flex flex-col items-center justify-center px-4 backdrop-blur-sm"
+      className="bg-background/75 fixed inset-0 z-[200] flex flex-col items-center justify-center px-4 backdrop-blur-lg"
       role="dialog"
       aria-modal="true"
       aria-labelledby="smart-fill-import-title"
       aria-describedby="smart-fill-import-desc"
     >
       <div className="flex max-w-sm flex-col items-center gap-6 text-center">
-        <div className="smart-fill-import-loader scale-150" aria-hidden />
+        <div
+          className="smart-fill-arcade-loader-stage rounded-lg border-2 border-foreground/80 bg-background/50 p-5"
+          aria-hidden
+        >
+          <div className={cn(`smart-fill-arcade-loader-${loaderIndex}`)} />
+        </div>
 
         <div className="space-y-2">
           <p id="smart-fill-import-title" className="text-lg font-medium">

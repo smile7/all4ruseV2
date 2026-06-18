@@ -55,6 +55,27 @@ export const profilesApi = {
       .single();
   },
 
+  /** Returns true when no other profile owns this username. */
+  async isUsernameAvailable(
+    client: Client,
+    username: string,
+    excludeUserId?: string,
+  ): Promise<boolean> {
+    const normalized = username.trim().toLowerCase();
+    if (!normalized) return true;
+
+    const { data, error } = await client
+      .from("profiles")
+      .select("id")
+      .eq("username", normalized)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return true;
+    if (excludeUserId && data.id === excludeUserId) return true;
+    return false;
+  },
+
   /**
    * Upcoming (endDate >= today) public events for a profile.
    * Also returns the total count of all active events to determine "host mode".

@@ -2,6 +2,10 @@ import { type NextRequest,NextResponse } from "next/server";
 
 import { DEFAULT_LOCALE } from "~/constants";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
+import {
+  AUTH_REMEMBER_COOKIE,
+  getRememberFlagCookieOptions,
+} from "~/lib/supabase/session-persistence";
 
 /**
  * Supabase PKCE auth callback.
@@ -22,7 +26,7 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get("next") ?? `/${DEFAULT_LOCALE}`;
 
   if (code) {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient({ remember: true });
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
@@ -47,7 +51,13 @@ export async function GET(request: NextRequest) {
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocal = process.env.NODE_ENV === "development";
       const base = isLocal || !forwardedHost ? origin : `https://${forwardedHost}`;
-      return NextResponse.redirect(`${base}${next}`);
+      const response = NextResponse.redirect(`${base}${next}`);
+      response.cookies.set(
+        AUTH_REMEMBER_COOKIE,
+        "1",
+        getRememberFlagCookieOptions(true),
+      );
+      return response;
     }
   }
 

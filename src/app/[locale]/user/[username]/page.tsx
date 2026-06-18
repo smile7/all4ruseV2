@@ -7,6 +7,7 @@ import { ArrowDown, Building2, ExternalLink, Mail, MapPin, Phone } from "lucide-
 
 import { EventCard } from "~/components/EventCard/EventCard";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { DEFAULT_PROFILE_COLOR } from "~/constants";
 import { profilesApi } from "~/lib/api";
 import { parseProfileGallery } from "~/lib/profile-gallery";
@@ -210,7 +211,7 @@ export default async function PublicProfilePage({
                 <a
                   href={profile.website}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener"
                   className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:px-8 sm:py-3.5 sm:text-base"
                   style={{ backgroundColor: color }}
                 >
@@ -307,7 +308,7 @@ export default async function PublicProfilePage({
                         {t("contactEmail")}
                       </div>
                       <div className="mt-1 break-all text-lg font-medium">
-                        {profile.email_to_show}
+                        <ObfuscatedEmail email={profile.email_to_show} />
                       </div>
                     </div>
                   </a>

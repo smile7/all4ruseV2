@@ -5,7 +5,13 @@ import { createClient } from "@supabase/supabase-js";
 
 import type { Database } from "~/types/database";
 
-export async function createSupabaseServerClient() {
+import {
+  AUTH_REMEMBER_COOKIE,
+  applyRememberPolicyToCookieOptions,
+  rememberFromCookieValue,
+} from "./session-persistence";
+
+export async function createSupabaseServerClient(options?: { remember?: boolean }) {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
@@ -17,8 +23,18 @@ export async function createSupabaseServerClient() {
         getAll: () => cookieStore.getAll(),
         setAll: (cookiesToSet) => {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
+            const remember =
+              options?.remember ??
+              rememberFromCookieValue(
+                cookieStore.get(AUTH_REMEMBER_COOKIE)?.value,
+              );
+
+            cookiesToSet.forEach(({ name, value, options: cookieOptions }) =>
+              cookieStore.set(
+                name,
+                value,
+                applyRememberPolicyToCookieOptions(name, cookieOptions, remember),
+              ),
             );
           } catch {
             // Supabase may try to refresh the session token during a Server

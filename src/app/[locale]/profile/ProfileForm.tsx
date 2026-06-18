@@ -26,6 +26,7 @@ import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Textarea } from "~/components/ui/textarea";
 import { AVATARS_BUCKET, DEFAULT_PROFILE_COLOR, PROFILE_COLOR_SWATCHES } from "~/constants";
+import { DEBOUNCE_DELAY, useDebounce } from "~/hooks/useDebounce";
 import { Link, useRouter } from "~/i18n/navigation";
 import { profilesApi } from "~/lib/api";
 import {
@@ -55,6 +56,10 @@ import { cn } from "~/lib/utils";
 import { type Profile, type UpdateProfileInput, updateProfileSchema } from "~/types";
 
 import { ProfileAccountSecurity } from "./ProfileAccountSecurity";
+
+const USERNAME_PATTERN = /^[a-z0-9-]{3,30}$/;
+
+type UsernameAvailability = "idle" | "checking" | "available" | "taken";
 
 type Props = {
   profile: Profile | null;
@@ -176,6 +181,58 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
   const watchUsername = useWatch({ control: form.control, name: "username" });
   const watchColor = useWatch({ control: form.control, name: "color" });
   const activeColor = watchColor || DEFAULT_PROFILE_COLOR;
+  const savedUsername = profile?.username ?? "";
+  const debouncedUsername = useDebounce(watchUsername ?? "", DEBOUNCE_DELAY);
+  const normalizedDebouncedUsername = debouncedUsername.trim().toLowerCase();
+  const normalizedSavedUsername = savedUsername.trim().toLowerCase();
+
+  const immediateUsernameAvailability = useMemo((): UsernameAvailability | "pending-check" => {
+    if (!normalizedDebouncedUsername) return "idle";
+    if (!USERNAME_PATTERN.test(normalizedDebouncedUsername)) return "idle";
+    if (normalizedDebouncedUsername === normalizedSavedUsername) return "available";
+    return "pending-check";
+  }, [normalizedDebouncedUsername, normalizedSavedUsername]);
+
+  const [usernameLookup, setUsernameLookup] = useState<{
+    username: string;
+    status: "available" | "taken";
+  } | null>(null);
+
+  useEffect(() => {
+    if (immediateUsernameAvailability !== "pending-check") return;
+
+    const username = normalizedDebouncedUsername;
+    let cancelled = false;
+
+    const supabase = getSupabaseBrowserClient();
+    profilesApi
+      .isUsernameAvailable(supabase, username, userId)
+      .then((available) => {
+        if (!cancelled) {
+          setUsernameLookup({
+            username,
+            status: available ? "available" : "taken",
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setUsernameLookup(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [immediateUsernameAvailability, normalizedDebouncedUsername, userId]);
+
+  const usernameAvailability = useMemo((): UsernameAvailability => {
+    if (immediateUsernameAvailability !== "pending-check") {
+      return immediateUsernameAvailability;
+    }
+    if (!usernameLookup || usernameLookup.username !== normalizedDebouncedUsername) {
+      return "checking";
+    }
+    return usernameLookup.status;
+  }, [immediateUsernameAvailability, usernameLookup, normalizedDebouncedUsername]);
 
   useRegisterUnsavedChanges(
     form.formState.isDirty || avatarDirty || headerDirty || galleryDirty,
@@ -323,6 +380,17 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
 
   // ── Submit ───────────────────────────────────────────────────────────────────
   async function onSubmit(values: UpdateProfileInput) {
+    const username = values.username?.trim().toLowerCase() ?? "";
+    if (
+      username &&
+      USERNAME_PATTERN.test(username) &&
+      username !== savedUsername.trim().toLowerCase() &&
+      usernameAvailability === "taken"
+    ) {
+      form.setError("username", { message: t("usernameTaken") });
+      return;
+    }
+
     const supabase = getSupabaseBrowserClient();
     let nextAvatarUrl: string | null | undefined;
     let nextHeaderUrl: string | null | undefined;
@@ -361,6 +429,9 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
 
       const { error } = await profilesApi.updateProfile(supabase, userId, payload);
       if (error) {
+        if (error.code === "23505") {
+          form.setError("username", { message: t("usernameTaken") });
+        }
         toast.error(t("errorMessage"));
         return;
       }
@@ -558,6 +629,18 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
                       }
                     />
                   </FormControl>
+                  {usernameAvailability === "checking" ? (
+                    <p className="text-muted-foreground text-xs">{t("usernameChecking")}</p>
+                  ) : null}
+                  {usernameAvailability === "available" &&
+                  debouncedUsername.trim().length >= 3 ? (
+                    <p className="text-xs text-green-600 dark:text-green-500">
+                      {t("usernameAvailable")}
+                    </p>
+                  ) : null}
+                  {usernameAvailability === "taken" ? (
+                    <p className="text-destructive text-xs">{t("usernameTaken")}</p>
+                  ) : null}
                   <FormMessage />
                 </FormItem>
               )}
@@ -570,7 +653,7 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
                 <Link
                   href={`/user/${watchUsername}`}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener"
                   className="text-primary min-w-0 flex-1 truncate text-xs underline-offset-2 hover:underline"
                 >
                   all4ruse.com/{locale}/user/{watchUsername}
@@ -942,7 +1025,16 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
         </Card>
 
         <div className="bg-background/80 sticky bottom-4 z-10 mt-8 flex items-center justify-end gap-3 rounded-xl border p-4 shadow-lg backdrop-blur-md">
-          <Button type="submit" disabled={form.formState.isSubmitting} size="lg" className="min-w-32">
+          <Button
+            type="submit"
+            disabled={
+              form.formState.isSubmitting ||
+              usernameAvailability === "checking" ||
+              usernameAvailability === "taken"
+            }
+            size="lg"
+            className="min-w-32"
+          >
             {t("edit")}
           </Button>
         </div>

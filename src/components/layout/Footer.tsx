@@ -130,7 +130,7 @@ export function Footer() {
           <a
             href={FACEBOOK_URL}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener"
             aria-label="Facebook"
             className="transition-opacity hover:opacity-80"
             style={{ color: FACEBOOK_BRAND_COLOR }}
@@ -140,7 +140,7 @@ export function Footer() {
           <a
             href={INSTAGRAM_URL}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener"
             aria-label="Instagram"
             className="transition-opacity hover:opacity-80"
             style={{ color: INSTAGRAM_BRAND_COLOR }}
@@ -150,7 +150,7 @@ export function Footer() {
           <a
             href={TIKTOK_URL}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener"
             aria-label="TikTok"
             className="text-black dark:text-white transition-opacity hover:opacity-80"
           >

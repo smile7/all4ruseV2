@@ -17,6 +17,7 @@ import { Typography } from "~/components/layout";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { FACEBOOK_URL, INSTAGRAM_URL } from "~/constants";
 import { cn } from "~/lib/utils";
 
@@ -236,7 +237,7 @@ export default async function WhyAll4RusePage() {
               <Typography.P className="mb-1 text-lg font-semibold">{t("email")}</Typography.P>
               <Button variant="link" className="h-auto p-0 text-base font-medium" asChild>
                 <a href="mailto:silvena@all4ruse.com" aria-label={t("emailAriaLabel")}>
-                  silvena@all4ruse.com
+                  <ObfuscatedEmail email="silvena@all4ruse.com" />
                 </a>
               </Button>
             </div>
@@ -244,7 +245,7 @@ export default async function WhyAll4RusePage() {
               <FacebookIcon size={32} className="text-primary mb-2" />
               <Typography.P className="mb-1 text-lg font-semibold">{t("facebookPage")}</Typography.P>
               <Button variant="link" className="h-auto p-0 text-base font-medium" asChild>
-                <a href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer">
+                <a href={FACEBOOK_URL} target="_blank" rel="noopener">
                   {t("facebookProfileLinkText")}
                 </a>
               </Button>
@@ -253,7 +254,7 @@ export default async function WhyAll4RusePage() {
               <InstagramIcon size={32} className="text-primary mb-2" />
               <Typography.P className="mb-1 text-lg font-semibold">{t("instagramLabel")}</Typography.P>
               <Button variant="link" className="h-auto p-0 text-base font-medium" asChild>
-                <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer">
+                <a href={INSTAGRAM_URL} target="_blank" rel="noopener">
                   {t("instagramHandle")}
                 </a>
               </Button>

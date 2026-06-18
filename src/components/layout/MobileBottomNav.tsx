@@ -181,7 +181,7 @@ export function MobileBottomNav() {
               <a
                 href={FACEBOOK_URL}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener"
                 aria-label="Facebook"
                 className="flex flex-col items-center gap-1 transition-opacity hover:opacity-80"
                 style={{ color: FACEBOOK_BRAND_COLOR }}
@@ -194,7 +194,7 @@ export function MobileBottomNav() {
               <a
                 href={INSTAGRAM_URL}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener"
                 aria-label="Instagram"
                 className="flex flex-col items-center gap-1 transition-opacity hover:opacity-80"
                 style={{ color: INSTAGRAM_BRAND_COLOR }}
@@ -207,7 +207,7 @@ export function MobileBottomNav() {
               <a
                 href={TIKTOK_URL}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener"
                 aria-label="TikTok"
                 className="flex flex-col items-center gap-1 text-black transition-opacity hover:opacity-80 dark:text-white"
               >

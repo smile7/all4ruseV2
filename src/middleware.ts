@@ -4,6 +4,11 @@ import createIntlMiddleware from "next-intl/middleware";
 import { createServerClient } from "@supabase/ssr";
 
 import { routing } from "~/i18n/routing";
+import {
+  AUTH_REMEMBER_COOKIE,
+  applyRememberPolicyToCookieOptions,
+  rememberFromCookieValue,
+} from "~/lib/supabase/session-persistence";
 import type { Database } from "~/types/database";
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -29,8 +34,16 @@ export async function middleware(request: NextRequest) {
         cookies: {
           getAll: () => request.cookies.getAll(),
           setAll: (cookiesToSet) => {
+            const remember = rememberFromCookieValue(
+              request.cookies.get(AUTH_REMEMBER_COOKIE)?.value,
+            );
+
             cookiesToSet.forEach(({ name, value, options }) =>
-              supabaseResponse.cookies.set(name, value, options),
+              supabaseResponse.cookies.set(
+                name,
+                value,
+                applyRememberPolicyToCookieOptions(name, options, remember),
+              ),
             );
           },
         },

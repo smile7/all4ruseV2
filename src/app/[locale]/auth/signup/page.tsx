@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import { SocialAuthButtons } from "~/components/auth/SocialAuthButtons";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -29,7 +30,6 @@ import {
 import { Input } from "~/components/ui/input";
 import { PasswordInput } from "~/components/ui/password-input";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
-import { SocialAuthButtons } from "~/components/auth/SocialAuthButtons";
 
 function makeSignupSchema(passwordLengthMsg: string, matchMsg: string, termsMsg: string) {
   return z
@@ -75,6 +75,7 @@ export default function SignupPage() {
   const locale = params.locale as string;
 
   const [authError, setAuthError] = useState<string | null>(null);
+  const [duplicateEmail, setDuplicateEmail] = useState(false);
 
   const schema = makeSignupSchema(
     t("passwordLength"),
@@ -95,9 +96,10 @@ export default function SignupPage() {
 
   async function onSubmit(values: SignupValues) {
     setAuthError(null);
+    setDuplicateEmail(false);
     const supabase = getSupabaseBrowserClient();
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
       options: {
@@ -111,7 +113,19 @@ export default function SignupPage() {
     });
 
     if (error) {
+      const isDuplicate =
+        error.message.toLowerCase().includes("user already registered") ||
+        error.message.toLowerCase().includes("already been registered");
+      setDuplicateEmail(isDuplicate);
       setAuthError(mapSignupError(error.message, t));
+      return;
+    }
+
+    // Confirmed duplicate: Supabase returns success with no error (anti-enumeration)
+    // but identities is empty — no confirmation email is sent.
+    if (!data.user?.identities?.length) {
+      setDuplicateEmail(true);
+      setAuthError(t("userAlreadyExists"));
       return;
     }
 
@@ -232,6 +246,17 @@ export default function SignupPage() {
               {authError && (
                 <p role="alert" className="text-destructive text-sm">
                   {authError}
+                  {duplicateEmail && (
+                    <>
+                      {" "}
+                      <Link
+                        href={`/${locale}/auth/login`}
+                        className="font-medium underline underline-offset-4"
+                      >
+                        {t("userAlreadyExistsLoginLink")}
+                      </Link>
+                    </>
+                  )}
                 </p>
               )}
 

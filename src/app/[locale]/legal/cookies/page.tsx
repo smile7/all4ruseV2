@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Typography } from "~/components/layout";
+import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 
 export const metadata: Metadata = {
   title: "Политика за бисквитки",
@@ -208,7 +209,7 @@ export default function CookiesPage() {
           <a
             href="https://tools.google.com/dlpage/gaoptout"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener"
           >
             https://tools.google.com/dlpage/gaoptout
           </a>
@@ -272,7 +273,7 @@ export default function CookiesPage() {
         <a
           href="https://www.facebook.com/policies/cookies/"
           target="_blank"
-          rel="noreferrer"
+          rel="noopener"
         >
           Facebook Cookie Policy
         </a>
@@ -328,7 +329,7 @@ export default function CookiesPage() {
         За въпроси относно бисквитките и тяхното използване, свържете се с нас
         на имейл:{" "}
         <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
-          silvena.miteva.007@gmail.com
+          <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>
         .
       </Typography.P>

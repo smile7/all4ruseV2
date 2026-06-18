@@ -34,6 +34,7 @@ type Props = {
   /** YYYY-MM-DD — calendar days strictly before this are not selectable */
   disableBefore?: string;
   disabled?: boolean;
+  required?: boolean;
 };
 
 function formatShort(dateStr: string, locale: string): string {
@@ -58,6 +59,7 @@ export function DatePopover({
   id,
   disableBefore,
   disabled = false,
+  required = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const locale = useLocale();
@@ -95,6 +97,7 @@ export function DatePopover({
             type="button"
             variant="ghost"
             disabled={disabled}
+            aria-required={required || undefined}
             className={cn(
               "border-input h-9 w-full justify-start gap-2 rounded-md border bg-secondary px-3 text-sm font-normal shadow-sm transition-colors",
               "hover:bg-secondary/60 focus-visible:ring-ring focus-visible:ring-1",
