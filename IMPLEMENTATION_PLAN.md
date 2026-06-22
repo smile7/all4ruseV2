@@ -431,14 +431,16 @@ Promotional Bulgarian description instructions in text and photo route system pr
 - Verify all interactive elements have accessible labels.
 - Check color contrast ratios against WCAG AA on both light and dark themes.
 
-### 7.10 PWA service worker + offline fallback
+### 7.10 PWA service worker + offline fallback ✅
 
-Do this after all routes are stable so cache strategies don't keep changing.
-
-- Install `next-pwa` (or write a custom service worker via `next.config.ts` `experimental.serviceWorker`).
-- Cache strategy: stale-while-revalidate for static assets, network-first for API routes, cache-first for Supabase Storage images.
-- Create `src/app/offline/page.tsx` — friendly "You are offline" screen with logo and message.
-- Register the service worker in the root layout. Verify offline fallback works in DevTools (Network → Offline).
+- Installed `@serwist/next` + `serwist` (Serwist is the recommended PWA library for Next.js 16 — `next-pwa` requires webpack and conflicts with Turbopack).
+- Created `src/app/sw.ts` — **minimal service worker** intentionally: only caches `/_next/static/*` (CacheFirst) and public images/icons (StaleWhileRevalidate). Navigation, RSC/Flight, and API routes go straight to the network — caching those breaks Supabase SSR auth redirects and causes infinite loading on mobile/PWA.
+- `next.config.ts` wraps config with `withSerwistInit({ swSrc: "src/app/sw.ts", swDest: "public/sw.js", disable: dev })`.
+- `src/app/sw.ts` excluded from the main tsconfig (it needs `webworker` lib, conflicting with DOM types).
+- Created `src/app/[locale]/offline/page.tsx` — friendly "You are offline" screen with retry and home buttons; `Offline` i18n namespace added to all 4 locale files.
+- All PWA icon assets generated into `public/`: `favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png`, `android-chrome-192x192.png`, `android-chrome-512x512.png`, `og-home.png`. Script preserved at `scripts/generate-icons.mjs` for easy re-generation when new branding arrives.
+- `layout.tsx` already has all required meta tags: `appleWebApp`, `theme-color`, `icons`, OG tags — no changes needed.
+- Verify: production build generates `public/sw.js`. Lighthouse PWA audit should pass. On Android Chrome "Add to Home Screen" prompt appears; on iOS Safari "Add to Home Screen" works.
 
 ---
 

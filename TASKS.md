@@ -184,7 +184,7 @@ Smart-fill helpers that pre-populate `EventForm` from a Facebook URL, freeform t
 - [ ] Mobile responsiveness review
 - [ ] Accessibility review (keyboard nav, contrast, ARIA)
 - [ ] i18n audit — all UI strings through t(), all 4 languages complete
-- [ ] PWA service worker + offline fallback (next-pwa, cache strategies, offline page)
+- [x] PWA service worker + offline fallback — Serwist (`@serwist/next`), minimal SW (static assets + images only, no navigation cache to protect Supabase SSR auth), offline page at `/[locale]/offline`, all icons in `public/`
 
 ## Phase 11 — Quick Fixes & UI Polish
 

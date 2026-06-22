@@ -410,7 +410,6 @@
     "galleryUploadFailed": "There was a problem uploading the gallery images. Please try again.",
     "showSavedEventsLabel": "Show my saved events on my public profile",
     "showSavedEventsHint": "If you have no created events, saved events will appear instead.",
-    "savedEventsSection": "Saved events",
     "colorLabel": "Profile color",
     "colorHint": "Used as the accent color on your public profile.",
     "publicProfileCard": "Public profile",
@@ -556,5 +555,11 @@
     "fbCheckUnknown": "Couldn't verify visibility. You can still try importing.",
     "fbCheckInvalidUrl": "Enter a valid facebook.com/events/... URL first.",
     "fbCheckError": "Couldn't check this event right now. Try again in a moment."
+  },
+  "Offline": {
+    "title": "No internet connection",
+    "description": "It looks like you're offline. Check your connection and try again.",
+    "retry": "Try again",
+    "home": "Go to home page"
   }
 }

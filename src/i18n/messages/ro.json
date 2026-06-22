@@ -410,7 +410,6 @@
     "galleryUploadFailed": "A apărut o problemă la încărcarea imaginilor. Încercați din nou.",
     "showSavedEventsLabel": "Afișează evenimentele salvate pe profilul public",
     "showSavedEventsHint": "Dacă nu ai creat evenimente, cele salvate vor apărea în locul lor.",
-    "savedEventsSection": "Evenimente salvate",
     "colorLabel": "Culoarea profilului",
     "colorHint": "Folosit ca accent pe profilul tău public.",
     "publicProfileCard": "Profil public",
@@ -556,5 +555,11 @@
     "fbCheckUnknown": "Nu am putut confirma vizibilitatea. Poți încerca totuși importul.",
     "fbCheckInvalidUrl": "Introdu mai întâi un URL valid facebook.com/events/...",
     "fbCheckError": "Verificarea a eșuat. Încearcă din nou peste puțin."
+  },
+  "Offline": {
+    "title": "Nu există conexiune la internet",
+    "description": "Se pare că nu ești conectat la internet. Verifică conexiunea și încearcă din nou.",
+    "retry": "Încearcă din nou",
+    "home": "Mergi la pagina principală"
   }
 }
