@@ -1,6 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
 
+import {
+  buildUsernameCandidate,
+  deriveUsernameFromEmail,
+  deriveUsernameFromUserId,
+  isUsernameInvalid,
+} from "~/lib/profile-username";
 import type { Event, Profile, Tag, UpdateProfileInput } from "~/types";
 import type { Database } from "~/types/database";
 
@@ -53,6 +59,88 @@ export const profilesApi = {
       .select("*")
       .eq("username", username.toLowerCase())
       .single();
+  },
+
+  /** Returns true when no other profile owns this username. */
+  async isUsernameAvailable(
+    client: Client,
+    username: string,
+    excludeUserId?: string,
+  ): Promise<boolean> {
+    const normalized = username.trim().toLowerCase();
+    if (!normalized) return true;
+
+    const { data, error } = await client
+      .from("profiles")
+      .select("id")
+      .eq("username", normalized)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return true;
+    if (excludeUserId && data.id === excludeUserId) return true;
+    return false;
+  },
+
+  /** First available username derived from email (base, then base-2, base-3, …). */
+  async deriveAvailableUsername(
+    client: Client,
+    email: string,
+    excludeUserId?: string,
+  ): Promise<string> {
+    const base = deriveUsernameFromEmail(email);
+
+    for (let attempt = 1; attempt <= 999; attempt++) {
+      const candidate = buildUsernameCandidate(base, attempt);
+      if (await this.isUsernameAvailable(client, candidate, excludeUserId)) {
+        return candidate;
+      }
+    }
+
+    if (excludeUserId) {
+      const fallback = deriveUsernameFromUserId(excludeUserId);
+      if (await this.isUsernameAvailable(client, fallback, excludeUserId)) {
+        return fallback;
+      }
+    }
+
+    throw new Error("Could not derive an available username");
+  },
+
+  /**
+   * Fix profiles whose username is missing, email-shaped, or fails format rules.
+   * Returns the updated profile, or null when no fix was needed or the update failed.
+   */
+  async fixInvalidProfileUsername(
+    client: Client,
+    userId: string,
+    email: string,
+  ): Promise<Profile | null> {
+    const { data: profile, error: fetchError } = await client
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (fetchError || !profile) return null;
+    if (!isUsernameInvalid(profile.username)) return null;
+
+    let username: string;
+    try {
+      username = await this.deriveAvailableUsername(client, email, userId);
+    } catch {
+      return null;
+    }
+
+    const { data: updated, error: updateError } = await client
+      .from("profiles")
+      .update({ username, updated_at: new Date().toISOString() })
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (updateError) return null;
+    return updated as Profile;
   },
 
   /**
@@ -132,10 +220,17 @@ export const profilesApi = {
   },
 
   async updateProfile(client: Client, userId: string, values: ProfileUpdatePayload) {
-    // header_url is cast via `any` because the DB column may not exist yet.
-    // Once the column is added and `npm run db:types` is run, this cast can be removed.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const payload = { ...values, updated_at: new Date().toISOString() } as any;
+    const normalizedUsername =
+      values.username === undefined
+        ? undefined
+        : values.username.trim().toLowerCase();
+
+    const payload = {
+      ...values,
+      ...(normalizedUsername !== undefined && { username: normalizedUsername }),
+      updated_at: new Date().toISOString(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- header_url may not be in generated types yet
+    } as any;
     return client
       .from("profiles")
       .update(payload)

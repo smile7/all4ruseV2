@@ -64,6 +64,7 @@ type Props = {
   onBlur?: () => void;
   placeholder?: string;
   disabled?: boolean;
+  required?: boolean;
 };
 
 function blockTypeValue(editor: Editor | null): string {
@@ -92,6 +93,7 @@ export function EventDescriptionEditor({
   onBlur,
   placeholder,
   disabled,
+  required = false,
 }: Props) {
   const t = useTranslations("CreateEvent");
   const locale = useLocale();
@@ -172,7 +174,10 @@ export function EventDescriptionEditor({
   const emojiTheme = resolvedTheme === "dark" ? "dark" : "light";
 
   return (
-    <div className="event-description-editor border-input bg-background/30 focus-within:ring-ring rounded-md border shadow-xs focus-within:ring-2">
+    <div
+      className="event-description-editor border-input bg-background/30 focus-within:ring-ring rounded-md border shadow-xs focus-within:ring-2"
+      aria-required={required || undefined}
+    >
       <div
         className="bg-muted/30 flex flex-wrap items-center gap-1 border-b p-2"
         role="toolbar"

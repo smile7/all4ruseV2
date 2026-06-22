@@ -188,6 +188,12 @@ This phase covers the full authentication experience and user-facing account pag
 ### 3.1 Login page ✅
 
 - `src/app/[locale]/auth/login/page.tsx` — `"use client"`, email + password form, react-hook-form + zod, `supabase.auth.signInWithPassword`. Inline error messages mapped from Supabase error strings. Password visibility toggle via `PasswordInput` component. Redirects to `next` param or locale home on success.
+- **Remember me** — checkbox on the login form (default **unchecked**). Stores the user’s choice in an `a4r-remember` cookie (`1` = persistent, `0` = session-only). Supabase SSR always writes long-lived auth cookies, so the app intercepts every cookie write and strips `maxAge` / `expires` when remember-me is off — auth cookies then die when the browser is fully closed. Wired through:
+  - `src/lib/supabase/session-persistence.ts` — preference cookie + `applyRememberPolicyToCookieOptions`
+  - `src/lib/supabase/browser-cookies.ts` — browser `setAll` adapter for `createBrowserClient`
+  - `src/lib/supabase/server.ts` + `src/middleware.ts` — same policy on server-side refresh
+  - `src/lib/supabase/client.ts` — clears preference on sign-out
+- OAuth / email-confirmation / password-reset callbacks (`/auth/callback`) always use a persistent session — there is no remember-me UI on those flows.
 
 ### 3.2 Signup page + email confirmation ✅
 
@@ -340,7 +346,7 @@ Every registered user gets a public profile page at `/[locale]/user/[username]`.
 
 ## Phase 6 — Event Creation Automation ✅
 
-Smart-fill helpers pre-populate `EventForm` via `SmartFillPanel` and `src/app/api/smart-fill/*` routes. **Remaining:** tetris loading overlay (Phase 8.7); confirm env vars in each deployment environment.
+Smart-fill helpers pre-populate `EventForm` via `SmartFillPanel` and `src/app/api/smart-fill/*` routes. **Remaining:** confirm env vars in each deployment environment.
 
 ### 6.1 `EventDraft` type and `SmartFillPanel` component ✅
 
@@ -444,7 +450,7 @@ Small, targeted fixes to improve consistency and resolve reported bugs. Each sub
 
 ### 8.1 Event form UX
 
-- **Required field markers** — `RequiredMark` (`*`) added on title, description, start date, start time, address, and first organizer name in `EventForm`. **Remaining:** end date, town, and `aria-required="true"` on required inputs (source: `createEventSchema` zod shape).
+- **Required field markers** ✅ — `RequiredMark` (`*`) and `aria-required="true"` on title, description, start/end date, start time, address, town, and first organizer in `EventForm`.
 - **Price field type** ✅ — `price` input is `<Input type="text">`; schema already uses `z.string().optional()` (Supabase column is `text`).
 - **Sticky bar mobile overflow** ✅ — sticky action bar uses `bottom-12` on mobile (clears `MobileBottomNav`) and `md:bottom-4` on desktop.
 
@@ -473,20 +479,19 @@ Fixes in `src/lib/api/saved-events.ts` and `src/hooks/query/saved-events.ts`:
 
 - `FilterContent.tsx` — search/host/place inputs use local state; debounced effects write to URL params only when value differs. Browser back syncs via `startTransition` effects.
 
-### 8.6 Link improvements
+### 8.6 Link improvements ✅
 
-- **Remove `noreferrer`** from external event links (ticket links, Facebook links, website links). Keep `rel="noopener"` for security. This allows partner websites to see traffic from All4Ruse in their analytics. Audit all `<a>` and `<Link>` usages that point to external domains.
-- **Obfuscate emails** — wherever user emails are rendered in the UI (profile pages, event detail host section), encode the address using a CSS `direction: rtl` + `unicode-bidi: bidi-override` trick or encode characters as HTML entities. This prevents scrapers from harvesting email addresses while keeping them readable for humans.
+- **Remove `noreferrer`** from external event links — keep `rel="noopener"` only so partners can see referral traffic in analytics.
+- **Obfuscate emails** — `ObfuscatedEmail` component (`src/components/ui/obfuscated-email.tsx`) on event detail, public profile, legal pages, and why-all4ruse; RTL CSS trick + `aria-label` for screen readers.
 
-### 8.7 Smart Fill tetris overlay
+### 8.7 Smart Fill arcade overlay ✅
 
-Replaces the plain loading spinner in `SmartFillPanel` (Phase 6) during the AI/Apify request:
+Full-viewport blurred overlay during Smart Fill import (`SmartFillImportOverlay`):
 
-- Full-viewport modal overlay (`fixed inset-0 z-50 bg-background/90 backdrop-blur-sm`).
-- CSS/Canvas tetris animation: randomly colored tetrominoes fall from the top of the screen and stack at the bottom. Keep it performant — use `requestAnimationFrame` with a Canvas element or CSS keyframe animations per piece.
-- Overlay text: "Анализирам събитието..." (or appropriate message per tab).
-- "Откажи" button in the center — calls `AbortController.abort()` on the fetch request and closes the overlay.
-- On success: overlay dismisses automatically before the preview card is shown.
+- All 10 CSS loaders from [css-loaders.com/arcade](https://css-loaders.com/arcade/) in `src/styles/smart-fill-arcade-loaders.css`; one picked at random per import.
+- `fixed inset-0 z-[200]` with `backdrop-blur-lg` and semi-transparent background.
+- Cancel button aborts the fetch via `AbortController` and closes the overlay.
+- Optional "My events" link lets the user leave the page (import stops on unmount).
 
 ### 8.8 Host section on event detail ✅
 
@@ -511,7 +516,7 @@ Supabase Auth handles the OAuth flow. Reference: https://supabase.com/ui/docs/ne
 - `/auth/callback` route handles OAuth code exchange; syncs provider `avatar_url` into `profiles.avatar_url` on first login using a single atomic `UPDATE … WHERE avatar_url IS NULL` (no manual upload overwrite risk).
 - `SocialAuthButtons` component on both `LoginPage` and `SignupPage` — outline variant, inline SVG provider icons ("Влез с Facebook", "Влез с Google"), separated by an "или" divider.
 - Profile page auto-corrects email-based usernames inserted by the DB trigger (detects `@` in username, derives clean slug from email prefix on first visit).
-- Duplicate email error on signup mapped to translated message with a link to login.
+- Duplicate email on signup: map explicit Supabase errors **and** detect confirmed duplicates via empty `data.user.identities` (Supabase anti-enumeration — no error, no email sent); show translated message with link to login instead of signup-success.
 
 ### 9.2 Remember me
 
@@ -519,17 +524,14 @@ Supabase Auth handles the OAuth flow. Reference: https://supabase.com/ui/docs/ne
 - Supabase JS `createBrowserClient` persists session in `localStorage` by default. When "Remember me" is unchecked, instead use `persistSession: false` by passing it to `signInWithPassword` options — this stores the session only in memory, not in `localStorage`.
 - Default state: unchecked (session-only). This matches what most users expect.
 
-### 9.3 Duplicate email error on signup ✅
+### 9.3 Duplicate email on signup ✅
 
-Supabase returns `"User already registered"` or a 422 when the email already exists. Map this in the signup form error handler:
+Two cases:
 
-```ts
-if (error.message.includes("already registered")) {
-  setError("root", { message: t("auth.emailAlreadyRegistered") });
-}
-```
+1. **Explicit error** — Supabase may return `"User already registered"`; map to `Profile.userAlreadyExists`.
+2. **Anti-enumeration (confirmed duplicate)** — `signUp` returns `{ error: null, user: { identities: [] } }`: no confirmation email is sent. Detect with `!data.user?.identities?.length`, show the same message + inline link to login. Do **not** redirect to signup-success.
 
-Add i18n key `auth.emailAlreadyRegistered` in all locale files: "Имейлът е вече регистриран. Искаш ли да [влезеш]?" — the word "влезеш" links to the login page.
+Unconfirmed duplicate (same email, never confirmed): Supabase resends the confirmation email and returns a user **with** identities — signup-success is correct.
 
 ### 9.4 reCAPTCHA v3
 

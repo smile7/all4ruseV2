@@ -819,7 +819,7 @@ export function EventForm({
                   <FormItem>
                     <FormLabel>{t("title")}<RequiredMark /></FormLabel>
                     <FormControl>
-                      <Input placeholder={t("enterTitle")} {...field} />
+                      <Input placeholder={t("enterTitle")} aria-required="true" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -837,6 +837,7 @@ export function EventForm({
                         key={descriptionEditorKey}
                         placeholder={t("enterDescription")}
                         disabled={isSubmitting}
+                        required
                         value={field.value}
                         onChange={field.onChange}
                         onBlur={field.onBlur}
@@ -927,6 +928,7 @@ export function EventForm({
                           placeholder={t("pickDate")}
                           clearLabel={t("clearDate")}
                           disabled={isSubmitting}
+                          required
                         />
                       </FormControl>
                       <FormMessage />
@@ -955,7 +957,7 @@ export function EventForm({
                     name="endDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("toDate")}</FormLabel>
+                        <FormLabel>{t("toDate")}<RequiredMark /></FormLabel>
                         <FormControl>
                           <DatePopover
                             id={field.name}
@@ -966,6 +968,7 @@ export function EventForm({
                             clearLabel={t("clearDate")}
                             disableBefore={startDate}
                             disabled={isSubmitting}
+                            required
                           />
                         </FormControl>
                         <FormMessage />
@@ -1092,7 +1095,7 @@ export function EventForm({
                     <FormItem>
                       <FormLabel>{t("fromTime")}<RequiredMark /></FormLabel>
                       <FormControl>
-                        <Input type="time" {...field} />
+                        <Input type="time" aria-required="true" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1143,7 +1146,7 @@ export function EventForm({
                   <FormItem>
                     <FormLabel>{t("address")}<RequiredMark /></FormLabel>
                     <FormControl>
-                      <Input placeholder={t("enterAddress")} {...field} />
+                      <Input placeholder={t("enterAddress")} aria-required="true" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1169,9 +1172,9 @@ export function EventForm({
                 name="town"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("town")}</FormLabel>
+                    <FormLabel>{t("town")}<RequiredMark /></FormLabel>
                     <FormControl>
-                      <Input placeholder="Русе" {...field} />
+                      <Input placeholder="Русе" aria-required="true" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1205,6 +1208,7 @@ export function EventForm({
                           <FormControl>
                             <Input
                               placeholder={t("enterOrganizerName")}
+                              aria-required={index === 0 ? true : undefined}
                               {...f}
                             />
                           </FormControl>

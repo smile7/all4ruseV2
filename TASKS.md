@@ -59,6 +59,7 @@
   - Auth callback route at `src/app/auth/callback/route.ts` (PKCE code exchange)
   - All error states mapped to translated messages; password visibility toggle on all password fields
   - Supabase Auth via `@supabase/ssr` — no external auth library
+- [x] Remember me on login — unchecked = session-only auth cookies (cleared when the browser is fully quit); checked = persistent cookies (~400 days). Preference stored in `a4r-remember`; policy applied in `session-persistence.ts`, `browser-cookies.ts`, server client, and middleware on every request.
 - [x] Header + MobileBottomNav full auth wiring
   - Mobile header top-right: primary "+" button → `/create-event`
   - Desktop header: avatar dropdown (Create Event · Profile · My Events · Logout) when authenticated, "Влез" link when guest
@@ -85,7 +86,7 @@
 ### DB + types
 
 - [x] Add `header_url text` column to `profiles` in Supabase (in `database.ts`)
-- [ ] Add `UNIQUE` constraint on `profiles.username`
+- [x] Add `UNIQUE` constraint on `profiles.username`
 - [x] Run `npm run db:types` to regenerate `src/types/database.ts`
 - [x] Extend `updateProfileSchema` / `UpdateProfileInput` with `color`; `header_url` via `ProfileUpdatePayload` in `profiles.ts`
 - [x] Extend `ProfileUpdatePayload` in `src/lib/api/profiles.ts` with `header_url` (+ `color` through schema)
@@ -100,7 +101,7 @@
 - [x] Add color picker (curated swatch palette) to `ProfileForm`
 - [x] Add header/cover photo upload to `ProfileForm` — `headers/{userId}` path
 - [x] Show copyable public profile link on profile page after username is set
-- [ ] Username validation in `ProfileForm`: debounced uniqueness check (format + inline sanitize done; DB uniqueness on save only)
+- [x] Username validation in `ProfileForm`: debounced uniqueness check (format + inline sanitize done; DB uniqueness on save only)
 - [x] Show banner nudge on profile page when no username set
 
 ### Public profile page
@@ -156,10 +157,10 @@ Smart-fill helpers that pre-populate `EventForm` from a Facebook URL, freeform t
 
 ### Env vars to add to `.env.local`
 
-- [ ] `APIFY_TOKEN`, `APIFY_ACTOR_ID` (deploy-time — confirm in each environment)
-- [ ] `APIFY_ACTOR_ID_GRABO`, `APIFY_ACTOR_ID_RUSE_DANUBE`
-- [ ] `GEMINI_API_KEY`
-- [ ] `ADMIN_USER_ID` (server-only), `NEXT_PUBLIC_ADMIN_USER_ID` (UI gating)
+- [x] `APIFY_TOKEN`, `APIFY_ACTOR_ID` (deploy-time — confirm in each environment)
+- [x] `APIFY_ACTOR_ID_GRABO`, `APIFY_ACTOR_ID_RUSE_DANUBE`
+- [x] `GEMINI_API_KEY`
+- [x] `ADMIN_USER_ID` (server-only), `NEXT_PUBLIC_ADMIN_USER_ID` (UI gating)
 
 ### i18n
 
@@ -191,7 +192,7 @@ Small targeted fixes and visual consistency improvements.
 
 ### Event form
 
-- [x] Mark required fields with `*` and `aria-required` in `EventForm` — `*` added on title, description, start date/time, address, first organizer; still missing end date, town, and `aria-required` on inputs
+- [x] Mark required fields with `*` and `aria-required` in `EventForm` — title, description, start/end date, start time, address, town, first organizer
 - [x] Change `price` field from `number` input to `text` — accepts "10", "10–20", "Безплатно", etc. (matches Supabase `text` column)
 - [x] Fix sticky bottom action bar on mobile — `bottom-12` on mobile clears bottom nav; `md:bottom-4` on desktop
 
@@ -214,13 +215,13 @@ Small targeted fixes and visual consistency improvements.
 
 ### Links & email safety
 
-- [ ] Remove `noreferrer` from external event links (keep `noopener` only) so partner websites can track referrals
-- [ ] Obfuscate displayed email addresses (CSS direction trick or Unicode encoding) to prevent scraper spam
+- [x] Remove `noreferrer` from external event links (keep `noopener` only) so partner websites can track referrals
+- [x] Obfuscate displayed email addresses (CSS `direction: rtl` + `bidi-override` trick via `ObfuscatedEmail` component) to prevent scraper spam
 
 ### Smart Fill loading UX (Phase 9 extension)
 
-- [ ] Replace plain spinner in `SmartFillPanel` with a full-screen tetris animation overlay (falling/stacking tetromino pieces) during AI/FB/URL import
-- [ ] Add "Откажи" (cancel) button on overlay to abort the request and close
+- [x] Replace plain spinner in `SmartFillPanel` with full-screen blurred overlay + random arcade CSS loader from [css-loaders.com/arcade](https://css-loaders.com/arcade/) during AI/FB/URL import
+- [x] Add cancel button on overlay to abort the request and close (`AbortController` + `loadingCancel` i18n)
 
 ### Host display on event detail
 
@@ -239,8 +240,8 @@ Small targeted fixes and visual consistency improvements.
 
 ### Login UX
 
-- [ ] Add "Запомни ме" (Remember me) checkbox to login form — when unchecked, use `persistSession: false`
-- [x] Handle "User already registered" error on signup with a specific translated message and a link to login
+- [x] Add "Запомни ме" (Remember me) checkbox to login form — when unchecked, use `persistSession: false`
+- [x] Handle duplicate email on signup — explicit Supabase error **and** empty `identities` anti-enumeration response; translated message + link to login (no false "check your email" redirect)
 
 ### Security
 

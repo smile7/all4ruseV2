@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Typography } from "~/components/layout";
+import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { Link } from "~/i18n/navigation";
 
 export const metadata: Metadata = {
@@ -49,7 +50,7 @@ export default function PrivacyPage() {
         <br />
         Имейл за контакт по GDPR въпроси:{" "}
         <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
-          silvena.miteva.007@gmail.com
+          <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>
       </Typography.P>
       <Typography.H3>3. Категории на субектите на данни</Typography.H3>
@@ -276,7 +277,7 @@ export default function PrivacyPage() {
         За да упражните което и да е от горните права, моля свържете се с
         администратора на имейл:{" "}
         <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
-          silvena.miteva.007@gmail.com
+          <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>
         .
         <br />
@@ -294,7 +295,7 @@ export default function PrivacyPage() {
         Адрес: гр. София 1592, бул. „Проф. Цветан Лазаров“ № 2
         <br />
         Уебсайт:{" "}
-        <a href="https://www.cpdp.bg" target="_blank" rel="noopener noreferrer">
+        <a href="https://www.cpdp.bg" target="_blank" rel="noopener">
           https://www.cpdp.bg
         </a>
         <br />
@@ -302,7 +303,7 @@ export default function PrivacyPage() {
         <br />
         Електронна поща:{" "}
         <a href={`mailto:kzld@cpdp.bg`} className="text-primary text-base font-medium underline" aria-label="Имейл на КЗЛД: kzld at cpdp dot bg">
-          kzld@cpdp.bg
+          <ObfuscatedEmail email="kzld@cpdp.bg" />
         </a>
       </Typography.P>
       <Typography.P>
@@ -385,7 +386,7 @@ export default function PrivacyPage() {
         За въпроси относно обработката на вашите лични данни или за упражняване
         на правата си, моля свържете се с нас на:{" "}
         <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
-          silvena.miteva.007@gmail.com
+          <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>
         .
       </Typography.P>

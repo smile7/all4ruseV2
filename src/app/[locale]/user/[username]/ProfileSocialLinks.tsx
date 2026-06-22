@@ -24,7 +24,7 @@ export function ProfileSocialLinks({ links, color, className }: Props) {
           key={href}
           href={href}
           target="_blank"
-          rel="noopener noreferrer"
+          rel="noopener"
           aria-label={label}
           className="flex size-9 items-center justify-center rounded-full border transition-colors"
           style={{ borderColor: `${color}60` }}

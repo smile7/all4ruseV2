@@ -29,6 +29,7 @@ import {
 } from "~/components/layout";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
+import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { type Locale, LOCALES } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { eventsApi, profilesApi } from "~/lib/api";
@@ -377,7 +378,7 @@ export default async function EventDetailPage({ params }: Props) {
                             key={i}
                             href={o.link}
                             target="_blank"
-                            rel="noopener noreferrer"
+                            rel="noopener"
                             className="text-sm font-semibold underline-offset-2 hover:underline"
                           >
                             {o.name}
@@ -409,7 +410,7 @@ export default async function EventDetailPage({ params }: Props) {
                       href={`mailto:${event.email}`}
                       className="text-sm font-semibold hover:underline"
                     >
-                      {event.email}
+                      <ObfuscatedEmail email={event.email} />
                     </a>
                   </EventDetailRow>
                 )}
@@ -427,7 +428,7 @@ export default async function EventDetailPage({ params }: Props) {
                 )}
                 {event.ticketsLink && (
                   <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                    <a href={event.ticketsLink} target="_blank" rel="noopener noreferrer">
+                    <a href={event.ticketsLink} target="_blank" rel="noopener">
                       <Ticket className="size-4 shrink-0" />
                       {t("buyTickets")}
                     </a>
@@ -435,7 +436,7 @@ export default async function EventDetailPage({ params }: Props) {
                 )}
                 {event.fbLink && (
                   <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                    <a href={event.fbLink} target="_blank" rel="noopener noreferrer">
+                    <a href={event.fbLink} target="_blank" rel="noopener">
                       <ExternalLink className="size-4 shrink-0" />
                       {t("facebook")}
                     </a>
@@ -443,7 +444,7 @@ export default async function EventDetailPage({ params }: Props) {
                 )}
                 <EventSaveButton eventId={event.id} variant="button" />
                 <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                  <a href={gcalUrl} target="_blank" rel="noopener noreferrer">
+                  <a href={gcalUrl} target="_blank" rel="noopener">
                     <CalendarPlus className="size-4 shrink-0" />
                     {t("addToCalendar")}
                   </a>
@@ -457,7 +458,7 @@ export default async function EventDetailPage({ params }: Props) {
                   </Button>
                 )}
                 <Button asChild className="w-full justify-start gap-2">
-                  <a href={fbShareUrl} target="_blank" rel="noopener noreferrer">
+                  <a href={fbShareUrl} target="_blank" rel="noopener">
                     <Share2 className="size-4 shrink-0" />
                     {t("shareOnFacebook")}
                   </a>
@@ -533,7 +534,7 @@ export default async function EventDetailPage({ params }: Props) {
               )}
               {event.fbLink && (
                 <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                  <a href={event.fbLink} target="_blank" rel="noopener noreferrer">
+                  <a href={event.fbLink} target="_blank" rel="noopener">
                     <ExternalLink className="size-4 shrink-0" />
                     {t("facebook")}
                   </a>
@@ -541,7 +542,7 @@ export default async function EventDetailPage({ params }: Props) {
               )}
               <EventSaveButton eventId={event.id} variant="button" />
               <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                <a href={gcalUrl} target="_blank" rel="noopener noreferrer">
+                <a href={gcalUrl} target="_blank" rel="noopener">
                   <CalendarPlus className="size-4 shrink-0" />
                   {t("addToCalendar")}
                 </a>
@@ -555,7 +556,7 @@ export default async function EventDetailPage({ params }: Props) {
                 </Button>
               )}
               <Button asChild className="w-full justify-start gap-2">
-                <a href={fbShareUrl} target="_blank" rel="noopener noreferrer">
+                <a href={fbShareUrl} target="_blank" rel="noopener">
                   <Share2 className="size-4 shrink-0" />
                   {t("shareOnFacebook")}
                 </a>
