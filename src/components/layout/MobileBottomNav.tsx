@@ -25,8 +25,14 @@ import {
 import { FacebookIcon, InstagramIcon, TikTokIcon } from "~/components/icons/SocialIcons";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "~/components/ui/drawer";
 import { Separator } from "~/components/ui/separator";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import {
   FACEBOOK_BRAND_COLOR,
   FACEBOOK_URL,
@@ -95,7 +101,7 @@ export function MobileBottomNav() {
 
   const tabClass = (active: boolean) =>
     [
-      "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors",
+      "flex flex-col items-center justify-center gap-1 py-3 text-[11px] font-medium transition-colors",
       active ? "text-primary" : "text-muted-foreground",
     ].join(" ");
 
@@ -164,16 +170,16 @@ export function MobileBottomNav() {
         </button>
       </nav>
 
-      {/* ── More sheet ─────────────────────────────────────────────────── */}
-      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent
-          side="bottom"
-          className="rounded-t-2xl px-0 pt-0 md:hidden"
+      {/* ── More drawer ────────────────────────────────────────────────── */}
+      <Drawer open={moreOpen} onOpenChange={setMoreOpen}>
+        <DrawerContent
+          className="rounded-t-2xl md:hidden"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <SheetHeader className="border-border border-b px-5 py-4">
-            <SheetTitle className="text-center text-sm font-semibold">{t("more")}</SheetTitle>
-          </SheetHeader>
+          <DrawerHeader className="border-border border-b px-5 pb-4 pt-2">
+            <DrawerTitle className="text-center text-sm font-semibold">{t("more")}</DrawerTitle>
+            <DrawerDescription className="sr-only">{t("more")}</DrawerDescription>
+          </DrawerHeader>
 
           <div className="max-h-[70svh] overflow-y-auto px-5 py-3">
             {/* Social icons */}
@@ -300,21 +306,23 @@ export function MobileBottomNav() {
               © All4Ruse {new Date().getFullYear()}
             </p>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
 
-      {/* ── Profile / Auth sheet ───────────────────────────────────────── */}
-      <Sheet open={profileOpen} onOpenChange={setProfileOpen}>
-        <SheetContent
-          side="bottom"
-          className="rounded-t-2xl px-0 pt-0 md:hidden"
+      {/* ── Profile / Auth drawer ─────────────────────────────────────── */}
+      <Drawer open={profileOpen} onOpenChange={setProfileOpen}>
+        <DrawerContent
+          className="rounded-t-2xl md:hidden"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <SheetHeader className="border-border border-b px-5 py-4">
-            <SheetTitle className="text-center text-sm font-semibold">
+          <DrawerHeader className="border-border border-b px-5 pb-4 pt-2">
+            <DrawerTitle className="text-center text-sm font-semibold">
               {user ? t("account") : t("loginSignup")}
-            </SheetTitle>
-          </SheetHeader>
+            </DrawerTitle>
+            <DrawerDescription className="sr-only">
+              {user ? t("account") : t("loginSignup")}
+            </DrawerDescription>
+          </DrawerHeader>
 
           <div className="max-h-[60svh] overflow-y-auto px-5 py-3">
             {user ? (
@@ -336,7 +344,7 @@ export function MobileBottomNav() {
                     <p className="text-muted-foreground truncate text-xs">{user.email}</p>
                   </div>
                 </div>
-                
+
                 <Separator className="my-3" />
 
                 {username && (
@@ -350,8 +358,8 @@ export function MobileBottomNav() {
                   </Link>
                 )}
 
-                <Link 
-                  href="/create-event" 
+                <Link
+                  href="/create-event"
                   className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
                   onClick={() => setProfileOpen(false)}
                 >
@@ -406,8 +414,8 @@ export function MobileBottomNav() {
               </div>
             )}
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

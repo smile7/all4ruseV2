@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 
 import { ThemeProvider } from "~/components/ThemeProvider";
@@ -54,6 +54,10 @@ export default function RootLayout({
 }
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

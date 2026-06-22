@@ -28,10 +28,11 @@ export default async function LocaleLayout({ children, params }: Props) {
         {/* Mobile filter drawer — portal-renders to body, trigger is in Header */}
         <FiltersMobileDrawer />
         {/*
-          pb-16  — clears the mobile bottom nav bar (~56px + safe area)
-          md:pb-10 — clears the fixed desktop footer (~40px)
+          main-layout — responsive bottom padding that clears the mobile nav
+          bar (including iOS home indicator safe area) on mobile, and the
+          fixed desktop footer on md+. Defined in globals.css.
         */}
-        <main className="min-h-[calc(100svh-3.5rem)] overflow-x-clip pb-16 md:pb-10 xl:px-30">
+        <main className="main-layout min-h-[calc(100svh-3.5rem)] overflow-x-clip xl:px-30">
           {children}
         </main>
         <Footer />
