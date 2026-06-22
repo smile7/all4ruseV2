@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { USERNAME_PATTERN, USERNAME_VALIDATION_MESSAGE } from "~/lib/profile-username";
+
 import {
   plainTextFromHtml,
   sanitizeEventDescription,
@@ -86,11 +88,7 @@ export type UpdateEventInput = Partial<CreateEventInput>;
 
 export const updateProfileSchema = z.object({
   full_name: z.string().max(100).optional().or(z.literal("")),
-  username: z
-    .string()
-    .regex(/^[a-z0-9-]{3,30}$/, "3–30 знака: малки букви, цифри, тире")
-    .optional()
-    .or(z.literal("")),
+  username: z.string().regex(USERNAME_PATTERN, USERNAME_VALIDATION_MESSAGE),
   bio: z.string().max(500).optional().or(z.literal("")),
   phone: z.string().max(30).optional().or(z.literal("")),
   place: z.string().max(100).optional().or(z.literal("")),

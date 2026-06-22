@@ -5,8 +5,8 @@ import { createServerClient } from "@supabase/ssr";
 
 import { routing } from "~/i18n/routing";
 import {
-  AUTH_REMEMBER_COOKIE,
   applyRememberPolicyToCookieOptions,
+  AUTH_REMEMBER_COOKIE,
   rememberFromCookieValue,
 } from "~/lib/supabase/session-persistence";
 import type { Database } from "~/types/database";
@@ -24,45 +24,45 @@ export async function middleware(request: NextRequest) {
   const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}/, "");
   const needsAuth = AUTH_REQUIRED.some((p) => pathnameWithoutLocale.startsWith(p));
 
-  if (needsAuth) {
-    const supabaseResponse = NextResponse.next({ request });
+  const response = intlMiddleware(request);
 
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
-      {
-        cookies: {
-          getAll: () => request.cookies.getAll(),
-          setAll: (cookiesToSet) => {
-            const remember = rememberFromCookieValue(
-              request.cookies.get(AUTH_REMEMBER_COOKIE)?.value,
-            );
+  const remember = rememberFromCookieValue(
+    request.cookies.get(AUTH_REMEMBER_COOKIE)?.value,
+  );
 
-            cookiesToSet.forEach(({ name, value, options }) =>
-              supabaseResponse.cookies.set(
-                name,
-                value,
-                applyRememberPolicyToCookieOptions(name, options, remember),
-              ),
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
+    {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+            response.cookies.set(
+              name,
+              value,
+              applyRememberPolicyToCookieOptions(name, options, remember),
             );
-          },
+          });
         },
       },
-    );
+    },
+  );
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (!user) {
-      const locale = pathname.split("/")[1] ?? routing.defaultLocale;
-      const loginUrl = new URL(`/${locale}/auth/login`, request.url);
-      loginUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
+  if (needsAuth && !user) {
+    const locale = pathname.split("/")[1] ?? routing.defaultLocale;
+    const loginUrl = new URL(`/${locale}/auth/login`, request.url);
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
-  return intlMiddleware(request);
+  return response;
 }
 
 export const config = {

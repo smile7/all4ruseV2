@@ -59,6 +59,7 @@
   - Auth callback route at `src/app/auth/callback/route.ts` (PKCE code exchange)
   - All error states mapped to translated messages; password visibility toggle on all password fields
   - Supabase Auth via `@supabase/ssr` — no external auth library
+- [x] Remember me on login — unchecked = session-only auth cookies (cleared when the browser is fully quit); checked = persistent cookies (~400 days). Preference stored in `a4r-remember`; policy applied in `session-persistence.ts`, `browser-cookies.ts`, server client, and middleware on every request.
 - [x] Header + MobileBottomNav full auth wiring
   - Mobile header top-right: primary "+" button → `/create-event`
   - Desktop header: avatar dropdown (Create Event · Profile · My Events · Logout) when authenticated, "Влез" link when guest
@@ -85,7 +86,7 @@
 ### DB + types
 
 - [x] Add `header_url text` column to `profiles` in Supabase (in `database.ts`)
-- [ ] Add `UNIQUE` constraint on `profiles.username`
+- [x] Add `UNIQUE` constraint on `profiles.username`
 - [x] Run `npm run db:types` to regenerate `src/types/database.ts`
 - [x] Extend `updateProfileSchema` / `UpdateProfileInput` with `color`; `header_url` via `ProfileUpdatePayload` in `profiles.ts`
 - [x] Extend `ProfileUpdatePayload` in `src/lib/api/profiles.ts` with `header_url` (+ `color` through schema)
@@ -100,7 +101,7 @@
 - [x] Add color picker (curated swatch palette) to `ProfileForm`
 - [x] Add header/cover photo upload to `ProfileForm` — `headers/{userId}` path
 - [x] Show copyable public profile link on profile page after username is set
-- [ ] Username validation in `ProfileForm`: debounced uniqueness check (format + inline sanitize done; DB uniqueness on save only)
+- [x] Username validation in `ProfileForm`: debounced uniqueness check (format + inline sanitize done; DB uniqueness on save only)
 - [x] Show banner nudge on profile page when no username set
 
 ### Public profile page
@@ -156,10 +157,10 @@ Smart-fill helpers that pre-populate `EventForm` from a Facebook URL, freeform t
 
 ### Env vars to add to `.env.local`
 
-- [ ] `APIFY_TOKEN`, `APIFY_ACTOR_ID` (deploy-time — confirm in each environment)
-- [ ] `APIFY_ACTOR_ID_GRABO`, `APIFY_ACTOR_ID_RUSE_DANUBE`
-- [ ] `GEMINI_API_KEY`
-- [ ] `ADMIN_USER_ID` (server-only), `NEXT_PUBLIC_ADMIN_USER_ID` (UI gating)
+- [x] `APIFY_TOKEN`, `APIFY_ACTOR_ID` (deploy-time — confirm in each environment)
+- [x] `APIFY_ACTOR_ID_GRABO`, `APIFY_ACTOR_ID_RUSE_DANUBE`
+- [x] `GEMINI_API_KEY`
+- [x] `ADMIN_USER_ID` (server-only), `NEXT_PUBLIC_ADMIN_USER_ID` (UI gating)
 
 ### i18n
 
@@ -239,7 +240,7 @@ Small targeted fixes and visual consistency improvements.
 
 ### Login UX
 
-- [ ] Add "Запомни ме" (Remember me) checkbox to login form — when unchecked, use `persistSession: false`
+- [x] Add "Запомни ме" (Remember me) checkbox to login form — when unchecked, use `persistSession: false`
 - [x] Handle duplicate email on signup — explicit Supabase error **and** empty `identities` anti-enumeration response; translated message + link to login (no false "check your email" redirect)
 
 ### Security

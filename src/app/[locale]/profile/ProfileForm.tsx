@@ -51,13 +51,16 @@ import {
   HEADER_INPUT_ACCEPT,
   validateHeaderFile,
 } from "~/lib/profile-header";
+import {
+  isUsernameInvalid,
+  sanitizeUsernameInput,
+  USERNAME_PATTERN,
+} from "~/lib/profile-username";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 import { cn } from "~/lib/utils";
 import { type Profile, type UpdateProfileInput, updateProfileSchema } from "~/types";
 
 import { ProfileAccountSecurity } from "./ProfileAccountSecurity";
-
-const USERNAME_PATTERN = /^[a-z0-9-]{3,30}$/;
 
 type UsernameAvailability = "idle" | "checking" | "available" | "taken";
 
@@ -78,7 +81,8 @@ function toFormDefaults(
   const p = profile as (Profile & { show_saved_events?: boolean | null }) | null;
   return {
     full_name: p?.full_name ?? "",
-    username: p?.username ?? "",
+    username:
+      p?.username && !isUsernameInvalid(p.username) ? p.username : "",
     bio: p?.bio ?? "",
     name_to_show: p?.name_to_show ?? "",
     phone: p?.phone ?? "",
@@ -183,8 +187,12 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
   const activeColor = watchColor || DEFAULT_PROFILE_COLOR;
   const savedUsername = profile?.username ?? "";
   const debouncedUsername = useDebounce(watchUsername ?? "", DEBOUNCE_DELAY);
+  const normalizedWatchUsername = (watchUsername ?? "").trim().toLowerCase();
   const normalizedDebouncedUsername = debouncedUsername.trim().toLowerCase();
   const normalizedSavedUsername = savedUsername.trim().toLowerCase();
+  const usernamePendingDebounce =
+    normalizedWatchUsername !== normalizedDebouncedUsername &&
+    USERNAME_PATTERN.test(normalizedWatchUsername);
 
   const immediateUsernameAvailability = useMemo((): UsernameAvailability | "pending-check" => {
     if (!normalizedDebouncedUsername) return "idle";
@@ -380,18 +388,21 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
 
   // ── Submit ───────────────────────────────────────────────────────────────────
   async function onSubmit(values: UpdateProfileInput) {
-    const username = values.username?.trim().toLowerCase() ?? "";
-    if (
-      username &&
-      USERNAME_PATTERN.test(username) &&
-      username !== savedUsername.trim().toLowerCase() &&
-      usernameAvailability === "taken"
-    ) {
-      form.setError("username", { message: t("usernameTaken") });
-      return;
+    const username = values.username.trim().toLowerCase();
+    const supabase = getSupabaseBrowserClient();
+
+    if (username !== normalizedSavedUsername) {
+      const available = await profilesApi.isUsernameAvailable(
+        supabase,
+        username,
+        userId,
+      );
+      if (!available) {
+        form.setError("username", { message: t("usernameTaken") });
+        return;
+      }
     }
 
-    const supabase = getSupabaseBrowserClient();
     let nextAvatarUrl: string | null | undefined;
     let nextHeaderUrl: string | null | undefined;
     let nextGalleryUrls: string[] | undefined;
@@ -422,6 +433,7 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
 
       const payload = {
         ...values,
+        username,
         ...(nextAvatarUrl !== undefined && { avatar_url: nextAvatarUrl }),
         ...(nextHeaderUrl !== undefined && { header_url: nextHeaderUrl }),
         ...(nextGalleryUrls !== undefined && { profile_gallery: nextGalleryUrls }),
@@ -431,6 +443,7 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
       if (error) {
         if (error.code === "23505") {
           form.setError("username", { message: t("usernameTaken") });
+          return;
         }
         toast.error(t("errorMessage"));
         return;
@@ -624,9 +637,7 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
                       autoComplete="username"
                       placeholder="your-name"
                       {...field}
-                      onChange={(e) =>
-                        field.onChange(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
-                      }
+                      onChange={(e) => field.onChange(sanitizeUsernameInput(e.target.value))}
                     />
                   </FormControl>
                   {usernameAvailability === "checking" ? (
@@ -1029,6 +1040,7 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
             type="submit"
             disabled={
               form.formState.isSubmitting ||
+              usernamePendingDebounce ||
               usernameAvailability === "checking" ||
               usernameAvailability === "taken"
             }

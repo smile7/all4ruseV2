@@ -188,6 +188,12 @@ This phase covers the full authentication experience and user-facing account pag
 ### 3.1 Login page ✅
 
 - `src/app/[locale]/auth/login/page.tsx` — `"use client"`, email + password form, react-hook-form + zod, `supabase.auth.signInWithPassword`. Inline error messages mapped from Supabase error strings. Password visibility toggle via `PasswordInput` component. Redirects to `next` param or locale home on success.
+- **Remember me** — checkbox on the login form (default **unchecked**). Stores the user’s choice in an `a4r-remember` cookie (`1` = persistent, `0` = session-only). Supabase SSR always writes long-lived auth cookies, so the app intercepts every cookie write and strips `maxAge` / `expires` when remember-me is off — auth cookies then die when the browser is fully closed. Wired through:
+  - `src/lib/supabase/session-persistence.ts` — preference cookie + `applyRememberPolicyToCookieOptions`
+  - `src/lib/supabase/browser-cookies.ts` — browser `setAll` adapter for `createBrowserClient`
+  - `src/lib/supabase/server.ts` + `src/middleware.ts` — same policy on server-side refresh
+  - `src/lib/supabase/client.ts` — clears preference on sign-out
+- OAuth / email-confirmation / password-reset callbacks (`/auth/callback`) always use a persistent session — there is no remember-me UI on those flows.
 
 ### 3.2 Signup page + email confirmation ✅
 

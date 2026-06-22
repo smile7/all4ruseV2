@@ -3,23 +3,10 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { Typography } from "~/components/layout/Typography";
 import { eventsApi, profilesApi } from "~/lib/api";
+import { isUsernameInvalid } from "~/lib/profile-username";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 import { ProfileForm } from "./ProfileForm";
-
-/**
- * Derive a valid username from an email address.
- * e.g. "silvena.miteva@gmail.com" → "silvena-miteva"
- */
-function deriveUsername(email: string): string {
-  const prefix = email.split("@")[0] ?? email;
-  const cleaned = prefix
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-") // replace non-alphanum runs with dash
-    .replace(/^-+|-+$/g, "")     // trim leading/trailing dashes
-    .slice(0, 30);
-  return cleaned.length >= 3 ? cleaned : cleaned.padEnd(3, "0");
-}
 
 export default async function ProfilePage() {
   const supabase = await createSupabaseServerClient();
@@ -41,17 +28,13 @@ export default async function ProfilePage() {
   // ── Fix invalid username on first profile visit ────────────────────────────
   // Some DB triggers set username to the full email address. Detect and fix it.
   let profile = rawProfile ?? null;
-  const usernameIsInvalid =
-    !profile?.username || profile.username.includes("@");
-
-  if (usernameIsInvalid && user.email) {
-    const { data: updated } = await supabase
-      .from("profiles")
-      .update({ username: deriveUsername(user.email) })
-      .eq("id", user.id)
-      .select()
-      .single();
-    if (updated) profile = updated;
+  if (user.email && isUsernameInvalid(profile?.username)) {
+    const fixed = await profilesApi.fixInvalidProfileUsername(
+      supabase,
+      user.id,
+      user.email,
+    );
+    if (fixed) profile = fixed;
   }
 
   const t = await getTranslations("Profile");
