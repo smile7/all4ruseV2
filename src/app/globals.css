@@ -319,6 +319,18 @@
   }
 }
 
+/* ── Main content bottom padding — clears mobile nav + iPhone home indicator ─
+   On mobile: nav tab height (~58px) + home indicator safe area (~34px on X+)
+   On desktop (md+): clears the fixed footer only; safe area is always 0 there. */
+.main-layout {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  .main-layout {
+    padding-bottom: 2.5rem;
+  }
+}
+
 /* ── LightGallery mobile viewport fix ───────────────────────────────────────
    The viewer toolbar sits at the top of the fixed overlay. On mobile, portrait
    images can end up starting behind that top area, so we reduce the usable
