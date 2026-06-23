@@ -216,14 +216,41 @@ export function isEventEnded(event: EventSchedule, now: Date = new Date()): bool
   }
 }
 
-/** True between start and end instants (inclusive of end). */
+/** Maximum duration an event without an explicit end time is shown as live. */
+const LIVE_FALLBACK_DURATION_MS = 90 * 60 * 1000; // 1.5 hours
+
+/**
+ * True while the event is in progress:
+ * - If `endTime` is set → live between start and end instants (inclusive).
+ * - If `endTime` is absent → live for up to 1.5 hours after `startTime`.
+ */
 export function isLiveNow(event: EventSchedule, now: Date = new Date()): boolean {
   try {
     const t = now.getTime();
-    return t >= getEventStartMs(event) && t <= getEventEndMs(event);
+    const startMs = getEventStartMs(event);
+    if (t < startMs) return false;
+    if (event.endTime?.trim()) return t <= getEventEndMs(event);
+    return t <= startMs + LIVE_FALLBACK_DURATION_MS;
   } catch {
     return false;
   }
+}
+
+/**
+ * Returns a localized relative time string showing how long ago the event started,
+ * e.g. "ПРЕДИ 27 МИНУТИ" (bg) or "27 MINUTES AGO" (en).
+ *
+ * Intended for client-side use only — relies on browser Intl data.
+ */
+export function formatLiveElapsed(event: EventSchedule, locale: string, now = new Date()): string {
+  const intlLocale = getIntlLocale(locale);
+  const elapsedMs = now.getTime() - getEventStartMs(event);
+  const elapsedMinutes = Math.max(1, Math.floor(elapsedMs / 60000));
+  const rtf = new Intl.RelativeTimeFormat(intlLocale, { numeric: "always", style: "long" });
+  if (elapsedMinutes < 60) {
+    return rtf.format(-elapsedMinutes, "minutes").toLocaleUpperCase(intlLocale);
+  }
+  return rtf.format(-Math.floor(elapsedMinutes / 60), "hours").toLocaleUpperCase(intlLocale);
 }
 
 /**

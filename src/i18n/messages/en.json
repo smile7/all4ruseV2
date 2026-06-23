@@ -237,7 +237,20 @@
     "email": "Email",
     "youtubeVideo": "YouTube video",
     "editEvent": "Edit event",
-    "organizer": "Organizer"
+    "organizer": "Organizer",
+    "claimEvent": "Claim this event",
+    "claimEventDialogTitle": "Claim this event",
+    "claimEventDialogDescription": "If this is your event, submit an ownership request. We will review it and get back to you.",
+    "claimEventMessageLabel": "Message (optional)",
+    "claimEventMessagePlaceholder": "Briefly describe why you are claiming this event…",
+    "claimEventSubmit": "Submit request",
+    "claimEventCancel": "Cancel",
+    "claimEventPending": "Request sent",
+    "claimEventApproved": "Approved",
+    "claimEventDeclined": "Declined",
+    "claimEventAlreadyClaimed": "You already have a pending request for this event.",
+    "claimEventSuccess": "Your request was submitted successfully.",
+    "claimEventError": "An error occurred. Please try again."
   },
   "CurrentEvents": {
     "createEvent": "Create an Event",

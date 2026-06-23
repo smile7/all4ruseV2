@@ -237,7 +237,20 @@
     "email": "Email",
     "youtubeVideo": "Video YouTube",
     "editEvent": "Editează evenimentul",
-    "organizer": "Organizator"
+    "organizer": "Organizator",
+    "claimEvent": "Revendic acest eveniment",
+    "claimEventDialogTitle": "Revendică acest eveniment",
+    "claimEventDialogDescription": "Dacă acesta este evenimentul tău, trimite o cerere de proprietate. O vom analiza și te vom contacta.",
+    "claimEventMessageLabel": "Mesaj (opțional)",
+    "claimEventMessagePlaceholder": "Descrie pe scurt de ce revendici acest eveniment…",
+    "claimEventSubmit": "Trimite cererea",
+    "claimEventCancel": "Anulează",
+    "claimEventPending": "Cerere trimisă",
+    "claimEventApproved": "Aprobat",
+    "claimEventDeclined": "Respins",
+    "claimEventAlreadyClaimed": "Ai deja o cerere trimisă pentru acest eveniment.",
+    "claimEventSuccess": "Cererea ta a fost trimisă cu succes.",
+    "claimEventError": "A apărut o eroare. Te rugăm să încerci din nou."
   },
   "CurrentEvents": {
     "createEvent": "Creează un eveniment",

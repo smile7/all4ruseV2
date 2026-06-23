@@ -17,6 +17,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { ClaimEventButton } from "~/components/ClaimEvent/ClaimEventButton";
 import { EventCard, EventSaveButton } from "~/components/EventCard";
 import { EventTag } from "~/components/EventTag";
 import {
@@ -32,7 +33,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { type Locale, LOCALES } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
-import { eventsApi, profilesApi } from "~/lib/api";
+import { claimsApi, eventsApi, profilesApi } from "~/lib/api";
 import {
   EVENT_DESCRIPTION_BODY_CLASSES,
   plainTextFromHtml,
@@ -166,6 +167,24 @@ export default async function EventDetailPage({ params }: Props) {
       : null;
 
   const isEventCreator = Boolean(user && event.createdBy === user.id);
+
+  // Show claim button when the event was imported by the admin (no real owner yet)
+  // and the logged-in user is not the admin themselves.
+  const showClaimButton =
+    Boolean(user) &&
+    event.createdBy === adminUserId &&
+    user?.id !== adminUserId;
+
+  const existingClaim =
+    showClaimButton && user
+      ? await claimsApi
+          .getMyClaimForEvent(authClient, event.id, user.id)
+          .catch(() => null)
+      : null;
+
+  const initialClaimStatus = existingClaim
+    ? (existingClaim.status as import("~/lib/api").ClaimStatus)
+    : null;
 
   const formattedTitle = formatEventTitle(event.title);
   const imageUrl = getEventImageUrl(event.image);
@@ -463,6 +482,12 @@ export default async function EventDetailPage({ params }: Props) {
                     {t("shareOnFacebook")}
                   </a>
                 </Button>
+                {showClaimButton && (
+                  <ClaimEventButton
+                    eventId={event.id}
+                    initialClaimStatus={initialClaimStatus}
+                  />
+                )}
               </div>
 
               {/* Description */}
@@ -561,6 +586,12 @@ export default async function EventDetailPage({ params }: Props) {
                   {t("shareOnFacebook")}
                 </a>
               </Button>
+              {showClaimButton && (
+                <ClaimEventButton
+                  eventId={event.id}
+                  initialClaimStatus={initialClaimStatus}
+                />
+              )}
               {mapsEmbedUrl && (
                 <div className="mt-1 overflow-hidden rounded-lg border">
                   <iframe
