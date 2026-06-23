@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { ArrowUpToLineIcon, Calendar, CalendarDays, LayoutGrid } from "lucide-react";
@@ -114,6 +114,8 @@ function ActiveEventsList({
   const t = useTranslations("HomePage");
   const { filters, hasActiveFilters } = useFilters();
   const [view, setView] = useViewPreference("grid");
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [calendarHeight, setCalendarHeight] = useState<number | null>(null);
 
   const params = {
     search: filters.search || undefined,
@@ -128,11 +130,57 @@ function ActiveEventsList({
     initialData,
   });
 
+  // On mobile only: when switching to calendar view, scroll the tabs to just
+  // below the sticky header, lock page scroll, then size the calendar to fill
+  // the remaining viewport so there is only ONE scroll surface.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isMobile = window.innerWidth < 768;
+
+    if (view !== "calendar" || !isMobile) {
+      document.documentElement.style.overflow = "";
+      return;
+    }
+
+    const tabsEl = tabsRef.current;
+    if (!tabsEl) return;
+
+    // Scroll so the top of the tabs section lands just below the sticky header.
+    const headerEl = document.querySelector<HTMLElement>("header");
+    const headerH = headerEl?.getBoundingClientRect().height ?? 0;
+    const tabsTop = tabsEl.getBoundingClientRect().top;
+    const scrollAdjust = tabsTop - headerH;
+    if (Math.abs(scrollAdjust) > 1) {
+      window.scrollBy({ top: scrollAdjust, behavior: "instant" });
+    }
+
+    // Prevent the page from scrolling while the calendar is shown.
+    document.documentElement.style.overflow = "hidden";
+
+    // Measure remaining space after the tabs section and above the mobile nav.
+    // setState is called inside the rAF callback (external system callback), not directly.
+    const frameId = requestAnimationFrame(() => {
+      const bottom = tabsEl.getBoundingClientRect().bottom;
+      // 4rem matches the main-layout padding-bottom that clears the mobile nav.
+      const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const bottomNavPx = rootFontSize * 4;
+      setCalendarHeight(Math.max(window.innerHeight - bottom - bottomNavPx, 200));
+    });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      document.documentElement.style.overflow = "";
+      // Reset height when leaving calendar view (cleanup = external-system callback).
+      setCalendarHeight(null);
+    };
+  }, [view]);
+
   if (isLoading && !events.length) return <EventsGridSkeleton />;
 
   return (
     <>
-      <div className="mt-4 flex flex-col gap-2">
+      <div ref={tabsRef} className="mt-4 flex flex-col gap-2">
         <p className="text-muted-foreground text-sm text-left">
           {hasActiveFilters
             ? t("filteredEventsSummary", {
@@ -147,12 +195,12 @@ function ActiveEventsList({
           onValueChange={(v) => setView(v as "grid" | "calendar")}
           className="w-full"
         >
-          <TabsList className="h-8 w-full gap-1 p-1">
-            <TabsTrigger value="grid" className="h-7 flex-1 gap-1.5 px-2.5 text-xs data-[state=inactive]:text-primary!">
+          <TabsList className="h-9 w-full gap-1 p-[3px]">
+            <TabsTrigger value="grid" className="flex-1 gap-2 px-3 text-xs data-[state=inactive]:text-primary!">
               <LayoutGrid className="size-3.5" aria-hidden />
               {t("gridView")}
             </TabsTrigger>
-            <TabsTrigger value="calendar" className="h-7 flex-1 gap-1.5 px-2.5 text-xs data-[state=inactive]:text-primary!">
+            <TabsTrigger value="calendar" className="flex-1 gap-2 px-3 text-xs data-[state=inactive]:text-primary!">
               <CalendarDays className="size-3.5" aria-hidden />
               {t("calendarView")}
             </TabsTrigger>
@@ -161,7 +209,10 @@ function ActiveEventsList({
       </div>
 
       {view === "calendar" ? (
-        <EventsCalendarView events={events} />
+        <EventsCalendarView
+          events={events}
+          containerHeight={calendarHeight ?? undefined}
+        />
       ) : (
         <EventsGrid events={events} groupByMonth />
       )}

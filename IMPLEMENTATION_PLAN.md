@@ -287,6 +287,7 @@ Authenticated users can bookmark events; bookmarks persist in the database. Gues
 ### 4.5 Saved page ✅
 
 - `src/app/[locale]/profile/saved-events/page.tsx` — SSR, upcoming/current + lazy past sections via `SavedEventsSections`.
+- Route is publicly accessible (middleware `AUTH_EXCLUDED`); unauthenticated visitors see a prompt UI with login/signup CTAs instead of a hard redirect.
 
 ### 4.6 i18n + nav ✅
 
@@ -639,33 +640,30 @@ Add a section at the top of `src/app/[locale]/page.tsx` (above the filters and e
 - Server Component — no client-side JS needed for the section itself.
 - Keep it compact; the events list should start without excessive scrolling on mobile.
 
-### 11.2 Calendar week view
+### 11.2 Calendar month view ✅
 
-Add a view mode toggle at the top of the events listing (`EventsList`) with two options: **Карти** (grid, default) and **Календар** (week view). Persist preference in `localStorage`.
+View mode toggle in `EventsList`: **Карти** (grid, default) ↔ **Календар** (month grid). Preference persisted in `localStorage` via `useViewPreference`.
 
-**Calendar layout:**
+**Calendar layout (`src/components/EventsCalendar/`):**
 
-- 7-column grid, one column per day, week starts Monday.
-- Column header: day abbreviation + date number (e.g. "Пон 8").
-- Events from `getActiveEvents` are distributed into their day columns by `startDate`.
-- Each event renders as a compact chip: colored badge using the event's first tag color + title (truncated) + time.
-- Clicking a chip navigates to the event detail page.
+- Month grid, week rows starting Monday, rendered by `EventsCalendarView.tsx`.
+- Event chips span multiple day columns for multi-day events using a track-packing algorithm in `calendar-utils.ts` (up to 10 tracks per week).
+- Each chip: event thumbnail + title (truncated) + time; clicking navigates to event detail.
+- Today highlighted; days outside the current month dimmed.
 
 **Navigation:**
 
-- Prev week (`<`) / Next week (`>`) arrow buttons.
-- "Тази седмица" button resets to the current week.
-- Week offset stored in component state (no URL param needed for now).
-
-**Mobile:**
-
-- Horizontal scroll on the 7-column grid — all 7 days are full width; user scrolls right.
-- Alternative: show 3 days at a time with swipe navigation (simpler on very small screens).
+- Prev month (`<`) / Next month (`>`) buttons with month + year heading.
+- Month/year header shows current position.
 
 **Data:**
 
-- Reuse the existing TanStack Query `useActiveEvents` data — no extra API call.
-- Filter events by date on the client (already in memory).
+- `useCalendarMonthEvents(year, month)` hook in `src/hooks/query/events.ts` — per-month cache key, queries `eventsApi.getEventsByMonthRange`, disabled for future months.
+- Each month lazily populated on navigation; previous months reuse the TanStack Query cache.
+
+**Additional — event detail hero zoom ✅:**
+
+- LightGallery zoom plugin wired into `EventHeroGallery` — clicking the hero image opens a full-screen zoomable lightbox.
 
 ---
 

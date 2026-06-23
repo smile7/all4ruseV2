@@ -327,6 +327,7 @@
     "userAlreadyExists": "This email is already registered.",
     "userAlreadyExistsLoginLink": "Log in to your account",
     "errorOccurred": "An error occurred. Please try again later.",
+    "captchaError": "We could not verify that you are human. Please try again.",
     "thankYouForSigningUp": "Thank you for signing up!",
     "pleaseCheckEmail": "Please check your email to confirm your registration.",
     "rememberMe": "Remember me",

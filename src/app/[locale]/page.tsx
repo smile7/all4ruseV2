@@ -1,9 +1,13 @@
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 
+import { Plus } from "lucide-react";
+
 import { EventsGridSkeleton } from "~/components/EventCard/EventCardSkeleton";
 import { EventsList } from "~/components/EventsList";
 import { Typography } from "~/components/layout";
+import { Button } from "~/components/ui/button";
+import { Link } from "~/i18n/navigation";
 import { eventsApi } from "~/lib/api";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import type { Event, GetEventsParams } from "~/types";
@@ -88,6 +92,15 @@ export default async function HomePage({
       <Typography.P className="text-muted-foreground text-center">
         {t("pageDescription")}
       </Typography.P>
+
+      <div className="mt-2 flex justify-center">
+        <Button asChild variant="outline">
+          <Link href="/create-event">
+            <Plus className="size-4" />
+            {t("createEvent")}
+          </Link>
+        </Button>
+      </div>
 
       {/*
         Suspense is required because EventsList internally calls useSearchParams().
