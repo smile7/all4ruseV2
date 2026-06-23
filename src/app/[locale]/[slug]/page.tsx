@@ -28,12 +28,13 @@ import {
   EventYoutubeEmbed,
   Typography,
 } from "~/components/layout";
+import { ReportEventButton } from "~/components/ReportEvent/ReportEventButton";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { type Locale, LOCALES } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
-import { claimsApi, eventsApi, profilesApi } from "~/lib/api";
+import { claimsApi, eventsApi, profilesApi, reportsApi } from "~/lib/api";
 import {
   EVENT_DESCRIPTION_BODY_CLASSES,
   plainTextFromHtml,
@@ -185,6 +186,18 @@ export default async function EventDetailPage({ params }: Props) {
   const initialClaimStatus = existingClaim
     ? (existingClaim.status as import("~/lib/api").ClaimStatus)
     : null;
+
+  // Show report button for authenticated users who are not the event creator.
+  const showReportButton = Boolean(user) && !isEventCreator && user?.id !== adminUserId;
+
+  const existingReport =
+    showReportButton && user
+      ? await reportsApi
+          .getMyReportForEvent(authClient, event.id, user.id)
+          .catch(() => null)
+      : null;
+
+  const alreadyReported = Boolean(existingReport);
 
   const formattedTitle = formatEventTitle(event.title);
   const imageUrl = getEventImageUrl(event.image);
@@ -488,6 +501,12 @@ export default async function EventDetailPage({ params }: Props) {
                     initialClaimStatus={initialClaimStatus}
                   />
                 )}
+                {showReportButton && (
+                  <ReportEventButton
+                    eventId={event.id}
+                    alreadyReported={alreadyReported}
+                  />
+                )}
               </div>
 
               {/* Description */}
@@ -590,6 +609,12 @@ export default async function EventDetailPage({ params }: Props) {
                 <ClaimEventButton
                   eventId={event.id}
                   initialClaimStatus={initialClaimStatus}
+                />
+              )}
+              {showReportButton && (
+                <ReportEventButton
+                  eventId={event.id}
+                  alreadyReported={alreadyReported}
                 />
               )}
               {mapsEmbedUrl && (

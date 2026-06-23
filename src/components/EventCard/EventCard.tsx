@@ -105,30 +105,42 @@ export function EventCard({
 
           {/* Date + time badge — top left */}
           <div className="bg-background/50 absolute top-2.5 left-2.5 z-20 min-w-14 rounded-xl px-2.5 py-2 text-center shadow backdrop-blur-sm">
-            {/* Live: show relative elapsed time; today/tomorrow → single large label; other days → "11 ЮНИ" + weekday */}
-            <p className={cn("leading-none font-bold tracking-wide", (dateBadge.secondary || liveElapsed) ? "text-sm" : "text-base")}>
-              {liveElapsed ?? dateBadge.primary}
-            </p>
-            {!liveElapsed && dateBadge.secondary && (
-              <p className="text-muted-foreground mt-1 text-[11px] leading-none">
-                {dateBadge.secondary}
-              </p>
+            {live ? (
+              <>
+                {/* Pulsing live indicator */}
+                <div className="mb-1.5 flex items-center justify-center gap-1">
+                  <span className="relative flex size-2 shrink-0">
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-green-500" />
+                  </span>
+                  <span className="text-[10px] font-semibold leading-none text-green-600 dark:text-green-400">
+                    {t("liveNow")}
+                  </span>
+                </div>
+                <p className="leading-none text-[10px] font-bold tracking-wide">
+                  {liveElapsed}
+                </p>
+              </>
+            ) : (
+              /* Today/tomorrow → single large label; other days → "11 ЮНИ" + weekday */
+              <>
+                <p className={cn("leading-none font-bold tracking-wide", dateBadge.secondary ? "text-sm" : "text-base")}>
+                  {dateBadge.primary}
+                </p>
+                {dateBadge.secondary && (
+                  <p className="text-muted-foreground mt-1 text-[11px] leading-none">
+                    {dateBadge.secondary}
+                  </p>
+                )}
+              </>
             )}
             <p className="mt-2 text-sm leading-none font-semibold tabular-nums">
               {event.startTime.slice(0, 5)}
             </p>
           </div>
 
-          {/* Live now — top right */}
-          {live ? (
-            <div className="bg-background/92 absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow backdrop-blur-sm">
-              <span className="relative flex size-2 shrink-0">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-green-500" />
-              </span>
-              {t("liveNow")}
-            </div>
-          ) : showManageActions && !event.isEventActive ? (
+          {/* Live now badge — top right (only when not live, for manage actions approval state) */}
+          {!live && showManageActions && !event.isEventActive ? (
             <div className="bg-background/92 text-muted-foreground absolute top-2.5 right-2.5 z-20 rounded-full px-3 py-1.5 text-xs font-semibold shadow backdrop-blur-sm">
               {tHome("waitingForApproval")}
             </div>
