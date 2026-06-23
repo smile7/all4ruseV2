@@ -568,5 +568,12 @@
     "description": "Se pare că nu ești conectat la internet. Verifică conexiunea și încearcă din nou.",
     "retry": "Încearcă din nou",
     "home": "Mergi la pagina principală"
+  },
+  "NotFound": {
+    "code": "404",
+    "title": "Pagina nu a fost găsită",
+    "description": "Pagina pe care o cauți nu există sau a fost mutată.",
+    "home": "Mergi la pagina principală",
+    "events": "Vezi evenimentele"
   }
 }

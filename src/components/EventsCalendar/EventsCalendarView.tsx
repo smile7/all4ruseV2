@@ -13,9 +13,6 @@ import { formatEventTitle, getEventImageUrl } from "~/lib/event-utils";
 import { cn } from "~/lib/utils";
 import type { Event } from "~/types";
 
-// Height of image strip for single-column stacked layout on mobile
-const SINGLE_COL_IMG_H_PX = 37;
-
 import {
   computeWeekSlots,
   type EventSlot,
@@ -29,10 +26,10 @@ import {
 
 /** Vertical space reserved at the top of each cell for the day number */
 const DAY_HEADER_PX = 36;
-/** Height per event track slot (card + gap) */
+/** Height per event track slot (card + gap) — desktop */
 const TRACK_HEIGHT_PX = 62;
-/** Actual card height within each track slot */
-const BAR_HEIGHT_PX = 58;
+/** Height per event track slot — mobile (taller to fit 3-line titles) */
+const MOBILE_TRACK_HEIGHT_PX = 105;
 /** Horizontal inset so cards don't bleed into cell borders */
 const BAR_INSET_PX = 3;
 /** Minimum cell height when a week has no events */
@@ -83,10 +80,13 @@ type WeekRowProps = {
   month: number;
   today: Date;
   todayStr: string;
+  /** Whether to render date numbers in cells.
+   *  False for the topmost visible week — the sticky header already shows those. */
+  showDates: boolean;
 };
 
 const WeekRow = forwardRef<HTMLDivElement, WeekRowProps>(function WeekRow(
-  { weekData, year, month, today, todayStr },
+  { weekData, year, month, today, todayStr, showDates },
   ref,
 ) {
   const { days, slots, maxTrack } = weekData;
@@ -95,10 +95,21 @@ const WeekRow = forwardRef<HTMLDivElement, WeekRowProps>(function WeekRow(
     BASE_CELL_HEIGHT_PX,
     DAY_HEADER_PX + (maxTrack + 1) * TRACK_HEIGHT_PX + 6,
   );
+  const mobileCellHeight = Math.max(
+    BASE_CELL_HEIGHT_PX,
+    DAY_HEADER_PX + (maxTrack + 1) * MOBILE_TRACK_HEIGHT_PX + 6,
+  );
 
   return (
-    <div ref={ref} className="relative border-b last:border-b-0" style={{ height: cellHeight }}>
-      {/* Day cells — only responsible for borders, backgrounds and day numbers */}
+    <div
+      ref={ref}
+      className="relative border-b last:border-b-0 h-(--ch-m) md:h-(--ch-d)"
+      style={{
+        "--ch-m": `${mobileCellHeight}px`,
+        "--ch-d": `${cellHeight}px`,
+      } as React.CSSProperties}
+    >
+      {/* Day cells — borders, backgrounds, and (when not the topmost visible week) date numbers */}
       <div className="absolute inset-0 grid grid-cols-7">
         {days.map((day, i) => {
           const isToday = isSameDay(day, today);
@@ -112,18 +123,20 @@ const WeekRow = forwardRef<HTMLDivElement, WeekRowProps>(function WeekRow(
                 !inMonth && "bg-muted/30 dark:bg-muted/10",
               )}
             >
-              <span
-                className={cn(
-                  "inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium leading-none select-none",
-                  isToday
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : inMonth
-                      ? "text-foreground"
-                      : "text-muted-foreground/50",
-                )}
-              >
-                {day.getDate()}
-              </span>
+              {showDates && (
+                <span
+                  className={cn(
+                    "inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium leading-none select-none",
+                    isToday
+                      ? "bg-primary text-primary-foreground font-semibold"
+                      : inMonth
+                        ? "text-foreground"
+                        : "text-muted-foreground/50",
+                  )}
+                >
+                  {day.getDate()}
+                </span>
+              )}
             </div>
           );
         })}
@@ -159,19 +172,23 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
 
   const imageUrl = getEventImageUrl(event.image);
 
-  const style: React.CSSProperties = {
+  const style = {
     position: "absolute",
     left: `calc(${(startCol / 7) * 100}% + ${BAR_INSET_PX}px)`,
     width: `calc(${((endCol - startCol + 1) / 7) * 100}% - ${BAR_INSET_PX * 2}px)`,
-    top: track * TRACK_HEIGHT_PX,
-    height: BAR_HEIGHT_PX,
-  };
+    "--top-m": `${track * MOBILE_TRACK_HEIGHT_PX}px`,
+    "--top-d": `${track * TRACK_HEIGHT_PX}px`,
+  } as React.CSSProperties;
 
   const barClass = cn(
     "overflow-hidden transition-opacity hover:opacity-85",
+    // Responsive top position via CSS vars (mobile uses taller tracks).
+    "top-(--top-m) md:top-(--top-d)",
+    // Responsive height: 88px on mobile, 58px on desktop.
+    "h-[98px] md:h-[58px]",
     // Single-col: column on mobile, row on md+. Multi-col: always row.
     isSingleCol ? "flex flex-col md:flex-row" : "flex",
-    isPast ? "bg-muted/40 text-muted-foreground/50" : "bg-muted text-muted-foreground border border-primary/60",
+    isPast ? "bg-muted text-muted-foreground/50" : "bg-muted text-muted-foreground border border-primary/60",
     isStart && isEnd
       ? "rounded-lg"
       : isStart
@@ -183,13 +200,10 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
 
   const content = isStart ? (
     isSingleCol ? (
-      // Stacked on mobile: full-width image strip, then 2-row title below.
+      // Stacked on mobile: full-width image strip, then 3-row title below.
       // On md+ reverts to side-by-side via flex-row above.
       <>
-        <div
-          className="relative w-full shrink-0 md:w-auto md:h-full"
-          style={{ height: SINGLE_COL_IMG_H_PX }}
-        >
+        <div className="relative w-full shrink-0 h-[50px] md:w-14 md:h-full">
           <Image
             src={imageUrl}
             alt=""
@@ -198,8 +212,8 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
             className={cn("object-cover", isPast && "grayscale opacity-50")}
           />
         </div>
-        <div className="flex min-w-0 flex-1 items-start overflow-hidden px-1 pt-0.5 md:flex-col md:justify-center md:px-2 md:py-1">
-          <span className="line-clamp-2 text-[9px] font-semibold leading-tight md:text-[11px] w-full">
+        <div className="flex min-w-0 flex-1 items-start overflow-hidden px-1 pt-1 md:flex-col md:justify-center md:px-2 md:py-1">
+          <span className="line-clamp-3 md:line-clamp-2 text-[10px] font-semibold leading-tight md:text-[11px] w-full">
             {formatEventTitle(event.title)}
           </span>
         </div>
@@ -207,7 +221,7 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
     ) : (
       // Side-by-side: fixed-width image on the left, title on the right.
       <>
-        <div className="relative shrink-0" style={{ width: BAR_HEIGHT_PX - 2, height: BAR_HEIGHT_PX }}>
+        <div className="relative shrink-0 w-[56px] h-[88px] md:h-[58px]">
           <Image
             src={imageUrl}
             alt=""
@@ -256,12 +270,12 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
 
 type Props = {
   events: Event[];
-  /** When provided (mobile only), the calendar's scroll container uses this
-   *  pixel height instead of its default max-h-[72svh] cap. */
-  containerHeight?: number;
+  /** On mobile only: explicit pixel height for the whole component so it fills
+   *  the remaining viewport without a page-level scrollbar. */
+  calendarHeight?: number;
 };
 
-export function EventsCalendarView({ events, containerHeight }: Props) {
+export function EventsCalendarView({ events, calendarHeight }: Props) {
   const locale = useLocale();
   const t = useTranslations("HomePage");
 
@@ -270,9 +284,13 @@ export function EventsCalendarView({ events, containerHeight }: Props) {
   const [year, setYear] = useState(() => now.getFullYear());
   const [month, setMonth] = useState(() => now.getMonth());
 
-  const todayRowRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const weekRowRefs = useRef<(HTMLDivElement | null)[]>([]);
   // Guard so we only auto-scroll once per mount, not on every data refresh.
   const hasScrolledRef = useRef(false);
+  // Set to true by goToToday so the effect below knows to scroll after month state settles.
+  const pendingScrollToTodayRef = useRef(false);
+  const [visibleWeekIndex, setVisibleWeekIndex] = useState(0);
 
   // Fetches all events (including past) for the displayed month.
   // The hook is only enabled for the current month and past months — future months stay empty.
@@ -282,6 +300,14 @@ export function EventsCalendarView({ events, containerHeight }: Props) {
   const isCurrentOrPast =
     year < now.getFullYear() ||
     (year === now.getFullYear() && month <= now.getMonth());
+
+  // Compute weeks and today's position before effects that depend on them.
+  const weeks = useMemo(() => getMonthWeeks(year, month), [year, month]);
+  const todayWeekIndex = useMemo(
+    () => weeks.findIndex((week) => week.some((day) => isSameDay(day, now))),
+    [weeks, now],
+  );
+  const weekdayLabels = useMemo(() => getWeekdayLabels(locale), [locale]);
 
   // Scroll today's week row into view once the data is stable.
   // On first open, monthEvents may not be in cache yet, so cell heights aren't
@@ -293,10 +319,51 @@ export function EventsCalendarView({ events, containerHeight }: Props) {
     if (!isReadyToScroll || hasScrolledRef.current) return;
     hasScrolledRef.current = true;
     const frame = requestAnimationFrame(() => {
-      todayRowRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      weekRowRefs.current[todayWeekIndex]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
     return () => cancelAnimationFrame(frame);
-  }, [isReadyToScroll]);
+  }, [isReadyToScroll, todayWeekIndex]);
+
+  // After goToToday() navigates back to the current month, scroll to today's week.
+  // This runs whenever year/month settle so the week row refs are up to date.
+  useEffect(() => {
+    if (!pendingScrollToTodayRef.current) return;
+    if (!isReadyToScroll) return;
+    pendingScrollToTodayRef.current = false;
+    const frame = requestAnimationFrame(() => {
+      weekRowRefs.current[todayWeekIndex]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [year, month, isReadyToScroll, todayWeekIndex]);
+
+  // Keep the sticky date row in sync with which week is at the top of the viewport.
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // Approximate height of the 2-row sticky header (day names + dates).
+    const STICKY_HEIGHT = 68;
+
+    function updateVisibleWeek() {
+      const containerRect = container!.getBoundingClientRect();
+      const threshold = containerRect.top + STICKY_HEIGHT;
+      let idx = 0;
+      for (let i = 0; i < weekRowRefs.current.length; i++) {
+        const row = weekRowRefs.current[i];
+        if (!row) continue;
+        // A row is "past" when its bottom clears the sticky header.
+        if (row.getBoundingClientRect().bottom <= threshold + 8) {
+          idx = Math.min(i + 1, weekRowRefs.current.length - 1);
+        } else {
+          break;
+        }
+      }
+      setVisibleWeekIndex(idx);
+    }
+
+    container.addEventListener("scroll", updateVisibleWeek, { passive: true });
+    return () => container.removeEventListener("scroll", updateVisibleWeek);
+  }, []);
 
   // For current/past months, monthEvents is the authoritative source (includes past events).
   // While monthEvents loads, supplement with the already-cached active events to avoid flicker.
@@ -309,16 +376,17 @@ export function EventsCalendarView({ events, containerHeight }: Props) {
     return [...monthEvents, ...activeNotInMonth];
   }, [events, monthEvents, isCurrentOrPast]);
 
-  const weeks = useMemo(() => getMonthWeeks(year, month), [year, month]);
   const weekDatas = useMemo(
     () => weeks.map((w) => computeWeekSlots(w, displayEvents)),
     [weeks, displayEvents],
   );
-  const todayWeekIndex = useMemo(
-    () => weeks.findIndex((week) => week.some((day) => isSameDay(day, now))),
-    [weeks, now],
-  );
-  const weekdayLabels = useMemo(() => getWeekdayLabels(locale), [locale]);
+
+  function resetScroll() {
+    setVisibleWeekIndex(0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }
 
   function prevMonth() {
     if (month === 0) {
@@ -327,6 +395,7 @@ export function EventsCalendarView({ events, containerHeight }: Props) {
     } else {
       setMonth((m) => m - 1);
     }
+    resetScroll();
   }
 
   function nextMonth() {
@@ -336,20 +405,34 @@ export function EventsCalendarView({ events, containerHeight }: Props) {
     } else {
       setMonth((m) => m + 1);
     }
+    resetScroll();
   }
 
   function goToToday() {
     setYear(now.getFullYear());
     setMonth(now.getMonth());
+    pendingScrollToTodayRef.current = true;
+    resetScroll();
   }
 
   const isCurrentMonth =
     year === now.getFullYear() && month === now.getMonth();
 
   return (
-    <div className="mt-4 w-full">
+    // calendarHeight: fills the measured remaining viewport space on mobile,
+    // flex column so month nav takes natural height and grid fills the rest.
+    // No calendarHeight: normal mt-4 layout with a max-height cap on mobile.
+    <div
+      className={cn("w-full", calendarHeight ? "flex flex-col" : "mt-4")}
+      style={calendarHeight ? { height: calendarHeight } : undefined}
+    >
       {/* Month navigation */}
-      <div className="mb-3 flex items-center justify-between">
+      <div
+        className={cn(
+          "flex items-center justify-between shrink-0",
+          calendarHeight ? "py-2" : "mb-3",
+        )}
+      >
         <Button
           variant="outline"
           size="icon"
@@ -388,46 +471,78 @@ export function EventsCalendarView({ events, containerHeight }: Props) {
       </div>
 
       {/* Calendar grid
-          Mobile: internally scrollable (both axes).
-            – When containerHeight is set (managed by EventsList), the container
-              fills that measured height exactly so there's no page-level scroll.
-            – Otherwise falls back to max-h-[72svh].
-          Desktop: full width, no height cap, normal page scroll.          */}
+          calendarHeight set: flex-1 + min-h-0 fills the remainder after month nav.
+          Otherwise: internal scroll on both mobile and desktop so the sticky
+          header works at all viewport sizes.                                */}
       <div
+        ref={scrollContainerRef}
         className={cn(
-          "rounded-xl border",
-          containerHeight
-            ? "overflow-auto"
-            : "overflow-auto max-h-[72svh] md:overflow-visible md:max-h-none",
+          "rounded-xl border overflow-auto",
+          calendarHeight
+            ? "flex-1 min-h-0"
+            : "max-h-[60svh] md:max-h-[80vh]",
         )}
-        style={containerHeight ? { height: containerHeight } : undefined}
       >
         <div className="min-w-[560px] md:min-w-0">
-          {/* Weekday header row */}
-          <div className="grid grid-cols-7 border-b bg-muted/50">
-            {weekdayLabels.map((label, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
-                  i < 6 && "border-r",
-                )}
-              >
-                {label}
-              </div>
-            ))}
+          {/* Sticky 2-row header: day names + dates of the current visible week */}
+          <div className="sticky top-0 z-10 border-b">
+            {/* Row 1 — weekday labels */}
+            <div className="grid grid-cols-7 border-b bg-muted/90 dark:bg-muted/70 backdrop-blur-sm">
+              {weekdayLabels.map((label, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
+                    i < 6 && "border-r",
+                  )}
+                >
+                  {label}
+                </div>
+              ))}
+            </div>
+            {/* Row 2 — dates for the topmost visible week */}
+            <div className="grid grid-cols-7 bg-background/95 dark:bg-background/90 backdrop-blur-sm">
+              {(weeks[visibleWeekIndex] ?? weeks[0])?.map((day, i) => {
+                const isDayToday = isSameDay(day, now);
+                const dayInMonth = isSameMonth(day, year, month);
+                return (
+                  <div
+                    key={i}
+                    className={cn(
+                      "flex items-center justify-center py-1",
+                      i < 6 && "border-r",
+                      !dayInMonth && "bg-muted/20 dark:bg-muted/10",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium select-none",
+                        isDayToday
+                          ? "bg-primary text-primary-foreground font-semibold"
+                          : dayInMonth
+                            ? "text-foreground"
+                            : "text-muted-foreground/40",
+                      )}
+                    >
+                      {day.getDate()}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Week rows */}
           {weekDatas.map((weekData, i) => (
             <WeekRow
               key={i}
-              ref={i === todayWeekIndex ? todayRowRef : undefined}
+              ref={(el) => { weekRowRefs.current[i] = el; }}
               weekData={weekData}
               year={year}
               month={month}
               today={now}
               todayStr={todayStr}
+              showDates={i !== visibleWeekIndex}
             />
           ))}
         </div>

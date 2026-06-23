@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import { Separator } from "~/components/ui/separator";
 import { Textarea } from "~/components/ui/textarea";
 import { compressImageForExtraction } from "~/lib/smart-fill/compress-image-client";
@@ -534,13 +535,12 @@ function UrlInput({
   disabled: boolean;
 }) {
   return (
-    <input
+    <Input
       type="url"
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm shadow-xs focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
     />
   );
 }

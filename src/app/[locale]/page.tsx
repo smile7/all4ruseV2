@@ -87,11 +87,8 @@ export default async function HomePage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-2 px-4 py-8 text-center sm:px-6 lg:px-8">
-      <Typography.H1 className="text-center">{t("pageTitle")}</Typography.H1>
-      <Typography.P className="text-muted-foreground text-center">
-        {t("pageDescription")}
-      </Typography.P>
+    <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-1 px-4 py-6 text-center sm:px-6 lg:px-8">
+      <Typography.H1 className="text-center text-3xl">{t("pageTitle")}</Typography.H1>
 
       <div className="mt-2 flex justify-center">
         <Button asChild variant="outline">

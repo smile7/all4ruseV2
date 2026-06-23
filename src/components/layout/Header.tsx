@@ -1,9 +1,3 @@
-import { getTranslations } from "next-intl/server";
-
-import { Plus } from "lucide-react";
-
-import { Button } from "~/components/ui/button";
-import { Link } from "~/i18n/navigation";
 import { profilesApi } from "~/lib/api";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
@@ -15,7 +9,6 @@ import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 
 export async function Header() {
-  const t = await getTranslations("HomePage");
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -29,21 +22,16 @@ export async function Header() {
     <header className="border-border/60 bg-secondary/85 sticky top-0 z-50 w-full backdrop-blur-md">
       {/* ── Mobile (<md) ──────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 px-3 py-2 md:hidden">
-        {/* Row 1: lang+theme (left) | Logo (center) | add-event (right) */}
+        {/* Row 1: lang (left) | Logo (center) | theme (right) */}
         <div className="grid grid-cols-3 items-center border-b pb-4">
-          <div className="flex items-center justify-start gap-0.5">
+          <div className="flex items-center justify-start">
             <LocaleSwitcher />
-            <ThemeToggle />
           </div>
           <div className="flex items-center justify-center">
             <Logo />
           </div>
           <div className="flex items-center justify-end">
-            <Button size="sm" asChild aria-label={t("navCreate")}>
-              <Link href="/create-event">
-                <Plus className="size-4" />
-              </Link>
-            </Button>
+            <ThemeToggle />
           </div>
         </div>
 
