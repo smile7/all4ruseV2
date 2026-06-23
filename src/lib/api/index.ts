@@ -1,6 +1,8 @@
-export { claimsApi } from "./claims";
 export type { ClaimStatus, EventClaim } from "./claims";
+export { claimsApi } from "./claims";
 export { eventsApi } from "./events";
 export { profilesApi } from "./profiles";
+export type { EventReport } from "./reports";
+export { reportsApi } from "./reports";
 export { savedEventsApi } from "./saved-events";
 export { tagsApi } from "./tags";

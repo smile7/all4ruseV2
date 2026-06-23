@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { BadgeCheck, Loader2, ShieldAlert } from "lucide-react";
+import { Flag, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
@@ -27,51 +27,23 @@ import {
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { useMediaQuery } from "~/hooks";
-import type { ClaimStatus } from "~/lib/api/claims";
 
 type Props = {
   eventId: number;
-  initialClaimStatus: ClaimStatus | null;
+  alreadyReported?: boolean;
   className?: string;
 };
 
-function StatusBadge({ status }: { status: ClaimStatus }) {
+function ReportedBadge() {
   const t = useTranslations("SingleEvent");
-
-  if (status === "pending") {
-    return (
-      <Button
-        variant="outline"
-        disabled
-        className="w-full cursor-default justify-start gap-2 opacity-70"
-      >
-        <BadgeCheck className="size-4" />
-        {t("claimEventPending")}
-      </Button>
-    );
-  }
-
-  if (status === "approved") {
-    return (
-      <Button
-        variant="outline"
-        disabled
-        className="w-full cursor-default justify-start gap-2 opacity-70"
-      >
-        <BadgeCheck className="size-4 text-green-600" />
-        {t("claimEventApproved")}
-      </Button>
-    );
-  }
-
   return (
     <Button
       variant="outline"
       disabled
       className="w-full cursor-default justify-start gap-2 opacity-70"
     >
-      <ShieldAlert className="size-4 text-destructive" />
-      {t("claimEventDeclined")}
+      <Flag className="size-4" />
+      {t("reportEventReported")}
     </Button>
   );
 }
@@ -82,7 +54,7 @@ type FormProps = {
   onClose: () => void;
 };
 
-function ClaimForm({ eventId, onSuccess, onClose }: FormProps) {
+function ReportForm({ eventId, onSuccess, onClose }: FormProps) {
   const t = useTranslations("SingleEvent");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -91,27 +63,27 @@ function ClaimForm({ eventId, onSuccess, onClose }: FormProps) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch("/api/events/claim", {
+      const res = await fetch("/api/events/report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ eventId, message: message.trim() || null }),
       });
 
       if (res.status === 409) {
-        toast.info(t("claimEventAlreadyClaimed"));
+        toast.info(t("reportEventAlreadyReported"));
         onSuccess();
         return;
       }
 
       if (!res.ok) {
-        toast.error(t("claimEventError"));
+        toast.error(t("reportEventError"));
         return;
       }
 
-      toast.success(t("claimEventSuccess"));
+      toast.success(t("reportEventSuccess"));
       onSuccess();
     } catch {
-      toast.error(t("claimEventError"));
+      toast.error(t("reportEventError"));
     } finally {
       setSubmitting(false);
     }
@@ -120,10 +92,10 @@ function ClaimForm({ eventId, onSuccess, onClose }: FormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-4 pb-4 md:px-0 md:pb-0">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="claim-message">{t("claimEventMessageLabel")}</Label>
+        <Label htmlFor="report-message">{t("reportEventMessageLabel")}</Label>
         <Textarea
-          id="claim-message"
-          placeholder={t("claimEventMessagePlaceholder")}
+          id="report-message"
+          placeholder={t("reportEventMessagePlaceholder")}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={4}
@@ -132,39 +104,42 @@ function ClaimForm({ eventId, onSuccess, onClose }: FormProps) {
         />
       </div>
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button type="submit" disabled={submitting}>
+        <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
+          {t("reportEventCancel")}
+        </Button>
+        <Button type="submit" variant="destructive" disabled={submitting}>
           {submitting && <Loader2 className="mr-2 size-4 animate-spin" />}
-          {t("claimEventSubmit")}
+          {t("reportEventSubmit")}
         </Button>
       </div>
     </form>
   );
 }
 
-export function ClaimEventButton({ eventId, initialClaimStatus, className }: Props) {
+export function ReportEventButton({ eventId, alreadyReported = false, className }: Props) {
   const t = useTranslations("SingleEvent");
   const [open, setOpen] = useState(false);
-  const [claimStatus, setClaimStatus] = useState<ClaimStatus | null>(initialClaimStatus);
+  const [reported, setReported] = useState(alreadyReported);
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  if (claimStatus !== null) {
-    return <StatusBadge status={claimStatus} />;
+  if (reported) {
+    return <ReportedBadge />;
   }
 
   function handleSuccess() {
-    setClaimStatus("pending");
+    setReported(true);
     setOpen(false);
   }
 
   const triggerButton = (
     <Button
       type="button"
-      variant="outline"
-      className={className ?? "w-full justify-start gap-2"}
+      variant="ghost"
+      className={className ?? "w-full justify-start gap-2 text-muted-foreground hover:text-destructive"}
       onClick={() => setOpen(true)}
     >
-      <BadgeCheck className="size-4 shrink-0" />
-      {t("claimEvent")}
+      <Flag className="size-4 shrink-0" />
+      {t("reportEvent")}
     </Button>
   );
 
@@ -175,10 +150,10 @@ export function ClaimEventButton({ eventId, initialClaimStatus, className }: Pro
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{t("claimEventDialogTitle")}</DialogTitle>
-              <DialogDescription>{t("claimEventDialogDescription")}</DialogDescription>
+              <DialogTitle>{t("reportEventDialogTitle")}</DialogTitle>
+              <DialogDescription>{t("reportEventDialogDescription")}</DialogDescription>
             </DialogHeader>
-            <ClaimForm
+            <ReportForm
               eventId={eventId}
               onSuccess={handleSuccess}
               onClose={() => setOpen(false)}
@@ -196,17 +171,17 @@ export function ClaimEventButton({ eventId, initialClaimStatus, className }: Pro
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerContent>
           <DrawerHeader className="text-left">
-            <DrawerTitle>{t("claimEventDialogTitle")}</DrawerTitle>
-            <DrawerDescription>{t("claimEventDialogDescription")}</DrawerDescription>
+            <DrawerTitle>{t("reportEventDialogTitle")}</DrawerTitle>
+            <DrawerDescription>{t("reportEventDialogDescription")}</DrawerDescription>
           </DrawerHeader>
-          <ClaimForm
+          <ReportForm
             eventId={eventId}
             onSuccess={handleSuccess}
             onClose={() => setOpen(false)}
           />
           <DrawerFooter className="pt-0">
             <DrawerClose asChild>
-              <Button variant="outline">{t("claimEventCancel") as string}</Button>
+              <Button variant="outline">{t("reportEventCancel") as string}</Button>
             </DrawerClose>
           </DrawerFooter>
         </DrawerContent>

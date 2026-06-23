@@ -172,7 +172,9 @@ export function formatEventTitle(title: string): string {
 
 function parseClockOnLocalDate(dateStr: string, timeStr: string): Date {
   const d = parseLocalDate(dateStr);
-  const parts = timeStr.split(":").map(Number);
+  // Strip timezone offset returned by Supabase timetz columns (e.g. "13:00:00+00" → "13:00:00")
+  const clean = timeStr.replace(/[+-]\d{2}(:\d{2})?$/, "");
+  const parts = clean.split(":").map(Number);
   const hh = parts[0] ?? 0;
   const mm = parts[1] ?? 0;
   const ss = parts[2] ?? 0;

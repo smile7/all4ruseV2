@@ -21,6 +21,7 @@ export type Database = {
           event_id: number
           id: string
           message: string | null
+          original_owner_id: string | null
           status: string
         }
         Insert: {
@@ -29,6 +30,7 @@ export type Database = {
           event_id: number
           id?: string
           message?: string | null
+          original_owner_id?: string | null
           status?: string
         }
         Update: {
@@ -37,11 +39,44 @@ export type Database = {
           event_id?: number
           id?: string
           message?: string | null
+          original_owner_id?: string | null
           status?: string
         }
         Relationships: [
           {
             foreignKeyName: "event_claims_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_reports: {
+        Row: {
+          created_at: string
+          event_id: number
+          id: string
+          message: string | null
+          reporter_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: number
+          id?: string
+          message?: string | null
+          reporter_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: number
+          id?: string
+          message?: string | null
+          reporter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_reports_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
