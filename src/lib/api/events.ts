@@ -361,6 +361,29 @@ async function getEventsByIds(client: Client, ids: number[]): Promise<Event[]> {
   return (data ?? []).map(mapEvent);
 }
 
+// Fetches all active events overlapping a given calendar month.
+// Used by the calendar view to include past events for the current/previous months.
+async function getEventsByMonthRange(
+  client: Client,
+  year: number,
+  month: number,
+): Promise<Event[]> {
+  const firstDay = format(new Date(year, month, 1), "yyyy-MM-dd");
+  const lastDay = format(new Date(year, month + 1, 0), "yyyy-MM-dd");
+
+  const { data, error } = await client
+    .from("events")
+    .select("*, event_tags(tags(id, title))")
+    .eq("isEventActive", true)
+    .lte("startDate", lastDay)
+    .gte("endDate", firstDay)
+    .order("startDate", { ascending: true })
+    .order("startTime", { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []).map(mapEvent);
+}
+
 // Returns all active event slugs — used by generateStaticParams on the detail page.
 async function getAllSlugs(client: Client): Promise<string[]> {
   const { data, error } = await client
@@ -620,6 +643,7 @@ export const eventsApi = {
   getActiveEvents,
   getCurrentEvents,
   getPastEvents,
+  getEventsByMonthRange,
   getEventBySlug,
   getEventById,
   getRelatedEvents,

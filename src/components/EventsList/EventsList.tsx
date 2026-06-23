@@ -3,13 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
-import { ArrowUpToLineIcon, Calendar } from "lucide-react";
+import { ArrowUpToLineIcon, Calendar, CalendarDays, LayoutGrid } from "lucide-react";
 
 import { EventCard } from "~/components/EventCard";
 import { EventsGridSkeleton } from "~/components/EventCard/EventCardSkeleton";
+import { EventsCalendarView } from "~/components/EventsCalendar/EventsCalendarView";
 import { Button } from "~/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useActiveEvents, useCurrentEvents, usePastEvents } from "~/hooks/query/events";
 import { useFilters } from "~/hooks/useFilters";
+import { useViewPreference } from "~/hooks/useViewPreference";
 import { formatEventMonthHeading, parseLocalDate } from "~/lib/event-utils";
 import type { Event } from "~/types";
 
@@ -110,6 +113,8 @@ function ActiveEventsList({
 }: Omit<Props, "variant">) {
   const t = useTranslations("HomePage");
   const { filters, hasActiveFilters } = useFilters();
+  const [view, setView] = useViewPreference("grid");
+
   const params = {
     search: filters.search || undefined,
     tagIds: filters.tagIds.length ? filters.tagIds : undefined,
@@ -124,17 +129,42 @@ function ActiveEventsList({
   });
 
   if (isLoading && !events.length) return <EventsGridSkeleton />;
+
   return (
     <>
-      <p className="text-muted-foreground mt-4 text-sm text-left">
-        {hasActiveFilters
-          ? t("filteredEventsSummary", {
-              filtered: events.length,
-              total: totalCount ?? events.length,
-            })
-          : t("allEventsSummary", { count: events.length })}
-      </p>
-      <EventsGrid events={events} groupByMonth />
+      <div className="mt-4 flex flex-col gap-2">
+        <p className="text-muted-foreground text-sm text-left">
+          {hasActiveFilters
+            ? t("filteredEventsSummary", {
+                filtered: events.length,
+                total: totalCount ?? events.length,
+              })
+            : t("allEventsSummary", { count: events.length })}
+        </p>
+
+        <Tabs
+          value={view}
+          onValueChange={(v) => setView(v as "grid" | "calendar")}
+          className="w-full"
+        >
+          <TabsList className="h-8 w-full gap-1 p-1">
+            <TabsTrigger value="grid" className="h-7 flex-1 gap-1.5 px-2.5 text-xs data-[state=inactive]:text-primary!">
+              <LayoutGrid className="size-3.5" aria-hidden />
+              {t("gridView")}
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="h-7 flex-1 gap-1.5 px-2.5 text-xs data-[state=inactive]:text-primary!">
+              <CalendarDays className="size-3.5" aria-hidden />
+              {t("calendarView")}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {view === "calendar" ? (
+        <EventsCalendarView events={events} />
+      ) : (
+        <EventsGrid events={events} groupByMonth />
+      )}
     </>
   );
 }

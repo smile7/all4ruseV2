@@ -71,7 +71,11 @@
     "backToTop": "Back to top",
     "goHomePage": "Back to home page",
     "createNewEvent": "Create New Event",
-    "duplicateExistingEvent": "Duplicate Existing Event"
+    "duplicateExistingEvent": "Duplicate Existing Event",
+    "gridView": "Grid",
+    "calendarView": "Calendar",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month"
   },
   "CreateEvent": {
     "createEventTitle": "Create New Event",
@@ -251,6 +255,8 @@
     "authPromptBody": "Create an account in about 1 minute to save events and find them easily later.",
     "signupCta": "Create account",
     "loginCta": "Log in",
+    "pageUnauthLine1": "To save events, please log in or create an account — it only takes 30 seconds.",
+    "pageUnauthLine2": "Here you can save events you want to attend. They are sorted from the soonest to the farthest and update automatically.",
     "mutationError": "We could not update your saved events. Please try again.",
     "upcomingTitle": "Upcoming and current",
     "pastTitle": "Past events",
