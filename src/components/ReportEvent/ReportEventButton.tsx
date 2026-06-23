@@ -134,7 +134,7 @@ export function ReportEventButton({ eventId, alreadyReported = false, className 
   const triggerButton = (
     <Button
       type="button"
-      variant="ghost"
+      variant="outline"
       className={className ?? "w-full justify-start gap-2 text-muted-foreground hover:text-destructive"}
       onClick={() => setOpen(true)}
     >
