@@ -106,7 +106,8 @@ export function MobileBottomNav() {
     ].join(" ");
 
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
-  const isProfileActive = isActive("/profile") || isActive("/auth");
+  const isProfileActive =
+    (isActive("/profile") && !isActive("/profile/saved-events")) || isActive("/auth");
 
   return (
     <>
@@ -173,7 +174,7 @@ export function MobileBottomNav() {
       {/* ── More drawer ────────────────────────────────────────────────── */}
       <Drawer open={moreOpen} onOpenChange={setMoreOpen}>
         <DrawerContent
-          className="rounded-t-2xl md:hidden"
+          className="rounded-t-2xl"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <DrawerHeader className="border-border border-b px-5 pb-4 pt-2">
@@ -312,7 +313,7 @@ export function MobileBottomNav() {
       {/* ── Profile / Auth drawer ─────────────────────────────────────── */}
       <Drawer open={profileOpen} onOpenChange={setProfileOpen}>
         <DrawerContent
-          className="rounded-t-2xl md:hidden"
+          className="rounded-t-2xl"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <DrawerHeader className="border-border border-b px-5 pb-4 pt-2">

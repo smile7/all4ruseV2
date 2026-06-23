@@ -34,6 +34,27 @@ export function usePastEvents(
   });
 }
 
+/**
+ * Fetches all events (including past) that overlap the given calendar month.
+ * Only enabled for the current month and past months — not triggered for future months.
+ * Each month gets its own query cache key so navigation backwards lazily populates them.
+ */
+export function useCalendarMonthEvents(year: number, month: number) {
+  const now = new Date();
+  const isPastOrCurrent =
+    year < now.getFullYear() ||
+    (year === now.getFullYear() && month <= now.getMonth());
+
+  return useQuery({
+    queryKey: ["calendar-month-events", year, month],
+    queryFn: () =>
+      eventsApi.getEventsByMonthRange(getSupabaseBrowserClient(), year, month),
+    enabled: isPastOrCurrent,
+    staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
+  });
+}
+
 export function useCurrentEvents(
   params: Partial<GetEventsParams> = {},
   { initialData }: Options = {},

@@ -16,13 +16,18 @@ const intlMiddleware = createIntlMiddleware(routing);
 // Routes that require the user to be authenticated
 const AUTH_REQUIRED = ["/create-event", "/my-events", "/profile"];
 
+// Sub-paths under AUTH_REQUIRED that are publicly accessible
+const AUTH_EXCLUDED = ["/profile/saved-events"];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Strip the locale prefix to check against protected route patterns.
   // e.g. /bg/create-event → /create-event
   const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}/, "");
-  const needsAuth = AUTH_REQUIRED.some((p) => pathnameWithoutLocale.startsWith(p));
+  const needsAuth =
+    AUTH_REQUIRED.some((p) => pathnameWithoutLocale.startsWith(p)) &&
+    !AUTH_EXCLUDED.some((p) => pathnameWithoutLocale.startsWith(p));
 
   const response = intlMiddleware(request);
 

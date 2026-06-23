@@ -71,7 +71,11 @@
     "thisWeekend": "Weekend",
     "thisWeek": "Săptămâna asta",
     "freeFilter": "Gratuit",
-    "backToTop": "Înapoi sus"
+    "backToTop": "Înapoi sus",
+    "gridView": "Grilă",
+    "calendarView": "Calendar",
+    "prevMonth": "Luna anterioară",
+    "nextMonth": "Luna următoare"
   },
   "CreateEvent": {
     "createEventTitle": "Creează un eveniment nou",
@@ -251,6 +255,8 @@
     "authPromptBody": "Creează un cont în aproximativ 1 minut ca să salvezi evenimente și să le găsești ușor mai târziu.",
     "signupCta": "Creează cont",
     "loginCta": "Autentificare",
+    "pageUnauthLine1": "Pentru a salva evenimente, te rugăm să te conectezi sau să creezi un cont — durează doar 30 de secunde.",
+    "pageUnauthLine2": "Aici poți salva evenimentele la care dorești să participi. Sunt sortate de la cele mai apropiate la cele mai îndepărtate și se actualizează automat.",
     "mutationError": "Nu am putut actualiza evenimentele salvate. Te rugăm să încerci din nou.",
     "upcomingTitle": "Viitoare și în desfășurare",
     "pastTitle": "Evenimente trecute",

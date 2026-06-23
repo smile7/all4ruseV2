@@ -1,7 +1,10 @@
-import { redirect } from "next/navigation";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
+
+import { Bookmark } from "lucide-react";
 
 import { Typography } from "~/components/layout";
+import { Button } from "~/components/ui/button";
+import { Link } from "~/i18n/navigation";
 import { savedEventsApi } from "~/lib/api";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
@@ -21,12 +24,37 @@ export default async function SavedEventsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const t = await getTranslations("SavedEvents");
+
   if (!user) {
-    const locale = await getLocale();
-    redirect(`/${locale}/auth/login`);
+    return (
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-2">
+          <Typography.H1>{t("pageTitle")}</Typography.H1>
+        </div>
+
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed px-6 py-2 text-center">
+          <div className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-full">
+            <Bookmark className="size-6" />
+          </div>
+          <div className="flex flex-col gap-4">
+            <p className="text-lg font-semibold">{t("authPromptTitle")}</p>
+            <p className="text-muted-foreground max-w-sm text-sm">{t("pageUnauthLine1")}</p>
+            <p className="text-muted-foreground max-w-sm text-sm">{t("pageUnauthLine2")}</p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button asChild>
+              <Link href="/auth/signup">{t("signupCta")}</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/auth/login">{t("loginCta")}</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const t = await getTranslations("SavedEvents");
   const [savedCount, upcomingEvents] = await Promise.all([
     savedEventsApi.getSavedEventsCount(supabase, user.id),
     savedEventsApi.getSavedEvents(supabase, user.id, "upcoming"),
