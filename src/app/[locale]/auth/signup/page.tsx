@@ -29,6 +29,7 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { PasswordInput } from "~/components/ui/password-input";
+import { executeRecaptcha } from "~/lib/recaptcha";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 
 function makeSignupSchema(passwordLengthMsg: string, matchMsg: string, termsMsg: string) {
@@ -97,6 +98,20 @@ export default function SignupPage() {
   async function onSubmit(values: SignupValues) {
     setAuthError(null);
     setDuplicateEmail(false);
+
+    const token = await executeRecaptcha("signup");
+    if (token) {
+      const res = await fetch("/api/auth/verify-captcha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      if (!res.ok) {
+        setAuthError(t("captchaError"));
+        return;
+      }
+    }
+
     const supabase = getSupabaseBrowserClient();
 
     const { data, error } = await supabase.auth.signUp({

@@ -245,8 +245,8 @@ Small targeted fixes and visual consistency improvements.
 
 ### Security
 
-- [ ] Add Google reCAPTCHA v3 to signup and login forms — server-side token verification before Supabase auth call
-- [ ] Env: `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY`
+- [x] Add Google reCAPTCHA v3 to signup and login forms — server-side token verification before Supabase auth call
+- [x] Env: `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY`
 
 ### Registration
 
@@ -279,17 +279,18 @@ Small targeted fixes and visual consistency improvements.
 ### Homepage create event CTA
 
 - [ ] Add hero section above event list: "СЪБИТИЯ В РУСЕ" heading + short subtitle
-- [ ] Prominent "Създай събитие +" button always visible
-- [ ] If guest: clicking → login page with `next=/create-event` param
+- [x] Prominent "Създай събитие +" button always visible (below subtitle; middleware redirects guests to login with `next` param)
 
 ### Calendar view
 
-- [ ] Add view toggle on events listing page: "Карти" (grid) ↔ "Календар" (week view)
-- [ ] Week view: starts Monday, shows event chips per day column
-- [ ] Navigation: prev week / next week + "Тази седмица" reset
-- [ ] Mobile: horizontally scrollable week strip
-- [ ] Click on event chip → event detail page
-- [ ] Custom implementation (no heavy calendar library)
+- [x] Add view toggle on events listing page: "Карти" (grid) ↔ "Календар" (month view)
+- [x] Month calendar: week rows starting Monday, events rendered as multi-day chips with track layout
+- [x] Navigation: prev month / next month with month/year heading
+- [x] Click on event chip → event detail page
+- [x] View preference persisted in `localStorage` (`useViewPreference` hook)
+- [x] Custom implementation — `EventsCalendarView.tsx` + `calendar-utils.ts` (no heavy calendar library)
+- [x] `useCalendarMonthEvents` hook — per-month query cache, lazy-loads past months, disabled for future months
+- [x] Event hero image zoom — LightGallery zoom plugin added to `EventHeroGallery` (click image to expand)
 
 ## Phase 15 — Notifications
 

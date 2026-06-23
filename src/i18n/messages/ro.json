@@ -327,6 +327,7 @@
     "userAlreadyExists": "Acest e-mail este deja înregistrat.",
     "userAlreadyExistsLoginLink": "Autentifică-te în cont",
     "errorOccurred": "A apărut o eroare. Te rugăm să încerci din nou mai târziu.",
+    "captchaError": "Nu am putut verifica că ești om. Te rugăm să încerci din nou.",
     "thankYouForSigningUp": "Îți mulțumim pentru înregistrare!",
     "pleaseCheckEmail": "Te rugăm să îți verifici e-mailul pentru a-ți confirma înregistrarea.",
     "rememberMe": "Ține-mă minte",

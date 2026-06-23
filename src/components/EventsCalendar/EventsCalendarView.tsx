@@ -13,6 +13,9 @@ import { formatEventTitle, getEventImageUrl } from "~/lib/event-utils";
 import { cn } from "~/lib/utils";
 import type { Event } from "~/types";
 
+// Height of image strip for single-column stacked layout on mobile
+const SINGLE_COL_IMG_H_PX = 37;
+
 import {
   computeWeekSlots,
   type EventSlot,
@@ -145,6 +148,9 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
   const { event, track, startCol, endCol, isStart, isEnd } = slot;
 
   const isPast = event.endDate < todayStr;
+  // Single-column events use a stacked layout on mobile (image on top, title below).
+  // Multi-column events always use the side-by-side layout.
+  const isSingleCol = isStart && startCol === endCol;
 
   const detailHref =
     event.isEventActive && typeof event.slug === "string" && event.slug.trim()
@@ -162,7 +168,9 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
   };
 
   const barClass = cn(
-    "flex overflow-hidden transition-opacity hover:opacity-85",
+    "overflow-hidden transition-opacity hover:opacity-85",
+    // Single-col: column on mobile, row on md+. Multi-col: always row.
+    isSingleCol ? "flex flex-col md:flex-row" : "flex",
     isPast ? "bg-muted/40 text-muted-foreground/50" : "bg-muted text-muted-foreground border border-primary/60",
     isStart && isEnd
       ? "rounded-lg"
@@ -174,24 +182,47 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
   );
 
   const content = isStart ? (
-    <>
-      {/* Image strip on the left */}
-      <div className="relative shrink-0" style={{ width: BAR_HEIGHT_PX - 2, height: BAR_HEIGHT_PX }}>
-        <Image
-          src={imageUrl}
-          alt=""
-          fill
-          sizes="120px"
-          className={cn("object-cover", isPast && "grayscale opacity-50")}
-        />
-      </div>
-      {/* Text on the right */}
-      <div className="flex min-w-0 flex-col justify-center gap-0.5 px-2 py-1">
-        <span className="line-clamp-2 text-[11px] font-semibold leading-tight">
-          {formatEventTitle(event.title)}
-        </span>
-      </div>
-    </>
+    isSingleCol ? (
+      // Stacked on mobile: full-width image strip, then 2-row title below.
+      // On md+ reverts to side-by-side via flex-row above.
+      <>
+        <div
+          className="relative w-full shrink-0 md:w-auto md:h-full"
+          style={{ height: SINGLE_COL_IMG_H_PX }}
+        >
+          <Image
+            src={imageUrl}
+            alt=""
+            fill
+            sizes="80px"
+            className={cn("object-cover", isPast && "grayscale opacity-50")}
+          />
+        </div>
+        <div className="flex min-w-0 flex-1 items-start overflow-hidden px-1 pt-0.5 md:flex-col md:justify-center md:px-2 md:py-1">
+          <span className="line-clamp-2 text-[9px] font-semibold leading-tight md:text-[11px] w-full">
+            {formatEventTitle(event.title)}
+          </span>
+        </div>
+      </>
+    ) : (
+      // Side-by-side: fixed-width image on the left, title on the right.
+      <>
+        <div className="relative shrink-0" style={{ width: BAR_HEIGHT_PX - 2, height: BAR_HEIGHT_PX }}>
+          <Image
+            src={imageUrl}
+            alt=""
+            fill
+            sizes="120px"
+            className={cn("object-cover", isPast && "grayscale opacity-50")}
+          />
+        </div>
+        <div className="flex min-w-0 flex-col justify-center gap-0.5 px-2 py-1">
+          <span className="line-clamp-2 text-[11px] font-semibold leading-tight">
+            {formatEventTitle(event.title)}
+          </span>
+        </div>
+      </>
+    )
   ) : (
     /* Continuation bar — no image, title repeated so multi-week events stay readable */
     <div className="flex min-w-0 items-center px-2 py-1">
@@ -225,9 +256,12 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
 
 type Props = {
   events: Event[];
+  /** When provided (mobile only), the calendar's scroll container uses this
+   *  pixel height instead of its default max-h-[72svh] cap. */
+  containerHeight?: number;
 };
 
-export function EventsCalendarView({ events }: Props) {
+export function EventsCalendarView({ events, containerHeight }: Props) {
   const locale = useLocale();
   const t = useTranslations("HomePage");
 
@@ -237,37 +271,43 @@ export function EventsCalendarView({ events }: Props) {
   const [month, setMonth] = useState(() => now.getMonth());
 
   const todayRowRef = useRef<HTMLDivElement>(null);
+  // Guard so we only auto-scroll once per mount, not on every data refresh.
+  const hasScrolledRef = useRef(false);
 
-  // On mount, scroll the current week row into view. On mobile the calendar grid
-  // is an internally-scrollable container (max-h-[72svh]), so this scrolls within
-  // it. On desktop all weeks are visible, so scrollIntoView is a no-op.
-  // rAF defers the scroll until after the first paint so cell heights are settled,
-  // which prevents the animation from starting from an incorrect position.
+  // Fetches all events (including past) for the displayed month.
+  // The hook is only enabled for the current month and past months — future months stay empty.
+  const { data: monthEvents = [], isFetched: monthEventsFetched } = useCalendarMonthEvents(year, month);
+
+  // Whether the displayed month can have historical events (i.e. the query is active).
+  const isCurrentOrPast =
+    year < now.getFullYear() ||
+    (year === now.getFullYear() && month <= now.getMonth());
+
+  // Scroll today's week row into view once the data is stable.
+  // On first open, monthEvents may not be in cache yet, so cell heights aren't
+  // final until the fetch completes. Waiting for isFetched (or for a future
+  // month where the query is disabled) ensures cell heights are settled before
+  // we scroll, fixing the "first time doesn't scroll" bug.
+  const isReadyToScroll = !isCurrentOrPast || monthEventsFetched;
   useEffect(() => {
+    if (!isReadyToScroll || hasScrolledRef.current) return;
+    hasScrolledRef.current = true;
     const frame = requestAnimationFrame(() => {
       todayRowRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
     return () => cancelAnimationFrame(frame);
-  }, []);
-
-  // Fetches all events (including past) for the displayed month.
-  // The hook is only enabled for the current month and past months — future months stay empty.
-  const { data: monthEvents = [] } = useCalendarMonthEvents(year, month);
+  }, [isReadyToScroll]);
 
   // For current/past months, monthEvents is the authoritative source (includes past events).
   // While monthEvents loads, supplement with the already-cached active events to avoid flicker.
   // For future months, monthEvents is empty so we fall back to the active events prop.
   const displayEvents = useMemo(() => {
-    const isCurrentOrPast =
-      year < now.getFullYear() ||
-      (year === now.getFullYear() && month <= now.getMonth());
-
     if (!isCurrentOrPast) return events;
 
     const monthIds = new Set(monthEvents.map((e) => e.id));
     const activeNotInMonth = events.filter((e) => !monthIds.has(e.id));
     return [...monthEvents, ...activeNotInMonth];
-  }, [events, monthEvents, year, month, now]);
+  }, [events, monthEvents, isCurrentOrPast]);
 
   const weeks = useMemo(() => getMonthWeeks(year, month), [year, month]);
   const weekDatas = useMemo(
@@ -348,9 +388,20 @@ export function EventsCalendarView({ events }: Props) {
       </div>
 
       {/* Calendar grid
-          Mobile: internally scrollable (both axes) at max 72svh
-          Desktop: full width, no height cap, normal page scroll        */}
-      <div className="overflow-auto rounded-xl border md:overflow-visible max-h-[72svh] md:max-h-none">
+          Mobile: internally scrollable (both axes).
+            – When containerHeight is set (managed by EventsList), the container
+              fills that measured height exactly so there's no page-level scroll.
+            – Otherwise falls back to max-h-[72svh].
+          Desktop: full width, no height cap, normal page scroll.          */}
+      <div
+        className={cn(
+          "rounded-xl border",
+          containerHeight
+            ? "overflow-auto"
+            : "overflow-auto max-h-[72svh] md:overflow-visible md:max-h-none",
+        )}
+        style={containerHeight ? { height: containerHeight } : undefined}
+      >
         <div className="min-w-[560px] md:min-w-0">
           {/* Weekday header row */}
           <div className="grid grid-cols-7 border-b bg-muted/50">
