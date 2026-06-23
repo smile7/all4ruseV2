@@ -260,26 +260,29 @@ Small targeted fixes and visual consistency improvements.
 
 ### Claim event
 
-- [ ] DB: create `event_claims` table (`id`, `event_id`, `claimant_id`, `status` pending/approved/declined, `message`, `created_at`) + RLS
-- [ ] Add "Претендирам за събитието" button on event detail (hidden if already owner, hidden if pending claim exists)
-- [ ] Clicking opens dialog: explanation + optional message + submit
-- [ ] On submit: save to DB + send email to admin (event link, claimant info, approve/decline API action links)
-- [ ] Approve/decline API routes update `status` + send result email to claimant
+- [x] DB: `event_claims` table (`id`, `event_id`, `claimant_id`, `status` pending/approved/declined, `message`, `created_at`) + RLS — exists in `database.ts`
+- [x] `claimsApi` in `src/lib/api/claims.ts` — `createEventClaim`, `getMyClaimForEvent`; exported from `lib/api/index.ts`
+- [x] `POST /api/events/claim` route — auth check, insert, 409 on duplicate
+- [x] `ClaimEventButton` component — responsive Dialog/Drawer, status badges, optional message textarea
+- [x] Wired in event detail page — `getMyClaimForEvent` on server, `initialClaimStatus` passed as prop; button hidden when user is the event owner
+- [x] i18n keys in all 4 locale files (`SingleEvent` namespace)
 
 ### Report event
 
-- [ ] DB: create `event_reports` table (`id`, `event_id`, `reporter_id` nullable, `reason` text, `status` new/reviewed, `created_at`) + RLS
-- [ ] Add "Докладвай събитието" button on event detail
-- [ ] Clicking opens dialog: required reason textarea + submit
-- [ ] On submit: save to DB + send email to admin with event info + reason
-- [ ] Show success toast to reporter
+- [x] DB: `event_reports` table (`id`, `event_id`, `reporter_id` nullable, `message` text, `status` new/reviewed, `created_at`) + RLS — exists in `database.ts`
+- [x] `reportsApi` in `src/lib/api/reports.ts` — `createEventReport`, `getMyReportForEvent`; exported from `lib/api/index.ts`
+- [x] `POST /api/events/report` route — auth check, insert, 409 on duplicate, 500 on error
+- [x] `ReportEventButton` component — responsive Dialog/Drawer, ghost variant, optional message textarea, `ReportedBadge` on reported state
+- [x] Wired in event detail page — `getMyReportForEvent` on server, `alreadyReported` bool passed as prop
+- [x] Success / duplicate / error toasts
+- [x] i18n keys in all 4 locale files (`SingleEvent` namespace)
 
 ## Phase 14 — Homepage Hero & Calendar View
 
 ### Homepage create event CTA
 
 - [ ] Add hero section above event list: "СЪБИТИЯ В РУСЕ" heading + short subtitle
-- [x] Prominent "Създай събитие +" button always visible (below subtitle; middleware redirects guests to login with `next` param)
+- [x] Prominent "Създай събитие +" button always visible (middleware redirects guests to login with `next` param)
 
 ### Calendar view
 
@@ -331,11 +334,6 @@ Small targeted fixes and visual consistency improvements.
 
 - [ ] Create `src/app/[locale]/advertise/page.tsx` — clean static page: what All4Ruse is, audience, why sponsor, sponsorship tiers (visual cards), contact CTA
 - [ ] Add to footer navigation and "More" mobile sheet
-
-### Revolut support button
-
-- [ ] Add "Подкрепи ни" button/chip linking to `https://revolut.me/silvenamiteva` in footer and "More" mobile sheet
-- [ ] Tasteful placement — not intrusive
 
 ## Phase 18 — Advanced Filters & Premium
 

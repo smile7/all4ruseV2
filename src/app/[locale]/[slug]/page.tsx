@@ -4,32 +4,26 @@ import { getMessages, getTranslations } from "next-intl/server";
 
 import {
   Calendar,
-  CalendarPlus,
   Clock,
-  ExternalLink,
   Mail,
   MapPin,
-  Pencil,
   Phone,
-  Share2,
   Ticket,
-  User,
   Users,
 } from "lucide-react";
 
-import { ClaimEventButton } from "~/components/ClaimEvent/ClaimEventButton";
-import { EventCard, EventSaveButton } from "~/components/EventCard";
+import { EventCard } from "~/components/EventCard";
 import { EventTag } from "~/components/EventTag";
 import {
+  EventActionButtons,
   EventDetailRow,
   EventDetailScrollReset,
   EventHeroGallery,
   EventImagesGallery,
+  EventMapAndReport,
   EventYoutubeEmbed,
   Typography,
 } from "~/components/layout";
-import { ReportEventButton } from "~/components/ReportEvent/ReportEventButton";
-import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { type Locale, LOCALES } from "~/constants";
@@ -450,63 +444,18 @@ export default async function EventDetailPage({ params }: Props) {
             </CardContent>
           </Card>
               <div className="flex flex-col gap-3 lg:hidden">
-                {isEventCreator && (
-                  <Button variant="outline" asChild className="w-full justify-start gap-2">
-                    <a href={`/${locale}/create-event?editId=${event.id}`}>
-                      <Pencil className="size-4 shrink-0" />
-                      {t("editEvent")}
-                    </a>
-                  </Button>
-                )}
-                {event.ticketsLink && (
-                  <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                    <a href={event.ticketsLink} target="_blank" rel="noopener">
-                      <Ticket className="size-4 shrink-0" />
-                      {t("buyTickets")}
-                    </a>
-                  </Button>
-                )}
-                {event.fbLink && (
-                  <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                    <a href={event.fbLink} target="_blank" rel="noopener">
-                      <ExternalLink className="size-4 shrink-0" />
-                      {t("facebook")}
-                    </a>
-                  </Button>
-                )}
-                <EventSaveButton eventId={event.id} variant="button" />
-                <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                  <a href={gcalUrl} target="_blank" rel="noopener">
-                    <CalendarPlus className="size-4 shrink-0" />
-                    {t("addToCalendar")}
-                  </a>
-                </Button>
-                {hostProfile?.username && (
-                  <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                    <a href={`/${locale}/user/${hostProfile.username}`}>
-                      <User className="size-4 shrink-0" />
-                      {t("organizer")}
-                    </a>
-                  </Button>
-                )}
-                <Button asChild className="w-full justify-start gap-2">
-                  <a href={fbShareUrl} target="_blank" rel="noopener">
-                    <Share2 className="size-4 shrink-0" />
-                    {t("shareOnFacebook")}
-                  </a>
-                </Button>
-                {showClaimButton && (
-                  <ClaimEventButton
-                    eventId={event.id}
-                    initialClaimStatus={initialClaimStatus}
-                  />
-                )}
-                {showReportButton && (
-                  <ReportEventButton
-                    eventId={event.id}
-                    alreadyReported={alreadyReported}
-                  />
-                )}
+                <EventActionButtons
+                  locale={locale}
+                  eventId={event.id}
+                  ticketsLink={event.ticketsLink}
+                  fbLink={event.fbLink}
+                  gcalUrl={gcalUrl}
+                  fbShareUrl={fbShareUrl}
+                  isEventCreator={isEventCreator}
+                  hostProfileUsername={hostProfile?.username}
+                  showClaimButton={showClaimButton}
+                  initialClaimStatus={initialClaimStatus}
+                />
               </div>
 
               {/* Description */}
@@ -530,20 +479,16 @@ export default async function EventDetailPage({ params }: Props) {
                 />
               )}
 
-              {/* ── Mobile-only: map after description ───────────────────── */}
-              {mapsEmbedUrl && (
-                <div className="overflow-hidden rounded-xl border lg:hidden">
-                  <iframe
-                    src={mapsEmbedUrl}
-                    title={t("place")}
-                    width="100%"
-                    height="180"
-                    className="block"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
-                </div>
-              )}
+              {/* ── Mobile-only: map + report after description ─────────── */}
+              <div className="flex flex-col gap-3 lg:hidden">
+                <EventMapAndReport
+                  locale={locale}
+                  mapsEmbedUrl={mapsEmbedUrl}
+                  eventId={event.id}
+                  showReportButton={showReportButton}
+                  alreadyReported={alreadyReported}
+                />
+              </div>
 
               {/* Image gallery — skip when only one image (hero already covers it) */}
               {galleryImages.length > 1 && (
@@ -560,76 +505,27 @@ export default async function EventDetailPage({ params }: Props) {
 
             {/* ── Desktop sidebar (hidden on mobile) ──────────────────── */}
             <div className="hidden lg:sticky lg:top-20 lg:flex lg:w-52 lg:shrink-0 lg:flex-col lg:gap-3">
-              {isEventCreator && (
-                <Button variant="outline" asChild className="w-full justify-start gap-2">
-                  <a href={`/${locale}/create-event?editId=${event.id}`}>
-                    <Pencil className="size-4 shrink-0" />
-                    {t("editEvent")}
-                  </a>
-                </Button>
-              )}
-              {event.ticketsLink && (
-                <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                  <a href={event.ticketsLink} target="_blank" rel="noopener">
-                    <Ticket className="size-4 shrink-0" />
-                    {t("buyTickets")}
-                  </a>
-                </Button>
-              )}
-              {event.fbLink && (
-                <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                  <a href={event.fbLink} target="_blank" rel="noopener">
-                    <ExternalLink className="size-4 shrink-0" />
-                    {t("facebook")}
-                  </a>
-                </Button>
-              )}
-              <EventSaveButton eventId={event.id} variant="button" />
-              <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                <a href={gcalUrl} target="_blank" rel="noopener">
-                  <CalendarPlus className="size-4 shrink-0" />
-                  {t("addToCalendar")}
-                </a>
-              </Button>
-              {hostProfile?.username && (
-                <Button variant="secondary" asChild className="w-full justify-start gap-2">
-                  <a href={`/${locale}/user/${hostProfile.username}`}>
-                    <User className="size-4 shrink-0" />
-                    {t("organizer")}
-                  </a>
-                </Button>
-              )}
-              <Button asChild className="w-full justify-start gap-2">
-                <a href={fbShareUrl} target="_blank" rel="noopener">
-                  <Share2 className="size-4 shrink-0" />
-                  {t("shareOnFacebook")}
-                </a>
-              </Button>
-              {showClaimButton && (
-                <ClaimEventButton
-                  eventId={event.id}
-                  initialClaimStatus={initialClaimStatus}
-                />
-              )}
-              {showReportButton && (
-                <ReportEventButton
-                  eventId={event.id}
-                  alreadyReported={alreadyReported}
-                />
-              )}
-              {mapsEmbedUrl && (
-                <div className="mt-1 overflow-hidden rounded-lg border">
-                  <iframe
-                    src={mapsEmbedUrl}
-                    title={t("place")}
-                    width="100%"
-                    height="200"
-                    className="block"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
-                </div>
-              )}
+              <EventActionButtons
+                locale={locale}
+                eventId={event.id}
+                ticketsLink={event.ticketsLink}
+                fbLink={event.fbLink}
+                gcalUrl={gcalUrl}
+                fbShareUrl={fbShareUrl}
+                isEventCreator={isEventCreator}
+                hostProfileUsername={hostProfile?.username}
+                showClaimButton={showClaimButton}
+                initialClaimStatus={initialClaimStatus}
+              />
+              <EventMapAndReport
+                locale={locale}
+                mapsEmbedUrl={mapsEmbedUrl}
+                eventId={event.id}
+                showReportButton={showReportButton}
+                alreadyReported={alreadyReported}
+                mapHeight={200}
+                mapRounded="lg"
+              />
             </div>
           </div>
 

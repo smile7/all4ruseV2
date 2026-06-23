@@ -562,9 +562,9 @@ Signup form includes `acceptTerms: z.boolean()` with a `.refine` rule enforcing 
 
 ## Phase 10 — Event Interactions
 
-### 10.1 Claim event
+### 10.1 Claim event ✅ (UI + DB; email notifications pending)
 
-**DB migration:**
+**DB migration:** ✅
 
 ```sql
 create table public.event_claims (
@@ -583,46 +583,48 @@ RLS: INSERT when `claimant_id = auth.uid()`; SELECT when `claimant_id = auth.uid
 
 **API routes (`src/app/api/events/claim/`):**
 
-- `POST route.ts` — auth check → insert claim → send admin email via Resend/Nodemailer with event title, claimant name, message, and two action links:
+- `POST route.ts` ✅ — auth check → insert claim → 409 on duplicate. **Pending:** send admin email via Resend/Nodemailer with event title, claimant name, message, and two action links:
   - `GET /api/events/claim/[id]/approve` — updates status to `approved`, emails claimant with approval
   - `GET /api/events/claim/[id]/decline` — updates status to `declined`, emails claimant with decline message
-- Both action routes use a signed token (HMAC of claim ID + secret) so they work without a login session.
+- Both action routes use a signed token (HMAC of claim ID + secret) so they work without a login session. **Pending.**
 
-**UI — event detail page:**
+**UI — event detail page:** ✅
 
-- Show "Претендирам за събитието" button when: user is authenticated AND `event.created_by !== user.id`.
-- If user already has a `pending` claim, show "Заявката е изпратена" (disabled).
-- Clicking opens a `<Dialog>`: brief explanation ("Ако ти си организаторът на това събитие...") + optional message `<Textarea>` + "Изпрати" button.
+- `ClaimEventButton` component (`src/components/ClaimEvent/ClaimEventButton.tsx`) — responsive Dialog/Drawer, `StatusBadge` for pending/approved/declined states.
+- `claimsApi.getMyClaimForEvent` called on page load to hydrate initial claim status; passed as `initialClaimStatus` prop.
+- Button visible when: user is authenticated AND `event.created_by !== user.id`.
+- i18n keys in all 4 locale files under `SingleEvent` namespace.
 
-### 10.2 Report event
+### 10.2 Report event ✅ (UI + DB; admin email pending)
 
-**DB migration:**
+**DB migration:** ✅
 
 ```sql
 create table public.event_reports (
   id uuid primary key default gen_random_uuid(),
   event_id int8 not null references public.events(id) on delete cascade,
-  reporter_id uuid references auth.users(id) on delete set null, -- nullable: allow guests
-  reason text not null,
+  reporter_id uuid references auth.users(id) on delete set null,
+  message text,
   status text not null default 'new' check (status in ('new', 'reviewed')),
   created_at timestamptz not null default now()
 );
 ```
 
-RLS: INSERT for anyone (including guests via service role or anon key); SELECT restricted to admin via service role in API route.
+RLS: INSERT for authenticated users; SELECT restricted to admin via service role in API route.
 
-**API route `POST /api/events/report`:**
+**API route `POST /api/events/report`:** ✅
 
-- No auth required (guests can report).
-- Rate-limit by IP using a simple in-memory or Redis check — or accept the low risk at this scale.
-- Insert report → send email to admin with event details, reporter info, reason.
-- Return 200 with success message.
+- Auth required (authenticated users only at this scale).
+- Insert report → 409 on duplicate. **Pending:** send admin email with event details, reporter info, reason.
+- Returns 200 with `{ ok: true, report }`.
 
-**UI — event detail page:**
+**UI — event detail page:** ✅
 
-- Show "Докладвай" button (small, secondary/ghost, bottom of page — unobtrusive).
-- Opens `<Dialog>`: "Опиши проблема" `<Textarea>` (required, min 20 chars) + submit.
-- Shows success toast on submit.
+- `ReportEventButton` component (`src/components/ReportEvent/ReportEventButton.tsx`) — responsive Dialog/Drawer, ghost variant, `ReportedBadge` on already-reported state.
+- Optional message textarea (not required — lower friction chosen over min-length enforcement).
+- `reportsApi.getMyReportForEvent` called on page load; `alreadyReported` bool passed as prop.
+- Success / duplicate / error toasts via sonner.
+- i18n keys in all 4 locale files under `SingleEvent` namespace.
 
 ---
 
