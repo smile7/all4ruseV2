@@ -12,6 +12,7 @@ import { Link, useRouter } from "~/i18n/navigation";
 import {
   formatDateBadge,
   formatEventTitle,
+  formatLiveElapsed,
   getEventImageUrl,
   getFirstHostName,
   isLiveNow,
@@ -49,6 +50,7 @@ export function EventCard({
     tomorrow: tHome("tomorrow"),
   });
   const live = isLiveNow(event);
+  const liveElapsed = live ? formatLiveElapsed(event, locale) : null;
   const imageUrl = getEventImageUrl(event.image);
   const formattedTitle = formatEventTitle(event.title);
   const host = getFirstHostName(event.organizers);
@@ -103,11 +105,11 @@ export function EventCard({
 
           {/* Date + time badge — top left */}
           <div className="bg-background/50 absolute top-2.5 left-2.5 z-20 min-w-14 rounded-xl px-2.5 py-2 text-center shadow backdrop-blur-sm">
-            {/* Today/tomorrow → single large label; other days → "11 ЮНИ" + weekday */}
-            <p className={cn("leading-none font-bold tracking-wide", dateBadge.secondary ? "text-sm" : "text-base")}>
-              {dateBadge.primary}
+            {/* Live: show relative elapsed time; today/tomorrow → single large label; other days → "11 ЮНИ" + weekday */}
+            <p className={cn("leading-none font-bold tracking-wide", (dateBadge.secondary || liveElapsed) ? "text-sm" : "text-base")}>
+              {liveElapsed ?? dateBadge.primary}
             </p>
-            {dateBadge.secondary && (
+            {!liveElapsed && dateBadge.secondary && (
               <p className="text-muted-foreground mt-1 text-[11px] leading-none">
                 {dateBadge.secondary}
               </p>

@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      event_claims: {
+        Row: {
+          claimant_id: string
+          created_at: string
+          event_id: number
+          id: string
+          message: string | null
+          status: string
+        }
+        Insert: {
+          claimant_id: string
+          created_at?: string
+          event_id: number
+          id?: string
+          message?: string | null
+          status?: string
+        }
+        Update: {
+          claimant_id?: string
+          created_at?: string
+          event_id?: number
+          id?: string
+          message?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_claims_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_tags: {
         Row: {
           event_id: number
@@ -66,7 +101,6 @@ export type Database = {
           place: string | null
           price: string | null
           seriesId: string | null
-          show_saved_events: boolean | null
           slug: string | null
           startDate: string
           startTime: string
@@ -96,7 +130,6 @@ export type Database = {
           place?: string | null
           price?: string | null
           seriesId?: string | null
-          show_saved_events?: boolean | null
           slug?: string | null
           startDate: string
           startTime: string
@@ -126,7 +159,6 @@ export type Database = {
           place?: string | null
           price?: string | null
           seriesId?: string | null
-          show_saved_events?: boolean | null
           slug?: string | null
           startDate?: string
           startTime?: string
@@ -163,6 +195,7 @@ export type Database = {
           phone: string | null
           place: string | null
           profile_gallery: Json | null
+          show_saved_events: boolean | null
           tiktok: string | null
           updated_at: string | null
           username: string | null
@@ -185,6 +218,7 @@ export type Database = {
           phone?: string | null
           place?: string | null
           profile_gallery?: Json | null
+          show_saved_events?: boolean | null
           tiktok?: string | null
           updated_at?: string | null
           username?: string | null
@@ -207,6 +241,7 @@ export type Database = {
           phone?: string | null
           place?: string | null
           profile_gallery?: Json | null
+          show_saved_events?: boolean | null
           tiktok?: string | null
           updated_at?: string | null
           username?: string | null

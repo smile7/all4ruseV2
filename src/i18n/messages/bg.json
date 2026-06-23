@@ -238,7 +238,20 @@
     "email": "Имейл",
     "youtubeVideo": "YouTube видео",
     "editEvent": "Редактирай",
-    "organizer": "Организатор"
+    "organizer": "Организатор",
+    "claimEvent": "Претендирам за събитието",
+    "claimEventDialogTitle": "Претендирай за събитието",
+    "claimEventDialogDescription": "Ако това е вашето събитие, изпратете заявка за собственост. Ще прегледаме заявката и ще се свържем с вас.",
+    "claimEventMessageLabel": "Съобщение (незадължително)",
+    "claimEventMessagePlaceholder": "Опишете накратко защо претендирате за това събитие…",
+    "claimEventSubmit": "Изпрати заявка",
+    "claimEventCancel": "Отказ",
+    "claimEventPending": "Заявката е изпратена",
+    "claimEventApproved": "Одобрено",
+    "claimEventDeclined": "Отказано",
+    "claimEventAlreadyClaimed": "Вече имате изпратена заявка за това събитие.",
+    "claimEventSuccess": "Заявката ви беше изпратена успешно.",
+    "claimEventError": "Възникна грешка. Моля опитайте отново."
   },
   "CurrentEvents": {
     "createEvent": "Създай Събитие",

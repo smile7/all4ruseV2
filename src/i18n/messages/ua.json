@@ -237,7 +237,20 @@
     "email": "Електронна пошта",
     "youtubeVideo": "Відео YouTube",
     "editEvent": "Редагувати подію",
-    "organizer": "Організатор"
+    "organizer": "Організатор",
+    "claimEvent": "Претендую на цю подію",
+    "claimEventDialogTitle": "Претендуйте на цю подію",
+    "claimEventDialogDescription": "Якщо це ваша подія, надішліть запит на власність. Ми розглянемо його та зв'яжемося з вами.",
+    "claimEventMessageLabel": "Повідомлення (необов'язково)",
+    "claimEventMessagePlaceholder": "Коротко опишіть, чому ви претендуєте на цю подію…",
+    "claimEventSubmit": "Надіслати запит",
+    "claimEventCancel": "Скасувати",
+    "claimEventPending": "Запит надіслано",
+    "claimEventApproved": "Схвалено",
+    "claimEventDeclined": "Відхилено",
+    "claimEventAlreadyClaimed": "У вас вже є надісланий запит для цієї події.",
+    "claimEventSuccess": "Ваш запит успішно надіслано.",
+    "claimEventError": "Сталася помилка. Спробуйте ще раз."
   },
   "CurrentEvents": {
     "createEvent": "Створити подію",
