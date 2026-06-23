@@ -568,5 +568,12 @@
     "description": "It looks like you're offline. Check your connection and try again.",
     "retry": "Try again",
     "home": "Go to home page"
+  },
+  "NotFound": {
+    "code": "404",
+    "title": "Page not found",
+    "description": "The page you're looking for doesn't exist or has been moved.",
+    "home": "Go to home page",
+    "events": "Browse events"
   }
 }
