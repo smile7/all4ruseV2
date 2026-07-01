@@ -4,6 +4,11 @@ import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 
 export const SMART_FILL_DAILY_LIMIT = 7;
 
+export function isSmartFillAdmin(userId: string): boolean {
+  const adminUserId = process.env.ADMIN_USER_ID;
+  return Boolean(adminUserId && userId === adminUserId);
+}
+
 export class SmartFillDailyLimitError extends Error {
   readonly used: number;
   readonly limit: number;

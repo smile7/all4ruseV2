@@ -10,8 +10,9 @@ export const maxDuration = 120;
 import { reuploadImageFromUrl } from "~/lib/smart-fill/image-reupload";
 import {
   SmartFillDailyLimitError,
-  smartFillDailyLimitResponse,
   consumeSmartFillImport,
+  isSmartFillAdmin,
+  smartFillDailyLimitResponse,
 } from "~/lib/smart-fill/rate-limit";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import type { EventDraft } from "~/types";
@@ -45,13 +46,15 @@ export async function POST(request: Request) {
     );
   }
 
-  try {
-    await consumeSmartFillImport(user.id);
-  } catch (err) {
-    if (err instanceof SmartFillDailyLimitError) {
-      return smartFillDailyLimitResponse(err);
+  if (!isSmartFillAdmin(user.id)) {
+    try {
+      await consumeSmartFillImport(user.id);
+    } catch (err) {
+      if (err instanceof SmartFillDailyLimitError) {
+        return smartFillDailyLimitResponse(err);
+      }
+      throw err;
     }
-    throw err;
   }
 
   try {

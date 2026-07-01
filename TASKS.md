@@ -281,7 +281,7 @@ Small targeted fixes and visual consistency improvements.
 
 ### Homepage create event CTA
 
-- [ ] Add hero section above event list: "СЪБИТИЯ В РУСЕ" heading + short subtitle
+- [x] Add hero section above event list: "СЪБИТИЯ В РУСЕ" heading + short subtitle
 - [x] Prominent "Създай събитие +" button always visible (middleware redirects guests to login with `next` param)
 
 ### Calendar view

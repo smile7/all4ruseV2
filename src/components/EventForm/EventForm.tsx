@@ -70,6 +70,7 @@ import {
 } from "~/lib/event-description-html";
 import { getEventImageUrl } from "~/lib/event-utils";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
+import { isOptionalWebUrl, normalizeWebUrl } from "~/lib/url-input";
 import { isValidYoutubeUrl } from "~/lib/youtube-url";
 import type { Event, EventDraft, Tag } from "~/types";
 
@@ -231,10 +232,15 @@ type Props = {
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const organizerSchema = z.object({
-  name: z.string().min(1),
-  link: z.string().optional(),
-});
+const organizerSchema = (invalidUrl: string) =>
+  z.object({
+    name: z.string().min(1),
+    link: z
+      .string()
+      .optional()
+      .or(z.literal(""))
+      .refine((val) => isOptionalWebUrl(val), { message: invalidUrl }),
+  });
 
 function makeFormSchema(t: ReturnType<typeof useTranslations<"CreateEvent">>) {
   return z.object({
@@ -254,8 +260,16 @@ function makeFormSchema(t: ReturnType<typeof useTranslations<"CreateEvent">>) {
     town: z.string().min(2, t("requiredField")),
     place: z.string().optional(),
     price: z.string().optional(),
-    ticketsLink: z.string().url(t("invalidUrl")).optional().or(z.literal("")),
-    fbLink: z.string().url(t("invalidUrl")).optional().or(z.literal("")),
+    ticketsLink: z
+      .string()
+      .optional()
+      .or(z.literal(""))
+      .refine((val) => isOptionalWebUrl(val), { message: t("invalidUrl") }),
+    fbLink: z
+      .string()
+      .optional()
+      .or(z.literal(""))
+      .refine((val) => isOptionalWebUrl(val), { message: t("invalidUrl") }),
     youtubeUrl: z
       .string()
       .optional()
@@ -265,7 +279,7 @@ function makeFormSchema(t: ReturnType<typeof useTranslations<"CreateEvent">>) {
       }),
     phoneNumber: z.string().optional(),
     email: z.string().email(t("invalidEmail")).optional().or(z.literal("")),
-    organizers: z.array(organizerSchema).min(1, t("atLeastOneOrganizer")),
+    organizers: z.array(organizerSchema(t("invalidUrl"))).min(1, t("atLeastOneOrganizer")),
     tagIds: z.array(z.number()).optional(),
   })
     .refine((data) => data.endDate >= data.startDate, {
@@ -345,6 +359,7 @@ function buildDefaultValues(
   mode: EventFormMode,
   initialData: Event | null | undefined,
   profileDefaults: ProfileDefaults | null | undefined,
+  skipContactDefaults = false,
 ): FormValues {
   const defaultName = profileDefaults?.name ?? "";
   const defaultLink = profileDefaults?.website ?? "";
@@ -391,8 +406,8 @@ function buildDefaultValues(
     ticketsLink: "",
     fbLink: "",
     youtubeUrl: "",
-    phoneNumber: profileDefaults?.phone ?? "",
-    email: profileDefaults?.email ?? "",
+    phoneNumber: skipContactDefaults ? "" : (profileDefaults?.phone ?? ""),
+    email: skipContactDefaults ? "" : (profileDefaults?.email ?? ""),
     organizers: [{ name: defaultName, link: defaultLink }],
     tagIds: [],
   };
@@ -423,6 +438,8 @@ export function EventForm({
   const eventTagLabels = messages.EventTags;
   const router = useRouter();
   const navigateGuarded = useUnsavedChangesNavigate();
+
+  const isAdminUser = userId === process.env.NEXT_PUBLIC_ADMIN_USER_ID;
 
   const formSchema = useMemo(() => makeFormSchema(t), [t]);
 
@@ -469,7 +486,12 @@ export function EventForm({
   // ── Form ──────────────────────────────────────────────────────────────────
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: buildDefaultValues(mode, initialData, profileDefaults),
+    defaultValues: buildDefaultValues(
+      mode,
+      initialData,
+      profileDefaults,
+      isAdminUser && mode === "create",
+    ),
   });
 
   const {
@@ -583,14 +605,19 @@ export function EventForm({
         town: values.town,
         place: values.place || null,
         price: isFree ? null : values.price || null,
-        ticketsLink: values.ticketsLink || null,
-        fbLink: values.fbLink || null,
+        ticketsLink: normalizeWebUrl(values.ticketsLink),
+        fbLink: normalizeWebUrl(values.fbLink),
         youtubeUrl: values.youtubeUrl || null,
         phoneNumber: values.phoneNumber || null,
         email: values.email || null,
         image: uploadedPaths[0] ?? null,
         images: uploadedPaths.length > 0 ? uploadedPaths : null,
-        organizers: values.organizers.filter((o) => o.name.trim()),
+        organizers: values.organizers
+          .filter((o) => o.name.trim())
+          .map((o) => ({
+            name: o.name,
+            link: normalizeWebUrl(o.link) ?? undefined,
+          })),
       };
 
       const tagIds = values.tagIds ?? [];
@@ -793,8 +820,6 @@ export function EventForm({
       });
     }
   }
-
-  const isAdminUser = userId === process.env.NEXT_PUBLIC_ADMIN_USER_ID;
 
   return (
     <>
