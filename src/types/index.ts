@@ -6,6 +6,7 @@ import {
   plainTextFromHtml,
   sanitizeEventDescription,
 } from "~/lib/event-description-html";
+import { isOptionalWebUrl } from "~/lib/url-input";
 import type { Tables } from "~/types/database";
 
 // ─── Domain types ─────────────────────────────────────────────────────────────
@@ -66,8 +67,16 @@ export const createEventSchema = z.object({
   town: z.string().min(2, "Градът е задължителен"),
   place: z.string().optional(),
   price: z.string().optional(),
-  ticketsLink: z.string().url("Невалиден линк").optional().or(z.literal("")),
-  fbLink: z.string().url("Невалиден линк").optional().or(z.literal("")),
+  ticketsLink: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine((val) => isOptionalWebUrl(val), { message: "Невалиден линк" }),
+  fbLink: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine((val) => isOptionalWebUrl(val), { message: "Невалиден линк" }),
   youtubeUrl: z.string().optional().or(z.literal("")),
   phoneNumber: z.string().optional(),
   email: z.string().email("Невалиден имейл").optional().or(z.literal("")),

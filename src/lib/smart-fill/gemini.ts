@@ -32,7 +32,7 @@ Return ONLY valid JSON — no markdown, no explanation.
 
 Rules:
 - Read text visible on the poster (OCR). Do not invent dates, venues, or prices that are not visible or clearly implied.
-- For "description": transcribe or briefly summarize the poster text in Bulgarian (max 60 words). Plain text only.
+- For "description": transcribe or briefly summarize the poster text in Bulgarian (max 60 words), in a warm, friendly tone — like a local event organizer, not a dry listing. Use 1–2 fitting emoji naturally, never decorative. Plain text only.
 - Omit fields you cannot determine.
 
 Return a JSON object with these optional fields:
@@ -44,7 +44,7 @@ Return ONLY valid JSON — no markdown, no explanation.
 
 Rules:
 - Extract structured fields from the input. Do not invent facts not present in the text.
-- For "description": reformat the user's text into 1–2 short paragraphs in Bulgarian (max 100 words). Keep their facts; light polish only — not a marketing rewrite.
+- For "description": reformat the user's text into 1–2 short paragraphs in Bulgarian (max 100 words). Keep their facts; light polish only — not a marketing rewrite. Write with warmth, like a local event organizer talking to a friend, and use 1–2 fitting emoji naturally — never decorative or forced.
 - Omit fields you cannot determine.
 
 Return a JSON object with these optional fields:
@@ -84,6 +84,21 @@ function isRateLimitError(err: unknown): boolean {
   return msg.includes("429") || msg.includes("resource exhausted");
 }
 
+/** Transient server-side overload — distinct from the caller's own rate limit or billing state. */
+function isServiceUnavailableError(err: unknown): boolean {
+  const msg = errorMessage(err).toLowerCase();
+  return (
+    msg.includes("503") ||
+    msg.includes("service unavailable") ||
+    msg.includes("overloaded") ||
+    msg.includes("high demand")
+  );
+}
+
+function isRetryableWithFallback(err: unknown): boolean {
+  return isRateLimitError(err) || isServiceUnavailableError(err);
+}
+
 function createExtractionModel(
   modelName: string,
   systemInstruction: string,
@@ -114,7 +129,7 @@ async function withExtractionRetries<T>(
       console.warn(
         `[smart-fill/gemini] ${label} attempt ${attempt}/${MAX_EXTRACTION_ATTEMPTS} failed: ${errorMessage(err)}`,
       );
-      if (isBillingDepleted(err) || isRateLimitError(err)) break;
+      if (isBillingDepleted(err) || isRetryableWithFallback(err)) break;
       if (attempt < MAX_EXTRACTION_ATTEMPTS) {
         await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
       }
@@ -236,15 +251,15 @@ async function generateDraftFromContent(
       );
     }
 
-    if (!isRateLimitError(primaryErr)) throw primaryErr;
+    if (!isRetryableWithFallback(primaryErr)) throw primaryErr;
 
     console.warn(
-      `[smart-fill/gemini] Primary model rate-limited, trying ${FALLBACK_MODEL_NAME}`,
+      `[smart-fill/gemini] Primary model rate-limited or unavailable, trying ${FALLBACK_MODEL_NAME}`,
     );
     try {
       return await run(FALLBACK_MODEL_NAME);
     } catch (fallbackErr) {
-      if (isBillingDepleted(fallbackErr) || isRateLimitError(fallbackErr)) {
+      if (isBillingDepleted(fallbackErr) || isRetryableWithFallback(fallbackErr)) {
         throw new QuotaExceededError(
           "API quota exceeded. Please try again later.",
         );
@@ -263,7 +278,13 @@ export async function extractDraftFromText(text: string): Promise<EventDraft> {
 export async function extractDraftFromImageBytes(
   imageBytes: Uint8Array,
   mimeType: string,
+  additionalText?: string,
 ): Promise<EventDraft> {
+  const trimmedText = additionalText?.trim();
+  const instruction = trimmedText
+    ? `Extract visible event details from this poster. The user also provided this additional context — use it to fill in or correct details that aren't clear from the image alone:\n"""${trimmedText}"""\nReturn JSON only.`
+    : "Extract visible event details from this poster. Return JSON only.";
+
   return generateDraftFromContent(
     [
       {
@@ -272,7 +293,7 @@ export async function extractDraftFromImageBytes(
           data: Buffer.from(imageBytes).toString("base64"),
         },
       },
-      "Extract visible event details from this poster. Return JSON only.",
+      instruction,
     ],
     IMAGE_SYSTEM_PROMPT,
     512,

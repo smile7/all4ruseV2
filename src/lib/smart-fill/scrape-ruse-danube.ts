@@ -37,19 +37,20 @@ export async function scrapeRuseDanube(
   const draft: Omit<EventDraft, "image"> = {
     ...fromHtml,
     ...fromJsonLd,
-    // These fields only come from the HTML pass — JSON-LD never includes them
-    organizer: fromHtml.organizer,
+    description: fromHtml.description ?? fromJsonLd.description,
+    organizer: fromHtml.organizer ?? fromJsonLd.organizer,
+    place: fromJsonLd.place ?? fromHtml.place,
     suggestedTagNames: fromHtml.suggestedTagNames,
-    // Prefer HTML-sourced links (more reliable on this site)
     fbLink: fromHtml.fbLink ?? fromJsonLd.fbLink,
     ticketsLink: fromHtml.ticketsLink ?? fromJsonLd.ticketsLink,
   };
 
-  // On ruseonthedanube the "Място" / JSON-LD location.name is just the address
-  // string, not a venue name. The actual venue IS the organizer
-  // (e.g. "Happy Clever Kids"), so always use the organizer as the place.
-  if (draft.organizer) {
-    draft.place = draft.organizer;
+  if (
+    draft.address &&
+    draft.place &&
+    isSameVenueLabel(draft.address, draft.place)
+  ) {
+    delete draft.address;
   }
 
   return { draft, rawImageUrl };
@@ -70,10 +71,26 @@ type SchemaEvent = {
       addressLocality?: string;
     };
   };
+  organizer?: {
+    name?: string;
+  };
   image?: string | string[];
   url?: string;
   offers?: { url?: string } | Array<{ url?: string }>;
 };
+
+function collectJsonLdNodes(parsed: unknown): unknown[] {
+  if (Array.isArray(parsed)) {
+    return parsed.flatMap(collectJsonLdNodes);
+  }
+  if (parsed && typeof parsed === "object") {
+    if ("@graph" in parsed && Array.isArray((parsed as { "@graph": unknown })["@graph"])) {
+      return (parsed as { "@graph": unknown[] })["@graph"];
+    }
+    return [parsed];
+  }
+  return [];
+}
 
 function tryJsonLd(
   $: cheerio.CheerioAPI,
@@ -84,8 +101,7 @@ function tryJsonLd(
     try {
       const raw = $(el).html() ?? "";
       const parsed: unknown = JSON.parse(raw);
-      const items = Array.isArray(parsed) ? parsed : [parsed];
-      for (const item of items) {
+      for (const item of collectJsonLdNodes(parsed)) {
         if (
           item &&
           typeof item === "object" &&
@@ -120,11 +136,24 @@ function mapSchemaEvent(ev: SchemaEvent): Omit<EventDraft, "image"> {
   }
 
   if (ev.location) {
-    if (ev.location.name) draft.place = ev.location.name.trim();
-    if (ev.location.address?.streetAddress)
-      draft.address = cleanAddress(ev.location.address.streetAddress.trim());
-    if (ev.location.address?.addressLocality)
+    if (ev.location.name) {
+      draft.place = decodeHtmlEntities(ev.location.name.trim());
+    }
+    if (ev.location.address?.streetAddress) {
+      const street = decodeHtmlEntities(
+        ev.location.address.streetAddress.trim(),
+      );
+      if (!isSameVenueLabel(street, draft.place)) {
+        draft.address = cleanAddress(street);
+      }
+    }
+    if (ev.location.address?.addressLocality) {
       draft.town = ev.location.address.addressLocality.trim();
+    }
+  }
+
+  if (ev.organizer?.name) {
+    draft.organizer = decodeHtmlEntities(ev.organizer.name.trim());
   }
 
   const offersUrl = Array.isArray(ev.offers)
@@ -190,47 +219,38 @@ function htmlPass(
     }
   }
 
-  // ── Address ───────────────────────────────────────────────────────────────
-  // Try tribe classes first, then look at "Място" section text
-  let rawAddress =
-    $(".tribe-street-address").first().text().trim() ||
-    $(".tribe-venue-location").first().text().trim();
+  // ── Place & address ───────────────────────────────────────────────────────
+  // "Място" is the venue name. WP Events Calendar often repeats it in
+  // tribe-street-address when no real street exists — do not treat that as address.
+  let place =
+    $("li.tribe-venue").first().text().trim() ||
+    $(".tribe-venue-name").first().text().trim();
 
-  if (!rawAddress) {
-    // Look for location/venue section in page — "Место" or "Място"
-    $("h2, h3, strong").each((_, el) => {
-      const text = $(el).text().trim().toLowerCase();
-      if (text === "място" || text === "место" || text === "location" || text === "venue") {
-        // Grab next sibling list item or text
-        const next = $(el).next();
-        const candidate = next.find("li").first().text().trim() || next.text().trim();
-        if (candidate && candidate.length > 3) {
-          rawAddress = candidate;
-          return false;
-        }
-        // Also check parent's next sibling
-        const parentNext = $(el).parent().next();
-        const candidate2 = parentNext.find("li").first().text().trim() || parentNext.text().trim();
-        if (candidate2 && candidate2.length > 3) {
-          rawAddress = candidate2;
-          return false;
-        }
-      }
-    });
+  if (!place) {
+    place = extractLabeledSectionText($, [
+      "място",
+      "место",
+      "location",
+      "venue",
+    ]);
   }
 
-  if (rawAddress) {
-    draft.address = cleanAddress(rawAddress);
+  if (place) {
+    draft.place = cleanVenueName(place);
     draft.town = "Русе";
   }
 
+  const rawAddress = $(".tribe-street-address").first().text().trim();
+  if (
+    rawAddress &&
+    !isSameVenueLabel(rawAddress, draft.place ?? "")
+  ) {
+    draft.address = cleanAddress(rawAddress);
+    draft.town = draft.town ?? "Русе";
+  }
+
   // ── Description ───────────────────────────────────────────────────────────
-  const descHtml = $(
-    ".tribe-events-single-section--description, .tribe-events-content, .tribe-events-single-section",
-  )
-    .first()
-    .html()
-    ?.trim();
+  const descHtml = extractDescriptionHtml($);
   if (descHtml) draft.description = sanitizeDescriptionHtml(descHtml);
 
   // ── Organizer ─────────────────────────────────────────────────────────────
@@ -239,18 +259,7 @@ function htmlPass(
     $(".tribe-organizer-title, .tribe-organizer a").first().text().trim();
 
   if (!organizer) {
-    // Scan for "Организатор" heading then grab sibling/child text
-    $("h2, h3, dt, strong, li").each((_, el) => {
-      const text = $(el).text().trim().toLowerCase();
-      if (text === "организатор" || text === "organizer") {
-        const next = $(el).next();
-        const candidate = next.find("li").first().text().trim() || next.text().trim();
-        if (candidate) { organizer = candidate; return false; }
-        const parentNext = $(el).parent().next();
-        const candidate2 = parentNext.find("li").first().text().trim() || parentNext.text().trim();
-        if (candidate2) { organizer = candidate2; return false; }
-      }
-    });
+    organizer = extractLabeledSectionText($, ["организатор", "organizer"]);
   }
 
   if (!organizer) {
@@ -309,8 +318,90 @@ function htmlPass(
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function extractDescriptionHtml($: cheerio.CheerioAPI): string | undefined {
+  const selectors = [
+    ".tribe-events-single-section--description .tribe-events-content",
+    ".tribe-events-content",
+    ".tribe-events-single-section--description",
+  ];
+
+  let best: { html: string; length: number } | undefined;
+
+  for (const selector of selectors) {
+    const html = $(selector).first().html()?.trim();
+    if (!html) continue;
+
+    const length = cheerio
+      .load(html, null, false)
+      .text()
+      .replace(/\s+/g, " ")
+      .trim().length;
+
+    if (!best || length > best.length) {
+      best = { html, length };
+    }
+  }
+
+  if (!best || best.length < 50) return undefined;
+  return best.html;
+}
+
 function ogImage($: cheerio.CheerioAPI): string | null {
   return $('meta[property="og:image"]').attr("content") ?? null;
+}
+
+function extractLabeledSectionText(
+  $: cheerio.CheerioAPI,
+  labels: string[],
+): string {
+  let result = "";
+
+  $("h2, h3, dt, strong").each((_, el) => {
+    const text = $(el).text().trim().toLowerCase();
+    if (!labels.includes(text)) return;
+
+    const next = $(el).next();
+    const candidate =
+      next.find("li.tribe-venue, li.tribe-organizer, li").first().text().trim() ||
+      next.text().trim();
+    if (candidate) {
+      result = candidate.split("\n")[0]?.trim() ?? candidate;
+      return false;
+    }
+
+    const parentNext = $(el).parent().next();
+    const candidate2 =
+      parentNext.find("li").first().text().trim() || parentNext.text().trim();
+    if (candidate2) {
+      result = candidate2.split("\n")[0]?.trim() ?? candidate2;
+      return false;
+    }
+  });
+
+  return result;
+}
+
+function decodeHtmlEntities(text: string): string {
+  return cheerio.load(`<span>${text}</span>`, null, false)("span").text();
+}
+
+function normalizeVenueLabel(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/[«»„""''–—-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isSameVenueLabel(a: string, b?: string): boolean {
+  if (!b) return false;
+  const left = normalizeVenueLabel(a);
+  const right = normalizeVenueLabel(b);
+  return left === right || left.includes(right) || right.includes(left);
+}
+
+function cleanVenueName(name: string): string {
+  return name.replace(/\s*\+\s*Google Map\s*$/i, "").trim();
 }
 
 function extractTimeFromIso(iso: string): string | undefined {

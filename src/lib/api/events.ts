@@ -280,9 +280,12 @@ async function getRelatedEvents(
   client: Client,
   eventId: number,
   tagIds: number[],
+  eventTitle: string,
   limit = RELATED_EVENTS_COUNT,
 ): Promise<Event[]> {
   if (tagIds.length === 0) return [];
+
+  const normalizedTitle = eventTitle.trim().toLocaleLowerCase();
 
   const { data: links, error: linksError } = await client
     .from("event_tags")
@@ -316,9 +319,10 @@ async function getRelatedEvents(
 
   const now = new Date();
 
-  return (data ?? [])
+  const sorted = (data ?? [])
     .map(mapEvent)
     .filter((e) => isVisibleOnHomeActiveList(e, today, now))
+    .filter((e) => e.title.trim().toLocaleLowerCase() !== normalizedTitle)
     .sort((left, right) => {
       const overlapDiff =
         (overlapCounts.get(right.id) ?? 0) - (overlapCounts.get(left.id) ?? 0);
@@ -329,8 +333,20 @@ async function getRelatedEvents(
       if (startDateDiff !== 0) return startDateDiff;
 
       return left.startTime.localeCompare(right.startTime);
-    })
-    .slice(0, limit);
+    });
+
+  // Recurring events (e.g. daily workshops) share the same title across many
+  // dates — keep only the soonest occurrence so suggestions aren't dominated
+  // by a single series.
+  const seenTitles = new Set<string>();
+  const deduped = sorted.filter((e) => {
+    const key = e.title.trim().toLocaleLowerCase();
+    if (seenTitles.has(key)) return false;
+    seenTitles.add(key);
+    return true;
+  });
+
+  return deduped.slice(0, limit);
 }
 
 // Returns all events created by a specific user (both active and inactive).
