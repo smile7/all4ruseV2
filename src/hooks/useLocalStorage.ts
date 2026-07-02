@@ -30,7 +30,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   const storedValue = useSyncExternalStore(
     subscribe,
     () => readStorage(key, initialValue), // client snapshot
-    () => initialValue,                   // server snapshot — safe default for SSR
+    () => initialValue, // server snapshot — safe default for SSR
   );
 
   const setValue = useCallback(

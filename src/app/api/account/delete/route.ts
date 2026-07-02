@@ -14,7 +14,10 @@ export async function POST(request: Request) {
   const json: unknown = await request.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json({ error: "invalid_confirmation" }, { status: 400 });
+    return NextResponse.json(
+      { error: "invalid_confirmation" },
+      { status: 400 },
+    );
   }
 
   const supabase = await createSupabaseServerClient();
@@ -34,10 +37,15 @@ export async function POST(request: Request) {
     }
 
     const admin = createSupabaseAdminClient();
-    const { error: deleteAuthError } = await admin.auth.admin.deleteUser(user.id);
+    const { error: deleteAuthError } = await admin.auth.admin.deleteUser(
+      user.id,
+    );
 
     if (deleteAuthError) {
-      return NextResponse.json({ error: "auth_delete_failed" }, { status: 500 });
+      return NextResponse.json(
+        { error: "auth_delete_failed" },
+        { status: 500 },
+      );
     }
   } catch {
     return NextResponse.json({ error: "server_error" }, { status: 500 });

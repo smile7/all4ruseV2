@@ -1,8 +1,5 @@
 import { Card, CardContent } from "~/components/ui/card";
-import {
-  extractYoutubeVideoId,
-  youtubeEmbedSrc,
-} from "~/lib/youtube-url";
+import { extractYoutubeVideoId, youtubeEmbedSrc } from "~/lib/youtube-url";
 
 type Props = {
   youtubeUrl: string;

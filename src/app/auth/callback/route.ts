@@ -1,4 +1,4 @@
-import { type NextRequest,NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 import { DEFAULT_LOCALE } from "~/constants";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
@@ -34,8 +34,12 @@ export async function GET(request: NextRequest) {
       // Uses a single UPDATE with .is("avatar_url", null) so the DB checks
       // atomically — no pre-query needed, no risk of overwriting a manual upload.
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        const providerAvatar = user?.user_metadata?.avatar_url as string | undefined;
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const providerAvatar = user?.user_metadata?.avatar_url as
+          | string
+          | undefined;
         if (user && providerAvatar) {
           await supabase
             .from("profiles")
@@ -50,7 +54,8 @@ export async function GET(request: NextRequest) {
       // Prefer the forwarded host in production (e.g. behind a reverse proxy)
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocal = process.env.NODE_ENV === "development";
-      const base = isLocal || !forwardedHost ? origin : `https://${forwardedHost}`;
+      const base =
+        isLocal || !forwardedHost ? origin : `https://${forwardedHost}`;
       const response = NextResponse.redirect(`${base}${next}`);
       response.cookies.set(
         AUTH_REMEMBER_COOKIE,
@@ -62,5 +67,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Something went wrong — send back to login with an error indicator
-  return NextResponse.redirect(`${origin}/${DEFAULT_LOCALE}/auth/login?error=auth_callback_failed`);
+  return NextResponse.redirect(
+    `${origin}/${DEFAULT_LOCALE}/auth/login?error=auth_callback_failed`,
+  );
 }

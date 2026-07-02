@@ -90,7 +90,10 @@ function ReportForm({ eventId, onSuccess, onClose }: FormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-4 pb-4 md:px-0 md:pb-0">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 px-4 pb-4 md:px-0 md:pb-0"
+    >
       <div className="flex flex-col gap-2">
         <Label htmlFor="report-message">{t("reportEventMessageLabel")}</Label>
         <Textarea
@@ -104,7 +107,12 @@ function ReportForm({ eventId, onSuccess, onClose }: FormProps) {
         />
       </div>
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onClose}
+          disabled={submitting}
+        >
           {t("reportEventCancel")}
         </Button>
         <Button type="submit" variant="destructive" disabled={submitting}>
@@ -116,7 +124,11 @@ function ReportForm({ eventId, onSuccess, onClose }: FormProps) {
   );
 }
 
-export function ReportEventButton({ eventId, alreadyReported = false, className }: Props) {
+export function ReportEventButton({
+  eventId,
+  alreadyReported = false,
+  className,
+}: Props) {
   const t = useTranslations("SingleEvent");
   const [open, setOpen] = useState(false);
   const [reported, setReported] = useState(alreadyReported);
@@ -135,7 +147,10 @@ export function ReportEventButton({ eventId, alreadyReported = false, className 
     <Button
       type="button"
       variant="outline"
-      className={className ?? "w-full justify-start gap-2 text-muted-foreground hover:text-destructive"}
+      className={
+        className ??
+        "text-muted-foreground hover:text-destructive w-full justify-start gap-2"
+      }
       onClick={() => setOpen(true)}
     >
       <Flag className="size-4 shrink-0" />
@@ -151,7 +166,9 @@ export function ReportEventButton({ eventId, alreadyReported = false, className 
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{t("reportEventDialogTitle")}</DialogTitle>
-              <DialogDescription>{t("reportEventDialogDescription")}</DialogDescription>
+              <DialogDescription>
+                {t("reportEventDialogDescription")}
+              </DialogDescription>
             </DialogHeader>
             <ReportForm
               eventId={eventId}
@@ -172,7 +189,9 @@ export function ReportEventButton({ eventId, alreadyReported = false, className 
         <DrawerContent>
           <DrawerHeader className="text-left">
             <DrawerTitle>{t("reportEventDialogTitle")}</DrawerTitle>
-            <DrawerDescription>{t("reportEventDialogDescription")}</DrawerDescription>
+            <DrawerDescription>
+              {t("reportEventDialogDescription")}
+            </DrawerDescription>
           </DrawerHeader>
           <ReportForm
             eventId={eventId}
@@ -181,7 +200,9 @@ export function ReportEventButton({ eventId, alreadyReported = false, className 
           />
           <DrawerFooter className="pt-0">
             <DrawerClose asChild>
-              <Button variant="outline">{t("reportEventCancel") as string}</Button>
+              <Button variant="outline">
+                {t("reportEventCancel") as string}
+              </Button>
             </DrawerClose>
           </DrawerFooter>
         </DrawerContent>

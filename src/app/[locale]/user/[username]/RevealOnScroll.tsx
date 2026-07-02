@@ -19,7 +19,12 @@ const TRANSLATE: Record<From, string> = {
   scale: "scale(0.94)",
 };
 
-export function RevealOnScroll({ children, className, delay = 0, from = "bottom" }: Props) {
+export function RevealOnScroll({
+  children,
+  className,
+  delay = 0,
+  from = "bottom",
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,7 +54,8 @@ export function RevealOnScroll({ children, className, delay = 0, from = "bottom"
       style={{
         opacity: 0,
         transform: TRANSLATE[from],
-        transition: "opacity 0.55s cubic-bezier(0.4,0,0.2,1), transform 0.55s cubic-bezier(0.4,0,0.2,1)",
+        transition:
+          "opacity 0.55s cubic-bezier(0.4,0,0.2,1), transform 0.55s cubic-bezier(0.4,0,0.2,1)",
         willChange: "opacity, transform",
       }}
     >

@@ -25,7 +25,9 @@ export function deriveUsernameFromEmail(email: string): string {
   return cleaned.padEnd(USERNAME_MIN_LENGTH, "0");
 }
 
-export function isUsernameInvalid(username: string | null | undefined): boolean {
+export function isUsernameInvalid(
+  username: string | null | undefined,
+): boolean {
   if (!username) return true;
   if (username.includes("@")) return true;
   return !USERNAME_PATTERN.test(username);

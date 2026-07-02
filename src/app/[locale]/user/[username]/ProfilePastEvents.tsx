@@ -33,7 +33,10 @@ export function ProfilePastEvents({ userId }: { userId: string }) {
     setLoading(true);
     try {
       const supabase = getSupabaseBrowserClient();
-      const data = await profilesApi.getPublicProfilePastEvents(supabase, userId);
+      const data = await profilesApi.getPublicProfilePastEvents(
+        supabase,
+        userId,
+      );
       setEvents(data);
       setExpanded(true);
     } catch {

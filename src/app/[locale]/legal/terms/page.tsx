@@ -14,7 +14,7 @@ export default function LegalTermsPage() {
   return (
     <article
       lang="bg"
-      className="prose prose-slate max-w-none dark:prose-invert prose-headings:text-balance prose-p:text-pretty prose-ul:list-disc prose-ul:pl-6"
+      className="prose prose-slate dark:prose-invert prose-headings:text-balance prose-p:text-pretty prose-ul:list-disc prose-ul:pl-6 max-w-none"
     >
       <Typography.H1>ОБЩИ УСЛОВИЯ ЗА ПОЛЗВАНЕ НА ALL4RUSE.COM</Typography.H1>
       <Typography.H3>1. Общи условия</Typography.H3>
@@ -45,7 +45,11 @@ export default function LegalTermsPage() {
         Управител: Силвена Здравкова Митева
         <br />
         Имейл за контакт:{" "}
-        <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
+        <a
+          href={`mailto:silvena.miteva.007@gmail.com`}
+          className="text-primary text-base font-medium underline"
+          aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com"
+        >
           <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>
       </Typography.P>
@@ -58,14 +62,20 @@ export default function LegalTermsPage() {
         <li>сте прочели и приели тези Общи условия;</li>
         <li>
           сте прочели и приели нашата{" "}
-          <Link href="/legal/privacy" className="text-primary font-medium underline">
+          <Link
+            href="/legal/privacy"
+            className="text-primary font-medium underline"
+          >
             Политика за поверителност
           </Link>
           ;
         </li>
         <li>
           сте прочели и приели нашата{" "}
-          <Link href="/legal/cookies" className="text-primary font-medium underline">
+          <Link
+            href="/legal/cookies"
+            className="text-primary font-medium underline"
+          >
             Политика за бисквитки
           </Link>
           ;
@@ -133,7 +143,9 @@ export default function LegalTermsPage() {
         4.5. Времето за преглед и одобрение не е гарантирано и зависи от
         възможностите на администратора.
       </Typography.P>
-      <Typography.H3>5А. Отговорност на потребителя за подадено съдържание</Typography.H3>
+      <Typography.H3>
+        5А. Отговорност на потребителя за подадено съдържание
+      </Typography.H3>
       <Typography.P>
         5А1. Вие носите пълна отговорност за истинността, точността,
         актуалността и законосъобразността на информацията, която подавате.
@@ -236,7 +248,9 @@ export default function LegalTermsPage() {
         6.2. При открито забранено съдържание администраторът ще го отхвърли или
         премахне от Сайта незабавно, без предварително уведомление.
       </Typography.P>
-      <Typography.H3>7. Право на администратора да отказва и премахва събития</Typography.H3>
+      <Typography.H3>
+        7. Право на администратора да отказва и премахва събития
+      </Typography.H3>
       <Typography.P>
         7.1. Администраторът на Сайта си запазва правото по всяко време и по
         своя преценка да:
@@ -262,7 +276,11 @@ export default function LegalTermsPage() {
       </Typography.P>
       <Typography.P>
         8.2. За да подадете сигнал, моля изпратете имейл на{" "}
-        <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
+        <a
+          href={`mailto:silvena.miteva.007@gmail.com`}
+          className="text-primary text-base font-medium underline"
+          aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com"
+        >
           <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>{" "}
         с:
@@ -462,7 +480,11 @@ export default function LegalTermsPage() {
       <Typography.H3>18. Контакт</Typography.H3>
       <Typography.P>
         За въпроси относно тези Условия, моля свържете се с нас на:{" "}
-        <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
+        <a
+          href={`mailto:silvena.miteva.007@gmail.com`}
+          className="text-primary text-base font-medium underline"
+          aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com"
+        >
           <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>
         .

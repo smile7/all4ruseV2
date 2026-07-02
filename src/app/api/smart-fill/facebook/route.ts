@@ -9,9 +9,9 @@ import { FB_EVENT_URL_RE } from "~/lib/smart-fill/facebook-public-check";
 export const maxDuration = 120;
 import { reuploadImageFromUrl } from "~/lib/smart-fill/image-reupload";
 import {
-  SmartFillDailyLimitError,
   consumeSmartFillImport,
   isSmartFillAdmin,
+  SmartFillDailyLimitError,
   smartFillDailyLimitResponse,
 } from "~/lib/smart-fill/rate-limit";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
@@ -66,7 +66,9 @@ export async function POST(request: Request) {
       // On an empty dataset (likely Facebook rate-limiting), retry once after
       // a short pause before giving up entirely.
       if (firstErr instanceof EmptyDatasetError) {
-        console.warn("[smart-fill/facebook] empty dataset on first attempt, retrying once…");
+        console.warn(
+          "[smart-fill/facebook] empty dataset on first attempt, retrying once…",
+        );
         await new Promise((resolve) => setTimeout(resolve, 4000));
         scrapeResult = await scrapeApifyFacebookEvent(url);
       } else {

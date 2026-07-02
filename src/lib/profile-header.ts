@@ -22,13 +22,18 @@ export function extractHeaderStoragePathFromPublicUrl(
 
 export type HeaderFileValidationError = "type" | "size";
 
-export function validateHeaderFile(file: File): HeaderFileValidationError | null {
+export function validateHeaderFile(
+  file: File,
+): HeaderFileValidationError | null {
   if (file.size > MAX_HEADER_BYTES) return "size";
   if (!ALLOWED_MIME.has(file.type)) return "type";
   return null;
 }
 
-export function buildHeaderStorageObjectPath(userId: string, file: File): string {
+export function buildHeaderStorageObjectPath(
+  userId: string,
+  file: File,
+): string {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
   return `headers/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 }

@@ -14,7 +14,8 @@ export function useActiveEvents(
 ) {
   return useQuery({
     queryKey: ["active-events", params],
-    queryFn: () => eventsApi.getActiveEvents(getSupabaseBrowserClient(), params),
+    queryFn: () =>
+      eventsApi.getActiveEvents(getSupabaseBrowserClient(), params),
     initialData,
     placeholderData: keepPreviousData,
     staleTime: 60_000,
@@ -61,7 +62,8 @@ export function useCurrentEvents(
 ) {
   return useQuery({
     queryKey: ["current-events", params],
-    queryFn: () => eventsApi.getCurrentEvents(getSupabaseBrowserClient(), params),
+    queryFn: () =>
+      eventsApi.getCurrentEvents(getSupabaseBrowserClient(), params),
     initialData,
     placeholderData: keepPreviousData,
     staleTime: 60_000,

@@ -68,7 +68,10 @@ export function ProfileAccountSecurity({ hasEmailAuth }: Props) {
   const [deletePhrase, setDeletePhrase] = useState("");
   const [deletePending, setDeletePending] = useState(false);
 
-  const pwdSchema = makePasswordSchema(t("passwordLength"), t("passwordsDoNotMatch"));
+  const pwdSchema = makePasswordSchema(
+    t("passwordLength"),
+    t("passwordsDoNotMatch"),
+  );
 
   const pwdForm = useForm<PasswordFormValues>({
     resolver: zodResolver(pwdSchema),
@@ -82,7 +85,9 @@ export function ProfileAccountSecurity({ hasEmailAuth }: Props) {
 
   async function onPasswordSubmit(values: PasswordFormValues) {
     const supabase = getSupabaseBrowserClient();
-    const { error } = await supabase.auth.updateUser({ password: values.password });
+    const { error } = await supabase.auth.updateUser({
+      password: values.password,
+    });
 
     if (error) {
       toast.error(t("errorUpdatingPassword"));
@@ -123,19 +128,25 @@ export function ProfileAccountSecurity({ hasEmailAuth }: Props) {
 
   return (
     <div className="space-y-6">
-      <p className="text-muted-foreground text-sm">{t("accountSecurityDescription")}</p>
+      <p className="text-muted-foreground text-sm">
+        {t("accountSecurityDescription")}
+      </p>
 
       {hasEmailAuth ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <KeyRound className="size-5 text-primary" aria-hidden />
+              <KeyRound className="text-primary size-5" aria-hidden />
               {t("password")}
             </CardTitle>
           </CardHeader>
           <CardContent variant="section">
             {!passwordOpen ? (
-              <Button type="button" variant="outline" onClick={() => setPasswordOpen(true)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPasswordOpen(true)}
+              >
                 {t("changePassword")}
               </Button>
             ) : (
@@ -151,7 +162,10 @@ export function ProfileAccountSecurity({ hasEmailAuth }: Props) {
                       <FormItem>
                         <FormLabel>{t("newPassword")}</FormLabel>
                         <FormControl>
-                          <PasswordInput autoComplete="new-password" {...field} />
+                          <PasswordInput
+                            autoComplete="new-password"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -165,7 +179,10 @@ export function ProfileAccountSecurity({ hasEmailAuth }: Props) {
                       <FormItem>
                         <FormLabel>{t("repeatPassword")}</FormLabel>
                         <FormControl>
-                          <PasswordInput autoComplete="new-password" {...field} />
+                          <PasswordInput
+                            autoComplete="new-password"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -173,10 +190,17 @@ export function ProfileAccountSecurity({ hasEmailAuth }: Props) {
                   />
 
                   <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:flex-wrap sm:items-center">
-                    <Button type="submit" disabled={pwdForm.formState.isSubmitting}>
+                    <Button
+                      type="submit"
+                      disabled={pwdForm.formState.isSubmitting}
+                    >
                       {t("saveNewPassword")}
                     </Button>
-                    <Button type="button" variant="outline" onClick={closePasswordSection}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={closePasswordSection}
+                    >
                       {t("cancel")}
                     </Button>
                   </div>
@@ -189,12 +213,14 @@ export function ProfileAccountSecurity({ hasEmailAuth }: Props) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <KeyRound className="size-5 text-primary" aria-hidden />
+              <KeyRound className="text-primary size-5" aria-hidden />
               {t("password")}
             </CardTitle>
           </CardHeader>
           <CardContent variant="section">
-            <p className="text-muted-foreground text-sm">{t("oauthNoPassword")}</p>
+            <p className="text-muted-foreground text-sm">
+              {t("oauthNoPassword")}
+            </p>
           </CardContent>
         </Card>
       )}
@@ -231,11 +257,16 @@ export function ProfileAccountSecurity({ hasEmailAuth }: Props) {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>{t("deleteAccount")}</DialogTitle>
-                <DialogDescription>{t("deleteAccountIrreversibleWarning")}</DialogDescription>
+                <DialogDescription>
+                  {t("deleteAccountIrreversibleWarning")}
+                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-2">
-                <label htmlFor="delete-confirm-input" className="text-sm font-medium">
+                <label
+                  htmlFor="delete-confirm-input"
+                  className="text-sm font-medium"
+                >
                   {t("deleteTypeDeleteHint")}
                 </label>
                 <Input
@@ -259,7 +290,9 @@ export function ProfileAccountSecurity({ hasEmailAuth }: Props) {
                 <Button
                   type="button"
                   variant="destructive"
-                  disabled={deletePhrase !== DELETE_CONFIRMATION || deletePending}
+                  disabled={
+                    deletePhrase !== DELETE_CONFIRMATION || deletePending
+                  }
                   onClick={handleDeleteAccount}
                 >
                   {t("confirmDeleteAccount")}

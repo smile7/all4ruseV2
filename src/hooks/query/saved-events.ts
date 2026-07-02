@@ -28,7 +28,9 @@ export function useCurrentUserId() {
 
 export function useSavedEventIds(userId: string | null | undefined) {
   return useQuery({
-    queryKey: userId ? savedEventsKeys.ids(userId) : ["saved-events", "ids", "guest"],
+    queryKey: userId
+      ? savedEventsKeys.ids(userId)
+      : ["saved-events", "ids", "guest"],
     queryFn: () =>
       savedEventsApi.getSavedEventIds(getSupabaseBrowserClient(), userId ?? ""),
     enabled: Boolean(userId),
@@ -84,10 +86,15 @@ export function useToggleSavedEvent(userId: string) {
       return { previousIds };
     },
     onError: (_error, _variables, context) => {
-      queryClient.setQueryData(savedEventsKeys.ids(userId), context?.previousIds ?? []);
+      queryClient.setQueryData(
+        savedEventsKeys.ids(userId),
+        context?.previousIds ?? [],
+      );
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: savedEventsKeys.ids(userId) });
+      void queryClient.invalidateQueries({
+        queryKey: savedEventsKeys.ids(userId),
+      });
       void queryClient.invalidateQueries({
         queryKey: ["saved-events", "list", userId],
       });

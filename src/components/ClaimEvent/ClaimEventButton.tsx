@@ -70,7 +70,7 @@ function StatusBadge({ status }: { status: ClaimStatus }) {
       disabled
       className="w-full cursor-default justify-start gap-2 opacity-70"
     >
-      <ShieldAlert className="size-4 text-destructive" />
+      <ShieldAlert className="text-destructive size-4" />
       {t("claimEventDeclined")}
     </Button>
   );
@@ -118,7 +118,10 @@ function ClaimForm({ eventId, onSuccess, onClose }: FormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-4 pb-4 md:px-0 md:pb-0">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 px-4 pb-4 md:px-0 md:pb-0"
+    >
       <div className="flex flex-col gap-2">
         <Label htmlFor="claim-message">{t("claimEventMessageLabel")}</Label>
         <Textarea
@@ -141,10 +144,16 @@ function ClaimForm({ eventId, onSuccess, onClose }: FormProps) {
   );
 }
 
-export function ClaimEventButton({ eventId, initialClaimStatus, className }: Props) {
+export function ClaimEventButton({
+  eventId,
+  initialClaimStatus,
+  className,
+}: Props) {
   const t = useTranslations("SingleEvent");
   const [open, setOpen] = useState(false);
-  const [claimStatus, setClaimStatus] = useState<ClaimStatus | null>(initialClaimStatus);
+  const [claimStatus, setClaimStatus] = useState<ClaimStatus | null>(
+    initialClaimStatus,
+  );
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   if (claimStatus !== null) {
@@ -176,7 +185,9 @@ export function ClaimEventButton({ eventId, initialClaimStatus, className }: Pro
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{t("claimEventDialogTitle")}</DialogTitle>
-              <DialogDescription>{t("claimEventDialogDescription")}</DialogDescription>
+              <DialogDescription>
+                {t("claimEventDialogDescription")}
+              </DialogDescription>
             </DialogHeader>
             <ClaimForm
               eventId={eventId}
@@ -197,7 +208,9 @@ export function ClaimEventButton({ eventId, initialClaimStatus, className }: Pro
         <DrawerContent>
           <DrawerHeader className="text-left">
             <DrawerTitle>{t("claimEventDialogTitle")}</DrawerTitle>
-            <DrawerDescription>{t("claimEventDialogDescription")}</DrawerDescription>
+            <DrawerDescription>
+              {t("claimEventDialogDescription")}
+            </DrawerDescription>
           </DrawerHeader>
           <ClaimForm
             eventId={eventId}
@@ -206,7 +219,9 @@ export function ClaimEventButton({ eventId, initialClaimStatus, className }: Pro
           />
           <DrawerFooter className="pt-0">
             <DrawerClose asChild>
-              <Button variant="outline">{t("claimEventCancel") as string}</Button>
+              <Button variant="outline">
+                {t("claimEventCancel") as string}
+              </Button>
             </DrawerClose>
           </DrawerFooter>
         </DrawerContent>

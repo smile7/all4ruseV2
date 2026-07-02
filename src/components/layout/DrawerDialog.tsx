@@ -116,7 +116,9 @@ export function DrawerDialog({
             )}
           >
             <DialogHeader>
-              <DialogTitle className={cn(!title && "sr-only")}>{title}</DialogTitle>
+              <DialogTitle className={cn(!title && "sr-only")}>
+                {title}
+              </DialogTitle>
               <DialogDescription className={cn(!description && "sr-only")}>
                 {description}
               </DialogDescription>
@@ -136,7 +138,9 @@ export function DrawerDialog({
           )}
           <DrawerContent className={contentClassName}>
             <DrawerHeader className="text-left">
-              <DrawerTitle className={cn(!title && "sr-only")}>{title}</DrawerTitle>
+              <DrawerTitle className={cn(!title && "sr-only")}>
+                {title}
+              </DrawerTitle>
               <DrawerDescription className={cn(!description && "sr-only")}>
                 {description}
               </DrawerDescription>

@@ -103,11 +103,13 @@ const WeekRow = forwardRef<HTMLDivElement, WeekRowProps>(function WeekRow(
   return (
     <div
       ref={ref}
-      className="relative border-b last:border-b-0 h-(--ch-m) md:h-(--ch-d)"
-      style={{
-        "--ch-m": `${mobileCellHeight}px`,
-        "--ch-d": `${cellHeight}px`,
-      } as React.CSSProperties}
+      className="relative h-(--ch-m) border-b last:border-b-0 md:h-(--ch-d)"
+      style={
+        {
+          "--ch-m": `${mobileCellHeight}px`,
+          "--ch-d": `${cellHeight}px`,
+        } as React.CSSProperties
+      }
     >
       {/* Day cells — borders, backgrounds, and (when not the topmost visible week) date numbers */}
       <div className="absolute inset-0 grid grid-cols-7">
@@ -119,14 +121,14 @@ const WeekRow = forwardRef<HTMLDivElement, WeekRowProps>(function WeekRow(
             <div
               key={i}
               className={cn(
-                "relative border-r last:border-r-0 px-1.5 pt-1.5",
+                "relative border-r px-1.5 pt-1.5 last:border-r-0",
                 !inMonth && "bg-muted/30 dark:bg-muted/10",
               )}
             >
               {showDates && (
                 <span
                   className={cn(
-                    "inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium leading-none select-none",
+                    "inline-flex h-7 w-7 items-center justify-center rounded-full text-sm leading-none font-medium select-none",
                     isToday
                       ? "bg-primary text-primary-foreground font-semibold"
                       : inMonth
@@ -148,7 +150,11 @@ const WeekRow = forwardRef<HTMLDivElement, WeekRowProps>(function WeekRow(
         style={{ top: DAY_HEADER_PX }}
       >
         {slots.map((slot) => (
-          <EventBar key={`${slot.event.id}-${slot.startCol}`} slot={slot} todayStr={todayStr} />
+          <EventBar
+            key={`${slot.event.id}-${slot.startCol}`}
+            slot={slot}
+            todayStr={todayStr}
+          />
         ))}
       </div>
     </div>
@@ -188,7 +194,9 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
     "h-[98px] md:h-[58px]",
     // Single-col: column on mobile, row on md+. Multi-col: always row.
     isSingleCol ? "flex flex-col md:flex-row" : "flex",
-    isPast ? "bg-muted text-muted-foreground/50" : "bg-muted text-muted-foreground border border-primary/60",
+    isPast
+      ? "bg-muted text-muted-foreground/50"
+      : "bg-muted text-muted-foreground border border-primary/60",
     isStart && isEnd
       ? "rounded-lg"
       : isStart
@@ -203,17 +211,17 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
       // Stacked on mobile: full-width image strip, then 3-row title below.
       // On md+ reverts to side-by-side via flex-row above.
       <>
-        <div className="relative w-full shrink-0 h-[50px] md:w-14 md:h-full">
+        <div className="relative h-[50px] w-full shrink-0 md:h-full md:w-14">
           <Image
             src={imageUrl}
             alt=""
             fill
             sizes="80px"
-            className={cn("object-cover", isPast && "grayscale opacity-50")}
+            className={cn("object-cover", isPast && "opacity-50 grayscale")}
           />
         </div>
         <div className="flex min-w-0 flex-1 items-start overflow-hidden px-1 pt-1 md:flex-col md:justify-center md:px-2 md:py-1">
-          <span className="line-clamp-3 md:line-clamp-2 text-xs font-semibold leading-tight md:text-sm w-full">
+          <span className="line-clamp-3 w-full text-xs leading-tight font-semibold md:line-clamp-2 md:text-sm">
             {formatEventTitle(event.title)}
           </span>
         </div>
@@ -221,17 +229,17 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
     ) : (
       // Side-by-side: fixed-width image on the left, title on the right.
       <>
-        <div className="relative shrink-0 w-[56px] h-[88px] md:h-[58px]">
+        <div className="relative h-[88px] w-[56px] shrink-0 md:h-[58px]">
           <Image
             src={imageUrl}
             alt=""
             fill
             sizes="120px"
-            className={cn("object-cover", isPast && "grayscale opacity-50")}
+            className={cn("object-cover", isPast && "opacity-50 grayscale")}
           />
         </div>
         <div className="flex min-w-0 flex-col justify-center gap-0.5 px-2 py-1">
-          <span className="line-clamp-2 text-xs font-semibold leading-tight md:text-sm">
+          <span className="line-clamp-2 text-xs leading-tight font-semibold md:text-sm">
             {formatEventTitle(event.title)}
           </span>
         </div>
@@ -240,7 +248,7 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
   ) : (
     /* Continuation bar — no image, title repeated so multi-week events stay readable */
     <div className="flex min-w-0 items-center px-2 py-1">
-      <span className="truncate text-xs font-semibold leading-tight md:text-sm">
+      <span className="truncate text-xs leading-tight font-semibold md:text-sm">
         {formatEventTitle(event.title)}
       </span>
     </div>
@@ -294,7 +302,8 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
 
   // Fetches all events (including past) for the displayed month.
   // The hook is only enabled for the current month and past months — future months stay empty.
-  const { data: monthEvents = [], isFetched: monthEventsFetched } = useCalendarMonthEvents(year, month);
+  const { data: monthEvents = [], isFetched: monthEventsFetched } =
+    useCalendarMonthEvents(year, month);
 
   // Whether the displayed month can have historical events (i.e. the query is active).
   const isCurrentOrPast =
@@ -319,7 +328,10 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
     if (!isReadyToScroll || hasScrolledRef.current) return;
     hasScrolledRef.current = true;
     const frame = requestAnimationFrame(() => {
-      weekRowRefs.current[todayWeekIndex]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      weekRowRefs.current[todayWeekIndex]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
     });
     return () => cancelAnimationFrame(frame);
   }, [isReadyToScroll, todayWeekIndex]);
@@ -331,7 +343,10 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
     if (!isReadyToScroll) return;
     pendingScrollToTodayRef.current = false;
     const frame = requestAnimationFrame(() => {
-      weekRowRefs.current[todayWeekIndex]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      weekRowRefs.current[todayWeekIndex]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
     });
     return () => cancelAnimationFrame(frame);
   }, [year, month, isReadyToScroll, todayWeekIndex]);
@@ -415,8 +430,7 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
     resetScroll();
   }
 
-  const isCurrentMonth =
-    year === now.getFullYear() && month === now.getMonth();
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
 
   return (
     // calendarHeight: fills measured remaining viewport space; flex column so
@@ -429,7 +443,7 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
       {/* Month navigation */}
       <div
         className={cn(
-          "flex items-center justify-between shrink-0",
+          "flex shrink-0 items-center justify-between",
           calendarHeight ? "py-2" : "mb-3",
         )}
       >
@@ -475,20 +489,20 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
       <div
         ref={scrollContainerRef}
         className={cn(
-          "rounded-xl border overflow-auto",
-          calendarHeight ? "flex-1 min-h-0" : "max-h-[60svh]",
+          "overflow-auto rounded-xl border",
+          calendarHeight ? "min-h-0 flex-1" : "max-h-[60svh]",
         )}
       >
         <div className="min-w-[560px] md:min-w-0">
           {/* Sticky 2-row header: day names + dates of the current visible week */}
           <div className="sticky top-0 z-10 border-b">
             {/* Row 1 — weekday labels */}
-            <div className="grid grid-cols-7 border-b bg-muted/90 dark:bg-muted/70 backdrop-blur-sm">
+            <div className="bg-muted/90 dark:bg-muted/70 grid grid-cols-7 border-b backdrop-blur-sm">
               {weekdayLabels.map((label, i) => (
                 <div
                   key={i}
                   className={cn(
-                    "py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
+                    "text-muted-foreground py-2 text-center text-[11px] font-semibold tracking-wider uppercase",
                     i < 6 && "border-r",
                   )}
                 >
@@ -497,7 +511,7 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
               ))}
             </div>
             {/* Row 2 — dates for the topmost visible week */}
-            <div className="grid grid-cols-7 bg-background/95 dark:bg-background/90 backdrop-blur-sm">
+            <div className="bg-background/95 dark:bg-background/90 grid grid-cols-7 backdrop-blur-sm">
               {(weeks[visibleWeekIndex] ?? weeks[0])?.map((day, i) => {
                 const isDayToday = isSameDay(day, now);
                 const dayInMonth = isSameMonth(day, year, month);
@@ -532,7 +546,9 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
           {weekDatas.map((weekData, i) => (
             <WeekRow
               key={i}
-              ref={(el) => { weekRowRefs.current[i] = el; }}
+              ref={(el) => {
+                weekRowRefs.current[i] = el;
+              }}
               weekData={weekData}
               year={year}
               month={month}

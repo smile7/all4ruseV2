@@ -94,7 +94,7 @@ export function DatePopoverRange({ from, to, onChange, onClear, id }: Props) {
             type="button"
             variant="ghost"
             className={cn(
-              "border-input h-9 w-full justify-start gap-2 rounded-md border bg-secondary px-3 text-sm font-normal shadow-sm transition-colors",
+              "border-input bg-secondary h-9 w-full justify-start gap-2 rounded-md border px-3 text-sm font-normal shadow-sm transition-colors",
               "hover:bg-secondary/60 focus-visible:ring-ring focus-visible:ring-1",
               !from ? "text-muted-foreground" : "text-foreground",
             )}
@@ -109,7 +109,7 @@ export function DatePopoverRange({ from, to, onChange, onClear, id }: Props) {
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 cursor-pointer [&_svg]:size-3.5 opacity-40 hover:opacity-80"
+            className="absolute top-1/2 right-1 h-6 w-6 -translate-y-1/2 cursor-pointer opacity-40 hover:opacity-80 [&_svg]:size-3.5"
             aria-label={t("clearFilters")}
             onClick={() => {
               onChange("", "");
@@ -121,7 +121,11 @@ export function DatePopoverRange({ from, to, onChange, onClear, id }: Props) {
         )}
       </div>
 
-      <PopoverContent className="w-auto bg-secondary p-0" align="start" side="bottom">
+      <PopoverContent
+        className="bg-secondary w-auto p-0"
+        align="start"
+        side="bottom"
+      >
         <Calendar
           className="bg-secondary"
           mode="range"

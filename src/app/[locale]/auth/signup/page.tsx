@@ -32,7 +32,11 @@ import { PasswordInput } from "~/components/ui/password-input";
 import { executeRecaptcha } from "~/lib/recaptcha";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 
-function makeSignupSchema(passwordLengthMsg: string, matchMsg: string, termsMsg: string) {
+function makeSignupSchema(
+  passwordLengthMsg: string,
+  matchMsg: string,
+  termsMsg: string,
+) {
   return z
     .object({
       fullName: z.string().optional(),

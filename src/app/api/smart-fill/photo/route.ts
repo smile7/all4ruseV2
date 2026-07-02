@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { extractDraftFromImageBytes, QuotaExceededError } from "~/lib/smart-fill/gemini";
+import {
+  extractDraftFromImageBytes,
+  QuotaExceededError,
+} from "~/lib/smart-fill/gemini";
 import { preprocessImageForExtraction } from "~/lib/smart-fill/image-preprocess";
 import {
   consumeSmartFillImport,
@@ -105,8 +108,11 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         draft: partialDraft,
-        warning: "Image was saved but details could not be extracted automatically.",
-        ...(err instanceof QuotaExceededError && { errorCode: "quota_exceeded" }),
+        warning:
+          "Image was saved but details could not be extracted automatically.",
+        ...(err instanceof QuotaExceededError && {
+          errorCode: "quota_exceeded",
+        }),
       },
       { status: 200 },
     );

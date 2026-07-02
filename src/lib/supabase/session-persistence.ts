@@ -76,11 +76,9 @@ export function rememberFromCookieValue(value: string | undefined): boolean {
   return value === "1";
 }
 
-export function applyRememberPolicyToCookieOptions<T extends { maxAge?: number; expires?: Date }>(
-  cookieName: string,
-  options: T,
-  remember: boolean,
-): T {
+export function applyRememberPolicyToCookieOptions<
+  T extends { maxAge?: number; expires?: Date },
+>(cookieName: string, options: T, remember: boolean): T {
   if (!isSupabaseAuthCookie(cookieName) || remember) {
     return options;
   }

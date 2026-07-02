@@ -219,7 +219,11 @@ export const profilesApi = {
       .filter((e): e is Event => e !== null);
   },
 
-  async updateProfile(client: Client, userId: string, values: ProfileUpdatePayload) {
+  async updateProfile(
+    client: Client,
+    userId: string,
+    values: ProfileUpdatePayload,
+  ) {
     const normalizedUsername =
       values.username === undefined
         ? undefined

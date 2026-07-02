@@ -3,7 +3,12 @@ import { AVATARS_BUCKET } from "~/constants";
 /** App Router and client components can read this at build/runtime. */
 export const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
-const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const ALLOWED_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
 
 export const AVATAR_INPUT_ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
 
@@ -25,14 +30,19 @@ export function extractAvatarStoragePathFromPublicUrl(
 
 export type AvatarFileValidationError = "type" | "size";
 
-export function validateAvatarFile(file: File): AvatarFileValidationError | null {
+export function validateAvatarFile(
+  file: File,
+): AvatarFileValidationError | null {
   if (file.size > MAX_AVATAR_BYTES) return "size";
   if (!ALLOWED_MIME.has(file.type)) return "type";
   return null;
 }
 
 /** Unique storage path for a new upload (not pure — call only from event handlers / async work). */
-export function buildAvatarStorageObjectPath(userId: string, file: File): string {
+export function buildAvatarStorageObjectPath(
+  userId: string,
+  file: File,
+): string {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
   return `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 }

@@ -153,7 +153,10 @@ export default function LoginPage() {
                       </Link>
                     </div>
                     <FormControl>
-                      <PasswordInput autoComplete="current-password" {...field} />
+                      <PasswordInput
+                        autoComplete="current-password"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -5,8 +5,9 @@ import type { Database } from "~/types/database";
 import { browserCookieMethods } from "./browser-cookies";
 import { clearAuthRememberPreference } from "./session-persistence";
 
-let cachedBrowserClient: ReturnType<typeof createBrowserClient<Database>> | null =
-  null;
+let cachedBrowserClient: ReturnType<
+  typeof createBrowserClient<Database>
+> | null = null;
 let rememberListenerInitialized = false;
 
 function initRememberListener(

@@ -33,9 +33,9 @@ export function HeaderSearchButton({ variant = "desktop" }: Props) {
       onClick={toggle}
       className={cn(
         "relative h-auto rounded-full text-xs font-medium tracking-wider uppercase transition-colors",
-        isOpen && "ring-2 ring-primary/40 ring-offset-1",
+        isOpen && "ring-primary/40 ring-2 ring-offset-1",
         isMobile
-          ? "w-full justify-center py-2 px-4"
+          ? "w-full justify-center px-4 py-2"
           : "w-full max-w-sm justify-center px-4 py-2",
       )}
     >
@@ -43,7 +43,7 @@ export function HeaderSearchButton({ variant = "desktop" }: Props) {
       <span>{t("searchButtonText")}</span>
 
       {activeCount > 0 && (
-        <span className="bg-background text-primary ring-primary/20 absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full text-[9px] font-bold leading-none ring-1">
+        <span className="bg-background text-primary ring-primary/20 absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-[9px] leading-none font-bold ring-1">
           {activeCount}
         </span>
       )}

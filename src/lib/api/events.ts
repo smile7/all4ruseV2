@@ -56,7 +56,10 @@ function mapEvent(row: any): Event {
   return { ...rest, tags: mapTags(event_tags) };
 }
 
-async function reloadEventWithTags(client: Client, eventId: number): Promise<Event> {
+async function reloadEventWithTags(
+  client: Client,
+  eventId: number,
+): Promise<Event> {
   const { data, error } = await client
     .from("events")
     .select("*, event_tags(tags(id, title))")
@@ -71,7 +74,10 @@ async function executeQuery(query: unknown): Promise<QueryResult> {
   return query as Promise<QueryResult>;
 }
 
-async function isCreatorConfirmed(client: Client, userId: string): Promise<boolean> {
+async function isCreatorConfirmed(
+  client: Client,
+  userId: string,
+): Promise<boolean> {
   const { data, error } = await client
     .from("profiles")
     .select("is_confirmed")
@@ -88,7 +94,10 @@ async function assignSlugForPublishedEvent(
   title: string,
 ): Promise<void> {
   const slug = buildEventSlugFromTitle(title, eventId);
-  const { error } = await client.from("events").update({ slug }).eq("id", eventId);
+  const { error } = await client
+    .from("events")
+    .update({ slug })
+    .eq("id", eventId);
   if (error) throw error;
 }
 
@@ -121,16 +130,7 @@ async function applyFilters(
   query: ReturnType<typeof baseQuery>,
   params: Partial<GetEventsParams>,
 ) {
-  const {
-    tagIds,
-    search,
-    from,
-    to,
-    isFree,
-    place,
-    page,
-    pageSize,
-  } = params;
+  const { tagIds, search, from, to, isFree, place, page, pageSize } = params;
 
   if (search) {
     query = query.ilike("title", `%${search}%`);
@@ -252,9 +252,7 @@ async function getPastEvents(
   const { data, error } = await executeQuery(query);
   if (error) throw error;
   const now = new Date();
-  const ended = (data ?? [])
-    .map(mapEvent)
-    .filter((e) => isEventEnded(e, now));
+  const ended = (data ?? []).map(mapEvent).filter((e) => isEventEnded(e, now));
   return filterByHost(ended, params.host);
 }
 
@@ -442,10 +440,7 @@ type EventWriteInput = {
 
 // Fetches a single event by numeric ID, regardless of isEventActive.
 // Used by the create-event page in edit/duplicate mode.
-async function getEventById(
-  client: Client,
-  id: number,
-): Promise<Event | null> {
+async function getEventById(client: Client, id: number): Promise<Event | null> {
   const { data, error } = await client
     .from("events")
     .select("*, event_tags(tags(id, title))")
@@ -550,7 +545,8 @@ async function createRecurringEvents(
     email: baseData.email ?? null,
     image: baseData.image ?? null,
     images: (baseData.images ?? null) as import("~/types/database").Json,
-    organizers: (baseData.organizers ?? null) as import("~/types/database").Json,
+    organizers: (baseData.organizers ??
+      null) as import("~/types/database").Json,
     seriesId,
     isEventActive: trustedPublisher,
     isEventPremium: false,
@@ -587,7 +583,10 @@ async function createRecurringEvents(
   const { data: all, error: reloadError } = await client
     .from("events")
     .select("*, event_tags(tags(id, title))")
-    .in("id", inserted.map((r) => r.id))
+    .in(
+      "id",
+      inserted.map((r) => r.id),
+    )
     .order("startDate", { ascending: true });
 
   if (reloadError) throw reloadError;
@@ -637,8 +636,7 @@ async function updateEvent(
   }
 
   let result = await reloadEventWithTags(client, eventId);
-  const slugMissing =
-    result.slug == null || String(result.slug).trim() === "";
+  const slugMissing = result.slug == null || String(result.slug).trim() === "";
 
   if (result.isEventActive === true && slugMissing) {
     await assignSlugForPublishedEvent(client, result.id, result.title);

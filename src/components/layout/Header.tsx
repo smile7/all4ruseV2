@@ -15,7 +15,8 @@ export async function Header() {
   } = await supabase.auth.getUser();
 
   const username = user
-    ? (await profilesApi.getProfile(supabase, user.id)).data?.username ?? undefined
+    ? ((await profilesApi.getProfile(supabase, user.id)).data?.username ??
+      undefined)
     : undefined;
 
   return (

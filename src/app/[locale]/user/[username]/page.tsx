@@ -3,7 +3,14 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
-import { ArrowDown, Building2, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
+import {
+  ArrowDown,
+  Building2,
+  ExternalLink,
+  Mail,
+  MapPin,
+  Phone,
+} from "lucide-react";
 
 import { EventCard } from "~/components/EventCard/EventCard";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -49,13 +56,17 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { username } = await params;
   const supabase = await createSupabaseServerClient();
-  const { data: rawProfile } = await profilesApi.getPublicProfile(supabase, username);
+  const { data: rawProfile } = await profilesApi.getPublicProfile(
+    supabase,
+    username,
+  );
   const profile = rawProfile as Profile | null;
 
   if (!profile) return {};
 
   const name = displayName(profile);
-  const description = profile.bio?.slice(0, 160) ?? `${name} — профил в All4Ruse`;
+  const description =
+    profile.bio?.slice(0, 160) ?? `${name} — профил в All4Ruse`;
   const ogImage = profile.header_url ?? profile.avatar_url ?? undefined;
 
   return {
@@ -87,14 +98,18 @@ export default async function PublicProfilePage({
   const t = await getTranslations("PublicProfile");
 
   const supabase = await createSupabaseServerClient();
-  const { data: rawProfile } = await profilesApi.getPublicProfile(supabase, username);
+  const { data: rawProfile } = await profilesApi.getPublicProfile(
+    supabase,
+    username,
+  );
   // Cast to include header_url (added via Profile type extension until DB column is migrated)
   const profile = rawProfile as Profile | null;
 
   if (!profile) notFound();
 
   const showSavedEvents =
-    (profile as Profile & { show_saved_events?: boolean | null }).show_saved_events ?? false;
+    (profile as Profile & { show_saved_events?: boolean | null })
+      .show_saved_events ?? false;
 
   const [{ upcoming, total }, savedEvents] = await Promise.all([
     profilesApi.getPublicProfileUpcomingEvents(supabase, profile.id),
@@ -111,10 +126,26 @@ export default async function PublicProfilePage({
   const galleryImages = parseProfileGallery(profile.profile_gallery);
 
   const socialLinks = [
-    profile.fb       && { href: profile.fb,        label: "Facebook",  type: "facebook"  as const },
-    profile.instagram && { href: profile.instagram, label: "Instagram", type: "instagram" as const },
-    profile.tiktok   && { href: profile.tiktok,     label: "TikTok",    type: "tiktok"    as const },
-  ].filter(Boolean) as { href: string; label: string; type: "facebook" | "instagram" | "tiktok" }[];
+    profile.fb && {
+      href: profile.fb,
+      label: "Facebook",
+      type: "facebook" as const,
+    },
+    profile.instagram && {
+      href: profile.instagram,
+      label: "Instagram",
+      type: "instagram" as const,
+    },
+    profile.tiktok && {
+      href: profile.tiktok,
+      label: "TikTok",
+      type: "tiktok" as const,
+    },
+  ].filter(Boolean) as {
+    href: string;
+    label: string;
+    type: "facebook" | "instagram" | "tiktok";
+  }[];
 
   // JSON-LD for hosts
   const jsonLd = isHost
@@ -139,7 +170,7 @@ export default async function PublicProfilePage({
       )}
 
       {/* ── HERO ──────────────────────────────────────────────────────────────── */}
-      <section className="relative left-1/2 flex min-h-[80svh] w-screen max-w-[100vw] -translate-x-1/2 flex-col items-center justify-start overflow-hidden pb-12 pt-10 sm:pt-14">
+      <section className="relative left-1/2 flex min-h-[80svh] w-screen max-w-[100vw] -translate-x-1/2 flex-col items-center justify-start overflow-hidden pt-10 pb-12 sm:pt-14">
         {/* Shared newspapers background */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -157,13 +188,13 @@ export default async function PublicProfilePage({
               background: `linear-gradient(135deg, rgba(${rgb},0.25) 0%, transparent 50%, rgba(0,0,0,0.35) 100%)`,
             }}
           />
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-background to-transparent" />
+          <div className="from-background absolute inset-x-0 bottom-0 h-32 bg-linear-to-t to-transparent" />
         </div>
 
         {/* Centered identity */}
         <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-4 text-center sm:px-8">
           <Avatar
-            className="size-28 rounded-2xl bg-background p-2 shadow-2xl ring-4 ring-white/25 transition-transform duration-500 hover:scale-105 sm:size-36"
+            className="bg-background size-28 rounded-2xl p-2 shadow-2xl ring-4 ring-white/25 transition-transform duration-500 hover:scale-105 sm:size-36"
             style={{ boxShadow: `0 0 0 4px ${color}50` }}
           >
             <AvatarImage
@@ -223,7 +254,7 @@ export default async function PublicProfilePage({
                 <ProfileSocialLinks
                   links={socialLinks}
                   color={color}
-                  className="flex justify-center gap-2 sm:gap-3 [&_a]:size-11 [&_a]:border-white/30 [&_a]:bg-white/10 [&_a]:text-white [&_svg]:size-4 sm:[&_a]:size-12 sm:[&_svg]:size-5"
+                  className="flex justify-center gap-2 sm:gap-3 [&_a]:size-11 [&_a]:border-white/30 [&_a]:bg-white/10 [&_a]:text-white sm:[&_a]:size-12 [&_svg]:size-4 sm:[&_svg]:size-5"
                 />
               )}
             </div>
@@ -259,7 +290,7 @@ export default async function PublicProfilePage({
             </RevealOnScroll>
             <RevealOnScroll delay={80} className="w-full">
               <div
-                className="relative w-full overflow-hidden rounded-4xl border bg-background/90 p-8 shadow-lg backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl sm:p-12"
+                className="bg-background/90 relative w-full overflow-hidden rounded-4xl border p-8 shadow-lg backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl sm:p-12"
                 style={{ boxShadow: `0 20px 60px -30px rgba(${rgb},0.45)` }}
               >
                 <div
@@ -267,7 +298,7 @@ export default async function PublicProfilePage({
                   style={{ backgroundColor: color }}
                   aria-hidden
                 />
-                <p className="text-lg leading-relaxed text-muted-foreground sm:text-xl">
+                <p className="text-muted-foreground text-lg leading-relaxed sm:text-xl">
                   {profile.bio}
                 </p>
               </div>
@@ -290,12 +321,12 @@ export default async function PublicProfilePage({
             <RevealOnScroll>
               <ProfileSectionHeader title={t("contactInfo")} color={color} />
             </RevealOnScroll>
-            <div className="grid w-full max-w-4xl gap-6 sm:grid-cols-2 md:grid-cols-3 sm:gap-8">
+            <div className="grid w-full max-w-4xl gap-6 sm:grid-cols-2 sm:gap-8 md:grid-cols-3">
               {profile.email_to_show && (
                 <RevealOnScroll delay={0} from="scale">
                   <a
                     href={`mailto:${profile.email_to_show}`}
-                    className="group/card flex flex-col items-center gap-4 rounded-3xl border bg-background/95 p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+                    className="group/card bg-background/95 flex flex-col items-center gap-4 rounded-3xl border p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
                   >
                     <div
                       className="flex size-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover/card:scale-110"
@@ -304,10 +335,10 @@ export default async function PublicProfilePage({
                       <Mail className="size-6" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                      <div className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
                         {t("contactEmail")}
                       </div>
-                      <div className="mt-1 break-all text-lg font-medium">
+                      <div className="mt-1 text-lg font-medium break-all">
                         <ObfuscatedEmail email={profile.email_to_show} />
                       </div>
                     </div>
@@ -318,7 +349,7 @@ export default async function PublicProfilePage({
                 <RevealOnScroll delay={100} from="scale">
                   <a
                     href={`tel:${profile.phone}`}
-                    className="group/card flex flex-col items-center gap-4 rounded-3xl border bg-background/95 p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+                    className="group/card bg-background/95 flex flex-col items-center gap-4 rounded-3xl border p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
                   >
                     <div
                       className="flex size-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover/card:scale-110"
@@ -327,7 +358,7 @@ export default async function PublicProfilePage({
                       <Phone className="size-6" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                      <div className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
                         {t("contactPhone")}
                       </div>
                       <div className="mt-1 text-lg font-medium">
@@ -338,8 +369,12 @@ export default async function PublicProfilePage({
                 </RevealOnScroll>
               )}
               {profile.address_physical && (
-                <RevealOnScroll delay={200} from="scale" className="sm:col-span-2 md:col-span-1">
-                  <div className="group/card flex flex-col items-center gap-4 rounded-3xl border bg-background/95 p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+                <RevealOnScroll
+                  delay={200}
+                  from="scale"
+                  className="sm:col-span-2 md:col-span-1"
+                >
+                  <div className="group/card bg-background/95 flex flex-col items-center gap-4 rounded-3xl border p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
                     <div
                       className="flex size-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover/card:scale-110"
                       style={{ backgroundColor: `rgba(${rgb},0.12)`, color }}
@@ -347,7 +382,7 @@ export default async function PublicProfilePage({
                       <MapPin className="size-6" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                      <div className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
                         {t("contactLocation")}
                       </div>
                       <div className="mt-1 text-lg font-medium">
@@ -369,7 +404,7 @@ export default async function PublicProfilePage({
               <ProfileSectionHeader title={t("galleryTitle")} color={color} />
             </RevealOnScroll>
             <RevealOnScroll delay={60}>
-              <div className="rounded-4xl border bg-background/80 p-4 shadow-lg backdrop-blur-sm transition-shadow duration-500 hover:shadow-xl sm:p-6">
+              <div className="bg-background/80 rounded-4xl border p-4 shadow-lg backdrop-blur-sm transition-shadow duration-500 hover:shadow-xl sm:p-6">
                 <ProfileGallery
                   images={galleryImages}
                   title={t("galleryTitle")}
@@ -391,8 +426,8 @@ export default async function PublicProfilePage({
 
             {upcoming.length === 0 ? (
               <RevealOnScroll delay={60}>
-                <div className="flex min-h-[300px] flex-col items-center justify-center rounded-4xl border-2 border-dashed border-border bg-secondary/10 p-12 text-center transition-colors duration-300 hover:border-primary/30 hover:bg-secondary/20">
-                  <p className="text-2xl font-medium text-muted-foreground">
+                <div className="border-border bg-secondary/10 hover:border-primary/30 hover:bg-secondary/20 flex min-h-[300px] flex-col items-center justify-center rounded-4xl border-2 border-dashed p-12 text-center transition-colors duration-300">
+                  <p className="text-muted-foreground text-2xl font-medium">
                     {t("noUpcomingEvents")}
                   </p>
                 </div>
@@ -467,7 +502,9 @@ export default async function PublicProfilePage({
         </div>
       )}
 
-      {!isHost && (!showSavedEvents || savedEvents.length === 0) && <div className="pb-32" />}
+      {!isHost && (!showSavedEvents || savedEvents.length === 0) && (
+        <div className="pb-32" />
+      )}
     </>
   );
 }

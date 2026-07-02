@@ -21,7 +21,9 @@ export default async function OfflinePage() {
       <WifiOff className="text-muted-foreground size-16" aria-hidden />
       <div className="flex flex-col gap-2">
         <h1 className="text-foreground text-2xl font-bold">{t("title")}</h1>
-        <p className="text-muted-foreground max-w-sm text-base">{t("description")}</p>
+        <p className="text-muted-foreground max-w-sm text-base">
+          {t("description")}
+        </p>
       </div>
       <div className="flex flex-col gap-3 sm:flex-row">
         <RetryButton label={t("retry")} />

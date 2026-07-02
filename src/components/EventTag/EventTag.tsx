@@ -1,6 +1,4 @@
-import {
-  getEventTagStyles,
-} from "~/lib/event-tag-styles";
+import { getEventTagStyles } from "~/lib/event-tag-styles";
 import { cn } from "~/lib/utils";
 
 type EventTagSize = "xs" | "sm" | "md";

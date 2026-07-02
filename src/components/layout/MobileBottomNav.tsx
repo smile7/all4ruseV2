@@ -23,7 +23,11 @@ import {
   User as UserIcon,
 } from "lucide-react";
 
-import { FacebookIcon, InstagramIcon, TikTokIcon } from "~/components/icons/SocialIcons";
+import {
+  FacebookIcon,
+  InstagramIcon,
+  TikTokIcon,
+} from "~/components/icons/SocialIcons";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -108,7 +112,8 @@ export function MobileBottomNav() {
 
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
   const isProfileActive =
-    (isActive("/profile") && !isActive("/profile/saved-events")) || isActive("/auth");
+    (isActive("/profile") && !isActive("/profile/saved-events")) ||
+    isActive("/auth");
 
   return (
     <>
@@ -166,7 +171,10 @@ export function MobileBottomNav() {
               </AvatarFallback>
             </Avatar>
           ) : (
-            <UserIcon className="size-5" strokeWidth={isProfileActive ? 2.5 : 2} />
+            <UserIcon
+              className="size-5"
+              strokeWidth={isProfileActive ? 2.5 : 2}
+            />
           )}
           <span>{user ? t("account") : t("loginButton")}</span>
         </button>
@@ -178,9 +186,13 @@ export function MobileBottomNav() {
           className="rounded-t-2xl"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <DrawerHeader className="border-border border-b px-5 pb-4 pt-2">
-            <DrawerTitle className="text-center text-sm font-semibold">{t("more")}</DrawerTitle>
-            <DrawerDescription className="sr-only">{t("more")}</DrawerDescription>
+          <DrawerHeader className="border-border border-b px-5 pt-2 pb-4">
+            <DrawerTitle className="text-center text-sm font-semibold">
+              {t("more")}
+            </DrawerTitle>
+            <DrawerDescription className="sr-only">
+              {t("more")}
+            </DrawerDescription>
           </DrawerHeader>
 
           <div className="max-h-[70svh] overflow-y-auto px-5 py-3">
@@ -274,7 +286,7 @@ export function MobileBottomNav() {
 
             <Separator className="my-3" />
 
-            <p className="text-muted-foreground mb-1.5 px-1 text-xs font-medium uppercase tracking-wider">
+            <p className="text-muted-foreground mb-1.5 px-1 text-xs font-medium tracking-wider uppercase">
               {t("legal")}
             </p>
             <Link
@@ -325,7 +337,7 @@ export function MobileBottomNav() {
           className="rounded-t-2xl"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <DrawerHeader className="border-border border-b px-5 pb-4 pt-2">
+          <DrawerHeader className="border-border border-b px-5 pt-2 pb-4">
             <DrawerTitle className="text-center text-sm font-semibold">
               {user ? t("account") : t("loginSignup")}
             </DrawerTitle>
@@ -351,7 +363,9 @@ export function MobileBottomNav() {
                         {user.user_metadata.full_name as string}
                       </p>
                     )}
-                    <p className="text-muted-foreground truncate text-xs">{user.email}</p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      {user.email}
+                    </p>
                   </div>
                 </div>
 
@@ -410,7 +424,11 @@ export function MobileBottomNav() {
               </>
             ) : (
               <div className="flex flex-col gap-2 py-2">
-                <Button asChild className="w-full" onClick={() => setProfileOpen(false)}>
+                <Button
+                  asChild
+                  className="w-full"
+                  onClick={() => setProfileOpen(false)}
+                >
                   <Link href="/auth/login">{t("loginButton")}</Link>
                 </Button>
                 <Button

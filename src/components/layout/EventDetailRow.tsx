@@ -8,7 +8,7 @@ type Props = {
 
 export function EventDetailRow({ icon, label, children }: Props) {
   return (
-    <div className="flex items-start gap-4 border p-2 rounded-md bg-background/20">
+    <div className="bg-background/20 flex items-start gap-4 rounded-md border p-2">
       <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-md">
         {icon}
       </span>

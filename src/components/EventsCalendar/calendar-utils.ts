@@ -96,14 +96,20 @@ export function computeWeekSlots(week: Date[], events: Event[]): WeekData {
   });
 
   // trackCols[t] = set of column indices (0–6) already claimed in track t
-  const trackCols: Set<number>[] = Array.from({ length: MAX_TRACKS }, () => new Set());
+  const trackCols: Set<number>[] = Array.from(
+    { length: MAX_TRACKS },
+    () => new Set(),
+  );
   const slots: EventSlot[] = [];
 
   for (const event of relevant) {
     const evStart = parseLocalDate(event.startDate);
     const evEnd = parseLocalDate(event.endDate);
 
-    const startCol = Math.max(0, Math.min(6, wholeDaysBetween(evStart, weekStart)));
+    const startCol = Math.max(
+      0,
+      Math.min(6, wholeDaysBetween(evStart, weekStart)),
+    );
     const endCol = Math.max(0, Math.min(6, wholeDaysBetween(evEnd, weekStart)));
 
     if (startCol > endCol) continue; // guard against bad data
@@ -132,6 +138,7 @@ export function computeWeekSlots(week: Date[], events: Event[]): WeekData {
     });
   }
 
-  const maxTrack = slots.length > 0 ? Math.max(...slots.map((s) => s.track)) : -1;
+  const maxTrack =
+    slots.length > 0 ? Math.max(...slots.map((s) => s.track)) : -1;
   return { days: week, slots, maxTrack };
 }

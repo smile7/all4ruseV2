@@ -84,7 +84,10 @@ function collectJsonLdNodes(parsed: unknown): unknown[] {
     return parsed.flatMap(collectJsonLdNodes);
   }
   if (parsed && typeof parsed === "object") {
-    if ("@graph" in parsed && Array.isArray((parsed as { "@graph": unknown })["@graph"])) {
+    if (
+      "@graph" in parsed &&
+      Array.isArray((parsed as { "@graph": unknown })["@graph"])
+    ) {
       return (parsed as { "@graph": unknown[] })["@graph"];
     }
     return [parsed];
@@ -92,9 +95,7 @@ function collectJsonLdNodes(parsed: unknown): unknown[] {
   return [];
 }
 
-function tryJsonLd(
-  $: cheerio.CheerioAPI,
-): Omit<EventDraft, "image"> | null {
+function tryJsonLd($: cheerio.CheerioAPI): Omit<EventDraft, "image"> | null {
   const scripts = $('script[type="application/ld+json"]').toArray();
 
   for (const el of scripts) {
@@ -190,14 +191,16 @@ function htmlPass(
 
   // Strategy B: scan "Дата:" / "Час:" labelled items anywhere in the page
   if (!draft.startDate) {
-    const allText = $("li, dd, td, .tribe-meta-value").map((_, el) =>
-      $(el).text().trim(),
-    ).get();
+    const allText = $("li, dd, td, .tribe-meta-value")
+      .map((_, el) => $(el).text().trim())
+      .get();
 
     for (const text of allText) {
       // "Дата:  10 юни" or "Дата: 10 юни 2026"
       const dateLabel =
-        /^(?:Дата|Date)[:\s]+(\d{1,2})\s+([а-яА-Я]+)(?:\s+(\d{4}))?/iu.exec(text);
+        /^(?:Дата|Date)[:\s]+(\d{1,2})\s+([а-яА-Я]+)(?:\s+(\d{4}))?/iu.exec(
+          text,
+        );
       if (dateLabel) {
         const day = dateLabel[1] ?? "";
         const month = dateLabel[2] ?? "";
@@ -211,7 +214,9 @@ function htmlPass(
 
       // "Час:  10:00 - 11:00" or just two times separated by dash
       const timeLabel =
-        /^(?:Час|Time|Hour)[:\s]+(\d{2}:\d{2})(?:\s*[-–]\s*(\d{2}:\d{2}))?/iu.exec(text);
+        /^(?:Час|Time|Hour)[:\s]+(\d{2}:\d{2})(?:\s*[-–]\s*(\d{2}:\d{2}))?/iu.exec(
+          text,
+        );
       if (timeLabel) {
         if (!draft.startTime) draft.startTime = timeLabel[1];
         if (timeLabel[2] && !draft.endTime) draft.endTime = timeLabel[2];
@@ -241,10 +246,7 @@ function htmlPass(
   }
 
   const rawAddress = $(".tribe-street-address").first().text().trim();
-  if (
-    rawAddress &&
-    !isSameVenueLabel(rawAddress, draft.place ?? "")
-  ) {
+  if (rawAddress && !isSameVenueLabel(rawAddress, draft.place ?? "")) {
     draft.address = cleanAddress(rawAddress);
     draft.town = draft.town ?? "Русе";
   }
@@ -255,8 +257,10 @@ function htmlPass(
 
   // ── Organizer ─────────────────────────────────────────────────────────────
   // Try tribe class first
-  let organizer =
-    $(".tribe-organizer-title, .tribe-organizer a").first().text().trim();
+  let organizer = $(".tribe-organizer-title, .tribe-organizer a")
+    .first()
+    .text()
+    .trim();
 
   if (!organizer) {
     organizer = extractLabeledSectionText($, ["организатор", "organizer"]);
@@ -284,7 +288,12 @@ function htmlPass(
       const text = $(el).text().trim();
       const catMatch = /Категория[^:]*:\s*(.+)/i.exec(text);
       if (catMatch?.[1]) {
-        categories.push(...catMatch[1].split(",").map((s) => s.trim()).filter(Boolean));
+        categories.push(
+          ...catMatch[1]
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+        );
         return false;
       }
     });
@@ -304,7 +313,9 @@ function htmlPass(
     const text = $(el).text().trim().toLowerCase();
     if (
       !draft.ticketsLink &&
-      (text.includes("билет") || text.includes("ticket") || href.includes("entase")) &&
+      (text.includes("билет") ||
+        text.includes("ticket") ||
+        href.includes("entase")) &&
       !href.includes("facebook") &&
       href.startsWith("http") &&
       !href.includes(pageUrl)
@@ -362,8 +373,11 @@ function extractLabeledSectionText(
 
     const next = $(el).next();
     const candidate =
-      next.find("li.tribe-venue, li.tribe-organizer, li").first().text().trim() ||
-      next.text().trim();
+      next
+        .find("li.tribe-venue, li.tribe-organizer, li")
+        .first()
+        .text()
+        .trim() || next.text().trim();
     if (candidate) {
       result = candidate.split("\n")[0]?.trim() ?? candidate;
       return false;
@@ -410,9 +424,18 @@ function extractTimeFromIso(iso: string): string | undefined {
 }
 
 const BG_MONTHS: Record<string, string> = {
-  януари: "01", февруари: "02", март: "03", април: "04",
-  май: "05", юни: "06", юли: "07", август: "08",
-  септември: "09", октомври: "10", ноември: "11", декември: "12",
+  януари: "01",
+  февруари: "02",
+  март: "03",
+  април: "04",
+  май: "05",
+  юни: "06",
+  юли: "07",
+  август: "08",
+  септември: "09",
+  октомври: "10",
+  ноември: "11",
+  декември: "12",
 };
 
 const BG_MONTH_RE = new RegExp(Object.keys(BG_MONTHS).join("|"), "iu");
@@ -439,8 +462,9 @@ function parseBulgarianDateHeading(
 ): Partial<Omit<EventDraft, "image">> {
   const result: Partial<Omit<EventDraft, "image">> = {};
 
-  const dateMatch =
-    /(\d{1,2})(?:\s*[-–]\s*(\d{1,2}))?\s+([а-яА-Я]+)/u.exec(text);
+  const dateMatch = /(\d{1,2})(?:\s*[-–]\s*(\d{1,2}))?\s+([а-яА-Я]+)/u.exec(
+    text,
+  );
   if (dateMatch) {
     const day1 = dateMatch[1] ?? "";
     const day2 = dateMatch[2];
@@ -451,8 +475,9 @@ function parseBulgarianDateHeading(
       : result.startDate;
   }
 
-  const timeMatch =
-    /@\s*(\d{2}:\d{2})(?:\s*[-–\-]\s*(\d{2}:\d{2}))?/.exec(text);
+  const timeMatch = /@\s*(\d{2}:\d{2})(?:\s*[-–\-]\s*(\d{2}:\d{2}))?/.exec(
+    text,
+  );
   if (timeMatch) {
     result.startTime = timeMatch[1];
     if (timeMatch[2]) result.endTime = timeMatch[2];

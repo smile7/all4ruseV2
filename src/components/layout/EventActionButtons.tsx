@@ -44,7 +44,11 @@ export async function EventActionButtons({
   return (
     <>
       {isEventCreator && (
-        <Button variant="outline" asChild className="w-full justify-start gap-2">
+        <Button
+          variant="outline"
+          asChild
+          className="w-full justify-start gap-2"
+        >
           <a href={`/${locale}/create-event?editId=${eventId}`}>
             <Pencil className="size-4 shrink-0" />
             {t("editEvent")}
@@ -52,7 +56,11 @@ export async function EventActionButtons({
         </Button>
       )}
       {ticketsLink && (
-        <Button variant="secondary" asChild className="w-full justify-start gap-2">
+        <Button
+          variant="secondary"
+          asChild
+          className="w-full justify-start gap-2"
+        >
           <a href={ticketsLink} target="_blank" rel="noopener">
             <Ticket className="size-4 shrink-0" />
             {t("buyTickets")}
@@ -60,7 +68,11 @@ export async function EventActionButtons({
         </Button>
       )}
       {fbLink && (
-        <Button variant="secondary" asChild className="w-full justify-start gap-2">
+        <Button
+          variant="secondary"
+          asChild
+          className="w-full justify-start gap-2"
+        >
           <a href={fbLink} target="_blank" rel="noopener">
             <ExternalLink className="size-4 shrink-0" />
             {t("facebook")}
@@ -68,14 +80,22 @@ export async function EventActionButtons({
         </Button>
       )}
       <EventSaveButton eventId={eventId} variant="button" />
-      <Button variant="secondary" asChild className="w-full justify-start gap-2">
+      <Button
+        variant="secondary"
+        asChild
+        className="w-full justify-start gap-2"
+      >
         <a href={gcalUrl} target="_blank" rel="noopener">
           <CalendarPlus className="size-4 shrink-0" />
           {t("addToCalendar")}
         </a>
       </Button>
       {hostProfileUsername && (
-        <Button variant="secondary" asChild className="w-full justify-start gap-2">
+        <Button
+          variant="secondary"
+          asChild
+          className="w-full justify-start gap-2"
+        >
           <a href={`/${locale}/user/${hostProfileUsername}`}>
             <User className="size-4 shrink-0" />
             {t("organizer")}
@@ -89,7 +109,10 @@ export async function EventActionButtons({
         </a>
       </Button>
       {showClaimButton && (
-        <ClaimEventButton eventId={eventId} initialClaimStatus={initialClaimStatus} />
+        <ClaimEventButton
+          eventId={eventId}
+          initialClaimStatus={initialClaimStatus}
+        />
       )}
     </>
   );

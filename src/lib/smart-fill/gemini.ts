@@ -149,7 +149,9 @@ function readModelText(result: GenerateContentResult): string {
     if (blockReason) {
       throw new Error(`Model blocked response: ${blockReason}`);
     }
-    throw err instanceof Error ? err : new Error("Failed to read model response");
+    throw err instanceof Error
+      ? err
+      : new Error("Failed to read model response");
   }
 }
 
@@ -188,8 +190,7 @@ function parseDraftFromJson(raw: string): EventDraft {
     draft.endTime = parsed.endTime;
   if (typeof parsed.address === "string" && parsed.address)
     draft.address = parsed.address;
-  if (typeof parsed.town === "string" && parsed.town)
-    draft.town = parsed.town;
+  if (typeof parsed.town === "string" && parsed.town) draft.town = parsed.town;
   if (typeof parsed.place === "string" && parsed.place)
     draft.place = parsed.place;
   if (typeof parsed.price === "string") draft.price = parsed.price;
@@ -222,9 +223,7 @@ function plainTextToHtml(text: string): string {
 
 type ExtractionContent =
   | string
-  | Parameters<
-      ReturnType<typeof createExtractionModel>["generateContent"]
-    >[0];
+  | Parameters<ReturnType<typeof createExtractionModel>["generateContent"]>[0];
 
 async function generateDraftFromContent(
   content: ExtractionContent,
@@ -259,7 +258,10 @@ async function generateDraftFromContent(
     try {
       return await run(FALLBACK_MODEL_NAME);
     } catch (fallbackErr) {
-      if (isBillingDepleted(fallbackErr) || isRetryableWithFallback(fallbackErr)) {
+      if (
+        isBillingDepleted(fallbackErr) ||
+        isRetryableWithFallback(fallbackErr)
+      ) {
         throw new QuotaExceededError(
           "API quota exceeded. Please try again later.",
         );

@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback } from "react";
-import { type FileRejection,useDropzone } from "react-dropzone";
+import { type FileRejection, useDropzone } from "react-dropzone";
 import { useTranslations } from "next-intl";
 
-import { ImagePlus,X } from "lucide-react";
+import { ImagePlus, X } from "lucide-react";
 
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
@@ -104,7 +104,9 @@ export function EventImageUpload({ images, onChange }: Props) {
         <p className="text-destructive text-sm">{t("maxImageSizeExceeded")}</p>
       )}
       {images.length >= MAX_IMAGES && (
-        <p className="text-muted-foreground text-sm">{t("maxImagesExceeded")}</p>
+        <p className="text-muted-foreground text-sm">
+          {t("maxImagesExceeded")}
+        </p>
       )}
 
       {images.length > 0 && (
@@ -125,7 +127,7 @@ export function EventImageUpload({ images, onChange }: Props) {
                 type="button"
                 aria-label={t("removeImageAria")}
                 onClick={() => handleRemove(img.id)}
-                className="absolute right-1 top-1 z-10 cursor-pointer rounded-full bg-black/35 p-1 text-white/85 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
+                className="absolute top-1 right-1 z-10 cursor-pointer rounded-full bg-black/35 p-1 text-white/85 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
               >
                 <X className="size-3" />
               </button>

@@ -26,7 +26,7 @@ export default async function PastEventsPage() {
   }
 
   return (
-    <div className="mx-auto w-full flex flex-col gap-2 text-center max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-2 px-4 py-8 text-center sm:px-6 lg:px-8">
       <Typography.H1 className="text-center">{t("pageTitle")}</Typography.H1>
       <EventsList initialData={initialData} variant="past" />
     </div>

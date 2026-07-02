@@ -6,12 +6,14 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "~/types/database";
 
 import {
-  AUTH_REMEMBER_COOKIE,
   applyRememberPolicyToCookieOptions,
+  AUTH_REMEMBER_COOKIE,
   rememberFromCookieValue,
 } from "./session-persistence";
 
-export async function createSupabaseServerClient(options?: { remember?: boolean }) {
+export async function createSupabaseServerClient(options?: {
+  remember?: boolean;
+}) {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
@@ -33,7 +35,11 @@ export async function createSupabaseServerClient(options?: { remember?: boolean 
               cookieStore.set(
                 name,
                 value,
-                applyRememberPolicyToCookieOptions(name, cookieOptions, remember),
+                applyRememberPolicyToCookieOptions(
+                  name,
+                  cookieOptions,
+                  remember,
+                ),
               ),
             );
           } catch {

@@ -49,7 +49,11 @@ const UnsavedChangesContext = createContext<
   UnsavedChangesContextValue | undefined
 >(undefined);
 
-export function UnsavedChangesGuardProvider({ children }: { children: ReactNode }) {
+export function UnsavedChangesGuardProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [dirty, setDirtyState] = useState(false);
   const dirtyRef = useRef(false);
   const [promptOpen, setPromptOpen] = useState(false);
@@ -118,13 +122,7 @@ export function UnsavedChangesGuardProvider({ children }: { children: ReactNode 
       const anchor = target?.closest?.("a");
       if (!anchor) return;
 
-      if (
-        e.metaKey ||
-        e.ctrlKey ||
-        e.shiftKey ||
-        e.altKey ||
-        e.button !== 0
-      ) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
         return;
       }
 
@@ -177,8 +175,7 @@ export function UnsavedChangesGuardProvider({ children }: { children: ReactNode 
       <DrawerDialog
         open={promptOpen}
         setOpen={(next) => {
-          const resolved =
-            typeof next === "function" ? next(promptOpen) : next;
+          const resolved = typeof next === "function" ? next(promptOpen) : next;
           if (!resolved) cancelNavigate();
           else setPromptOpen(true);
         }}

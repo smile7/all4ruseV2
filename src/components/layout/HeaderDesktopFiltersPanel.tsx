@@ -6,7 +6,11 @@ import { Search } from "lucide-react";
 
 import { FilterContent } from "~/components/EventFilters";
 import { Button } from "~/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { useFilterPanel } from "~/contexts/FilterPanelContext";
 import { useMediaQuery } from "~/hooks";
 import { useFilters } from "~/hooks/useFilters";
@@ -26,7 +30,10 @@ export function HeaderDesktopFiltersPanel() {
   if (!isDesktop || pathname !== "/") return null;
 
   return (
-    <Popover open={isOpen && isDesktop} onOpenChange={(nextOpen) => (nextOpen ? open() : close())}>
+    <Popover
+      open={isOpen && isDesktop}
+      onOpenChange={(nextOpen) => (nextOpen ? open() : close())}
+    >
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -38,7 +45,7 @@ export function HeaderDesktopFiltersPanel() {
           <Search className="size-4 shrink-0" />
           <span className="mt-0.5">{t("searchButtonText")}</span>
           {activeCount > 0 && (
-            <span className="bg-background text-primary ring-primary/20 absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full text-[9px] font-bold leading-none ring-1">
+            <span className="bg-background text-primary ring-primary/20 absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-[9px] leading-none font-bold ring-1">
               {activeCount}
             </span>
           )}
@@ -48,7 +55,7 @@ export function HeaderDesktopFiltersPanel() {
       <PopoverContent
         align="center"
         side="bottom"
-        className="data-[state=open]:zoom-in-0! data-[state=closed]:zoom-out-0! bg-background w-[min(92vw,1000px)] origin-center border-border/70 p-5 duration-400"
+        className="data-[state=open]:zoom-in-0! data-[state=closed]:zoom-out-0! bg-background border-border/70 w-[min(92vw,1000px)] origin-center p-5 duration-400"
       >
         <FilterContent />
       </PopoverContent>

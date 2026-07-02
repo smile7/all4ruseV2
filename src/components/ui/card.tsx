@@ -31,7 +31,11 @@ type CardHeaderProps = DivProps & {
   variant?: CardVariant;
 };
 
-function CardHeader({ className, variant = "default", ...props }: CardHeaderProps) {
+function CardHeader({
+  className,
+  variant = "default",
+  ...props
+}: CardHeaderProps) {
   return (
     <div
       data-slot="card-header"
@@ -49,7 +53,11 @@ type CardTitleProps = ComponentProps<"div"> & {
   variant?: CardVariant;
 };
 
-function CardTitle({ className, variant = "default", ...props }: CardTitleProps) {
+function CardTitle({
+  className,
+  variant = "default",
+  ...props
+}: CardTitleProps) {
   return (
     <div
       data-slot="card-title"
@@ -98,11 +106,7 @@ function CardContent({
   return (
     <div
       data-slot="card-content"
-      className={cn(
-        "px-6",
-        variant === "section" && "space-y-5",
-        className,
-      )}
+      className={cn("px-6", variant === "section" && "space-y-5", className)}
       {...props}
     />
   );

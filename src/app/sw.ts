@@ -1,5 +1,12 @@
 /// <reference lib="webworker" />
-import { CacheFirst, ExpirationPlugin, PrecacheEntry, Serwist, SerwistGlobalConfig, StaleWhileRevalidate } from "serwist";
+import {
+  CacheFirst,
+  ExpirationPlugin,
+  PrecacheEntry,
+  Serwist,
+  SerwistGlobalConfig,
+  StaleWhileRevalidate,
+} from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -28,7 +35,10 @@ const serwist = new Serwist({
       handler: new CacheFirst({
         cacheName: "next-static",
         plugins: [
-          new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 365 }),
+          new ExpirationPlugin({
+            maxEntries: 200,
+            maxAgeSeconds: 60 * 60 * 24 * 365,
+          }),
         ],
       }),
     },
@@ -38,7 +48,10 @@ const serwist = new Serwist({
       handler: new StaleWhileRevalidate({
         cacheName: "images",
         plugins: [
-          new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 }),
+          new ExpirationPlugin({
+            maxEntries: 100,
+            maxAgeSeconds: 60 * 60 * 24 * 30,
+          }),
         ],
       }),
     },

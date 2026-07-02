@@ -48,9 +48,7 @@ export function FilterPanelProvider({
 export function useFilterPanel() {
   const ctx = useContext(FilterPanelContext);
   if (!ctx) {
-    throw new Error(
-      "useFilterPanel must be used inside a FilterPanelProvider",
-    );
+    throw new Error("useFilterPanel must be used inside a FilterPanelProvider");
   }
   return ctx;
 }

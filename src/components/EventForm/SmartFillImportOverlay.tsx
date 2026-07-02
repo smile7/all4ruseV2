@@ -62,7 +62,7 @@ export function SmartFillImportOverlay({ onCancel }: Props) {
     >
       <div className="flex max-w-sm flex-col items-center gap-6 text-center">
         <div
-          className="smart-fill-arcade-loader-stage rounded-lg border-2 border-foreground/80 bg-background/50 p-5"
+          className="smart-fill-arcade-loader-stage border-foreground/80 bg-background/50 rounded-lg border-2 p-5"
           aria-hidden
         >
           <div className={cn(`smart-fill-arcade-loader-${loaderIndex}`)} />
@@ -72,7 +72,10 @@ export function SmartFillImportOverlay({ onCancel }: Props) {
           <p id="smart-fill-import-title" className="text-lg font-medium">
             {t("parsing")}
           </p>
-          <p id="smart-fill-import-desc" className="text-muted-foreground text-sm">
+          <p
+            id="smart-fill-import-desc"
+            className="text-muted-foreground text-sm"
+          >
             {t("parsingHint")}
           </p>
         </div>

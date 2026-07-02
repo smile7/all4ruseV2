@@ -113,18 +113,23 @@ export function EventCard({
                     <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
                     <span className="relative inline-flex size-2 rounded-full bg-green-500" />
                   </span>
-                  <span className="text-[10px] font-semibold leading-none text-green-600 dark:text-green-400">
+                  <span className="text-[10px] leading-none font-semibold text-green-600 dark:text-green-400">
                     {t("liveNow")}
                   </span>
                 </div>
-                <p className="leading-none text-[10px] font-bold tracking-wide">
+                <p className="text-[10px] leading-none font-bold tracking-wide">
                   {liveElapsed}
                 </p>
               </>
             ) : (
               /* Today/tomorrow → single large label; other days → "11 ЮНИ" + weekday */
               <>
-                <p className={cn("leading-none font-bold tracking-wide", dateBadge.secondary ? "text-sm" : "text-base")}>
+                <p
+                  className={cn(
+                    "leading-none font-bold tracking-wide",
+                    dateBadge.secondary ? "text-sm" : "text-base",
+                  )}
+                >
                   {dateBadge.primary}
                 </p>
                 {dateBadge.secondary && (
@@ -166,7 +171,7 @@ export function EventCard({
                   type="button"
                   onClick={handleEdit}
                   aria-label={tHome("edit")}
-                  className="flex w-full max-w-52 cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full max-w-52 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-lg transition-colors"
                 >
                   <Pencil className="size-4 shrink-0" />
                   {tHome("edit")}
@@ -175,7 +180,7 @@ export function EventCard({
                   type="button"
                   onClick={handleDuplicate}
                   aria-label={tHome("duplicate")}
-                  className="flex w-full max-w-52 cursor-pointer items-center justify-center gap-2 rounded-xl bg-background/95 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg ring-1 ring-black/10 backdrop-blur-sm transition-colors hover:bg-background dark:ring-white/15"
+                  className="bg-background/95 text-foreground hover:bg-background flex w-full max-w-52 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-lg ring-1 ring-black/10 backdrop-blur-sm transition-colors dark:ring-white/15"
                 >
                   <CopyPlus className="size-4 shrink-0" />
                   {tHome("duplicate")}

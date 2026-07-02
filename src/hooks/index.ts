@@ -3,4 +3,3 @@ export { useFilters } from "./useFilters";
 export { useLocalStorage } from "./useLocalStorage";
 export { useMediaQuery } from "./useMediaQuery";
 export { useIsMobile } from "./useMobile";
-

@@ -39,8 +39,12 @@ export default async function SavedEventsPage() {
           </div>
           <div className="flex flex-col gap-4">
             <p className="text-lg font-semibold">{t("authPromptTitle")}</p>
-            <p className="text-muted-foreground max-w-sm text-sm">{t("pageUnauthLine1")}</p>
-            <p className="text-muted-foreground max-w-sm text-sm">{t("pageUnauthLine2")}</p>
+            <p className="text-muted-foreground max-w-sm text-sm">
+              {t("pageUnauthLine1")}
+            </p>
+            <p className="text-muted-foreground max-w-sm text-sm">
+              {t("pageUnauthLine2")}
+            </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button asChild>

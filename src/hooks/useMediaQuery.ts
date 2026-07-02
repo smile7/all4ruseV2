@@ -13,6 +13,6 @@ export function useMediaQuery(query: string): boolean {
   return useSyncExternalStore(
     subscribe,
     () => window.matchMedia(query).matches, // client snapshot
-    () => false,                            // server snapshot — safe default for SSR
+    () => false, // server snapshot — safe default for SSR
   );
 }

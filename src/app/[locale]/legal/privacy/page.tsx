@@ -14,7 +14,7 @@ export default function PrivacyPage() {
   return (
     <article
       lang="bg"
-      className="prose prose-slate max-w-none dark:prose-invert prose-headings:text-balance prose-p:text-pretty prose-ul:list-disc prose-ul:pl-6 prose-a:text-primary"
+      className="prose prose-slate dark:prose-invert prose-headings:text-balance prose-p:text-pretty prose-ul:list-disc prose-ul:pl-6 prose-a:text-primary max-w-none"
     >
       <Typography.H1>ПОЛИТИКА ЗА ПОВЕРИТЕЛНОСТ НА ALL4RUSE.COM</Typography.H1>
       <Typography.H3>1. Общи положения</Typography.H3>
@@ -49,7 +49,11 @@ export default function PrivacyPage() {
         Управител: Силвена Здравкова Митева
         <br />
         Имейл за контакт по GDPR въпроси:{" "}
-        <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
+        <a
+          href={`mailto:silvena.miteva.007@gmail.com`}
+          className="text-primary text-base font-medium underline"
+          aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com"
+        >
           <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>
       </Typography.P>
@@ -276,7 +280,11 @@ export default function PrivacyPage() {
         <br />
         За да упражните което и да е от горните права, моля свържете се с
         администратора на имейл:{" "}
-        <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
+        <a
+          href={`mailto:silvena.miteva.007@gmail.com`}
+          className="text-primary text-base font-medium underline"
+          aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com"
+        >
           <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>
         .
@@ -302,7 +310,11 @@ export default function PrivacyPage() {
         Телефон: +359 2 915 3420
         <br />
         Електронна поща:{" "}
-        <a href={`mailto:kzld@cpdp.bg`} className="text-primary text-base font-medium underline" aria-label="Имейл на КЗЛД: kzld at cpdp dot bg">
+        <a
+          href={`mailto:kzld@cpdp.bg`}
+          className="text-primary text-base font-medium underline"
+          aria-label="Имейл на КЗЛД: kzld at cpdp dot bg"
+        >
           <ObfuscatedEmail email="kzld@cpdp.bg" />
         </a>
       </Typography.P>
@@ -385,7 +397,11 @@ export default function PrivacyPage() {
       <Typography.P>
         За въпроси относно обработката на вашите лични данни или за упражняване
         на правата си, моля свържете се с нас на:{" "}
-        <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
+        <a
+          href={`mailto:silvena.miteva.007@gmail.com`}
+          className="text-primary text-base font-medium underline"
+          aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com"
+        >
           <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>
         .

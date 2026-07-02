@@ -9,7 +9,7 @@ export type FilterValues = {
   search: string;
   tagIds: number[];
   from: string; // ISO date YYYY-MM-DD
-  to: string;   // ISO date YYYY-MM-DD
+  to: string; // ISO date YYYY-MM-DD
   isFree: boolean;
   host: string;
   place: string;

@@ -305,10 +305,18 @@
 
 /* Strong blur covers the full crossfade window so any loading gap is invisible */
 @keyframes via-blur {
-  0%   { filter: blur(0px); }
-  25%  { filter: blur(12px); }
-  65%  { filter: blur(12px); }
-  100% { filter: blur(0px); }
+  0% {
+    filter: blur(0px);
+  }
+  25% {
+    filter: blur(12px);
+  }
+  65% {
+    filter: blur(12px);
+  }
+  100% {
+    filter: blur(0px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

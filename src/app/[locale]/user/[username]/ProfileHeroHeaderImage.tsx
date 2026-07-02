@@ -85,7 +85,7 @@ export function ProfileHeroHeaderImage({ src, alt, color }: Props) {
       >
         <div
           ref={innerRef}
-          className="relative mx-auto w-full overflow-hidden rounded-2xl bg-muted/40 shadow-2xl aspect-video max-h-[42svh] sm:aspect-auto sm:max-h-none sm:rounded-3xl sm:bg-transparent"
+          className="bg-muted/40 relative mx-auto aspect-video max-h-[42svh] w-full overflow-hidden rounded-2xl shadow-2xl sm:aspect-auto sm:max-h-none sm:rounded-3xl sm:bg-transparent"
           style={{
             transformOrigin: "50% 0%",
             boxShadow: `0 40px 80px -20px ${color}66, 0 0 0 1px rgba(255,255,255,0.08) inset`,

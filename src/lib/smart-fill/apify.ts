@@ -136,9 +136,10 @@ function pickImageUrl(result: ApifyFacebookEventResult): string | undefined {
  *
  * Handles format: "📍 Place Name, Street Address"
  */
-function parseLocationFromDescription(
-  desc: string,
-): { place?: string; address?: string } {
+function parseLocationFromDescription(desc: string): {
+  place?: string;
+  address?: string;
+} {
   const match = /📍\s*([^,\n]+?)(?:,\s*([^\n]+))?(?:\n|$)/.exec(desc);
   if (!match) return {};
   return {
@@ -153,10 +154,7 @@ function parseLocationFromDescription(
  */
 function cleanApifyAddress(address: string): string {
   return address
-    .replace(
-      /,?\s*\d{4}\s*(?:Русе|Ruse)\s*,?\s*(?:България|Bulgaria)\s*$/i,
-      "",
-    )
+    .replace(/,?\s*\d{4}\s*(?:Русе|Ruse)\s*,?\s*(?:България|Bulgaria)\s*$/i, "")
     .replace(/,?\s*(?:Русе|Ruse)\s*,?\s*(?:България|Bulgaria)\s*$/i, "")
     .replace(/,?\s*(?:България|Bulgaria)\s*$/i, "")
     .replace(/,?\s*(?:Русе|Ruse)\s*$/i, "")
@@ -167,8 +165,9 @@ function extractTownFromAddress(address: string): string | undefined {
   const postalMatch = /,\s*\d{4}\s+(Русе|Ruse)\b/i.exec(address);
   if (postalMatch?.[1]) return postalMatch[1];
 
-  const suffixMatch =
-    /,\s*(Русе|Ruse)\s*,?\s*(?:България|Bulgaria)?\s*$/i.exec(address);
+  const suffixMatch = /,\s*(Русе|Ruse)\s*,?\s*(?:България|Bulgaria)?\s*$/i.exec(
+    address,
+  );
   if (suffixMatch?.[1]) return suffixMatch[1];
 
   return undefined;
@@ -181,7 +180,9 @@ function pickTicketUrl(item: ApifyFacebookEventResult): string | undefined {
     item.ticket_url?.trim();
   if (direct) return direct;
 
-  return item.externalLinks?.find((url) => !url.toLowerCase().includes("facebook.com"));
+  return item.externalLinks?.find(
+    (url) => !url.toLowerCase().includes("facebook.com"),
+  );
 }
 
 function mapLocationFields(
@@ -216,7 +217,9 @@ function mapLocationFields(
   return mapped;
 }
 
-function utcIsoFromEndFields(item: ApifyFacebookEventResult): string | undefined {
+function utcIsoFromEndFields(
+  item: ApifyFacebookEventResult,
+): string | undefined {
   if (item.utcEndDate) return item.utcEndDate;
   if (item.end_date) return item.end_date;
   if (item.end_timestamp) {
@@ -233,11 +236,12 @@ function addDurationToStart(
   const start = new Date(utcStartIso);
   if (Number.isNaN(start.getTime())) return null;
 
-  const hourMatch = /^(\d+(?:\.\d+)?)\s*(?:hr|hrs|hour|hours|ч\.?|часа?)\b/.exec(
-    normalized,
-  );
+  const hourMatch =
+    /^(\d+(?:\.\d+)?)\s*(?:hr|hrs|hour|hours|ч\.?|часа?)\b/.exec(normalized);
   if (hourMatch) {
-    const end = new Date(start.getTime() + parseFloat(hourMatch[1]!) * 3_600_000);
+    const end = new Date(
+      start.getTime() + parseFloat(hourMatch[1]!) * 3_600_000,
+    );
     return {
       endDate: utcToLocalDate(end.toISOString()),
       endTime: utcToLocalTime(end.toISOString()),
@@ -249,16 +253,22 @@ function addDurationToStart(
       normalized,
     );
   if (minuteMatch) {
-    const end = new Date(start.getTime() + parseFloat(minuteMatch[1]!) * 60_000);
+    const end = new Date(
+      start.getTime() + parseFloat(minuteMatch[1]!) * 60_000,
+    );
     return {
       endDate: utcToLocalDate(end.toISOString()),
       endTime: utcToLocalTime(end.toISOString()),
     };
   }
 
-  const dayMatch = /^(\d+(?:\.\d+)?)\s*(?:day|days|д\.?|дни?)\b/.exec(normalized);
+  const dayMatch = /^(\d+(?:\.\d+)?)\s*(?:day|days|д\.?|дни?)\b/.exec(
+    normalized,
+  );
   if (dayMatch) {
-    const end = new Date(start.getTime() + parseFloat(dayMatch[1]!) * 86_400_000);
+    const end = new Date(
+      start.getTime() + parseFloat(dayMatch[1]!) * 86_400_000,
+    );
     return {
       endDate: utcToLocalDate(end.toISOString()),
       endTime: utcToLocalTime(end.toISOString()),
@@ -374,7 +384,9 @@ export async function scrapeApifyFacebookEvent(
   );
 
   if (!runRes.ok) {
-    throw new Error(`Apify run failed: ${runRes.status} ${await runRes.text()}`);
+    throw new Error(
+      `Apify run failed: ${runRes.status} ${await runRes.text()}`,
+    );
   }
 
   const run = (await runRes.json()) as { data: ApifyRunResponse };

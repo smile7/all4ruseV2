@@ -91,22 +91,31 @@ export function HeaderAuthButton({ user, username }: Props) {
           </>
         )}
         <DropdownMenuItem asChild>
-          <Link href="/create-event" className="flex cursor-pointer items-center gap-2">
+          <Link
+            href="/create-event"
+            className="flex cursor-pointer items-center gap-2"
+          >
             <Plus className="size-4" />
             {t("createEvent")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/my-events" className="flex cursor-pointer items-center gap-2">
+          <Link
+            href="/my-events"
+            className="flex cursor-pointer items-center gap-2"
+          >
             <CalendarDays className="size-4" />
             {t("publishedEvents")}
           </Link>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
-        
+
         <DropdownMenuItem asChild>
-          <Link href="/profile" className="flex cursor-pointer items-center gap-2">
+          <Link
+            href="/profile"
+            className="flex cursor-pointer items-center gap-2"
+          >
             <UserIcon className="size-4" />
             {t("account")}
           </Link>

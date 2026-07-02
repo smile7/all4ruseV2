@@ -86,11 +86,11 @@ export default async function WhyAll4RusePage() {
   const t = await getTranslations("WhyUs");
 
   return (
-    <div className="mx-auto flex w-full max-w-[1800px] flex-col items-center gap-16 rounded-xl bg-linear-to-b from-primary/10 via-background to-background px-4 py-10 sm:px-6 lg:px-8">
+    <div className="from-primary/10 via-background to-background mx-auto flex w-full max-w-[1800px] flex-col items-center gap-16 rounded-xl bg-linear-to-b px-4 py-10 sm:px-6 lg:px-8">
       {/* Header */}
       <section className="relative w-full max-w-4xl px-4 pb-8 text-center">
         <div
-          className="absolute inset-x-0 top-0 -z-10 h-40 bg-linear-to-b from-primary/30 via-primary/10 to-transparent opacity-60 blur-2xl"
+          className="from-primary/30 via-primary/10 absolute inset-x-0 top-0 -z-10 h-40 bg-linear-to-b to-transparent opacity-60 blur-2xl"
           aria-hidden
         />
         <Badge
@@ -115,7 +115,7 @@ export default async function WhyAll4RusePage() {
         contentClassName="flex w-full flex-col items-center gap-8 md:flex-row md:items-start"
       >
         <div className="w-[160px] shrink-0 md:w-[180px]">
-          <div className="relative aspect-3/5 w-full overflow-hidden rounded-2xl border-4 border-primary shadow-md">
+          <div className="border-primary relative aspect-3/5 w-full overflow-hidden rounded-2xl border-4 shadow-md">
             <Image
               src="/author2.jpeg"
               alt={t("authorImageAlt")}
@@ -127,19 +127,32 @@ export default async function WhyAll4RusePage() {
           </div>
         </div>
         <div className="min-w-0 flex-1 text-left">
-          <Typography.H2 className="mb-2 border-0 pb-0">{t("aboutMeHeader")}</Typography.H2>
-          <Typography.P className="text-pretty text-justify">{t("aboutMe")}</Typography.P>
-          <Typography.P className="mt-6 text-pretty text-justify">{t("aboutMe2")}</Typography.P>
+          <Typography.H2 className="mb-2 border-0 pb-0">
+            {t("aboutMeHeader")}
+          </Typography.H2>
+          <Typography.P className="text-justify text-pretty">
+            {t("aboutMe")}
+          </Typography.P>
+          <Typography.P className="mt-6 text-justify text-pretty">
+            {t("aboutMe2")}
+          </Typography.P>
         </div>
       </WhySection>
 
       {/* Why created */}
-      <WhySection fadeDelay="why-fade-delay-400" title={t("whyCreatedHeadline")}>
+      <WhySection
+        fadeDelay="why-fade-delay-400"
+        title={t("whyCreatedHeadline")}
+      >
         <div className="flex flex-col gap-4">
-          <Typography.P className="text-pretty text-justify">{t("whyCreated")}</Typography.P>
-          <Typography.P className="text-pretty text-justify">{t("whyCreated2")}</Typography.P>
+          <Typography.P className="text-justify text-pretty">
+            {t("whyCreated")}
+          </Typography.P>
+          <Typography.P className="text-justify text-pretty">
+            {t("whyCreated2")}
+          </Typography.P>
           <div className="flex justify-center pt-2">
-            <div className="rounded-lg bg-primary px-6 py-3 text-center shadow-md">
+            <div className="bg-primary rounded-lg px-6 py-3 text-center shadow-md">
               <Typography.Lead className="text-primary-foreground text-pretty">
                 {t("whyCreated3")}
               </Typography.Lead>
@@ -149,9 +162,14 @@ export default async function WhyAll4RusePage() {
       </WhySection>
 
       {/* What makes different */}
-      <WhySection fadeDelay="why-fade-delay-500" title={t("whatMakesDifferentHeadline")}>
+      <WhySection
+        fadeDelay="why-fade-delay-500"
+        title={t("whatMakesDifferentHeadline")}
+      >
         <div className="flex flex-col gap-4">
-          <Typography.P className="text-pretty">{t("whatMakesDifferent")}</Typography.P>
+          <Typography.P className="text-pretty">
+            {t("whatMakesDifferent")}
+          </Typography.P>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className={spotlightCardClass}>
               <Filter className="text-primary mb-2 size-8" aria-hidden />
@@ -179,11 +197,20 @@ export default async function WhyAll4RusePage() {
       </WhySection>
 
       {/* How events are added */}
-      <WhySection fadeDelay="why-fade-delay-600" title={t("howEventsAreAddedHeadline")}>
+      <WhySection
+        fadeDelay="why-fade-delay-600"
+        title={t("howEventsAreAddedHeadline")}
+      >
         <div className="flex flex-col gap-4">
-          <Typography.P className="text-pretty">{t("howEventsAreAdded")}</Typography.P>
-          <Typography.P className="text-pretty">{t("howEventsAreAdded2")}</Typography.P>
-          <Typography.P className="text-pretty">{t("howEventsAreAdded3")}</Typography.P>
+          <Typography.P className="text-pretty">
+            {t("howEventsAreAdded")}
+          </Typography.P>
+          <Typography.P className="text-pretty">
+            {t("howEventsAreAdded2")}
+          </Typography.P>
+          <Typography.P className="text-pretty">
+            {t("howEventsAreAdded3")}
+          </Typography.P>
           <Typography.P className="text-primary mt-2 text-center text-lg font-semibold">
             {t("howEventsAreAdded4")}
           </Typography.P>
@@ -191,19 +218,26 @@ export default async function WhyAll4RusePage() {
       </WhySection>
 
       {/* How you can help */}
-      <WhySection fadeDelay="why-fade-delay-700" title={t("howYouCanHelpHeadline")}>
+      <WhySection
+        fadeDelay="why-fade-delay-700"
+        title={t("howYouCanHelpHeadline")}
+      >
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className={helpCardClass}>
               <Send className="text-primary mb-2 size-7" aria-hidden />
-              <Typography.P className="text-center font-semibold">{t("sendEvent")}</Typography.P>
+              <Typography.P className="text-center font-semibold">
+                {t("sendEvent")}
+              </Typography.P>
               <Typography.Small className="text-center leading-snug">
                 {t("sendEventDesc")}
               </Typography.Small>
             </div>
             <div className={helpCardClass}>
               <AlertCircle className="text-primary mb-2 size-7" aria-hidden />
-              <Typography.P className="text-center font-semibold">{t("reportIssue")}</Typography.P>
+              <Typography.P className="text-center font-semibold">
+                {t("reportIssue")}
+              </Typography.P>
               <Typography.Small className="text-center leading-snug">
                 {t("reportIssueDesc")}
               </Typography.Small>
@@ -211,11 +245,13 @@ export default async function WhyAll4RusePage() {
             <div
               className={cn(
                 helpCardClass,
-                "bg-linear-to-br from-primary/10 to-secondary/10",
+                "from-primary/10 to-secondary/10 bg-linear-to-br",
               )}
             >
               <PlusCircle className="text-primary mb-2 size-7" aria-hidden />
-              <Typography.P className="text-center font-semibold">{t("newIdeas")}</Typography.P>
+              <Typography.P className="text-center font-semibold">
+                {t("newIdeas")}
+              </Typography.P>
               <Typography.Small className="text-center leading-snug">
                 {t("newIdeasDesc")}
               </Typography.Small>
@@ -230,21 +266,38 @@ export default async function WhyAll4RusePage() {
       {/* Contact */}
       <WhySection fadeDelay="why-fade-delay-800" title={t("contactHeadline")}>
         <div className="flex flex-col gap-4">
-          <Typography.P className="text-pretty text-justify">{t("contactInfo")}</Typography.P>
+          <Typography.P className="text-justify text-pretty">
+            {t("contactInfo")}
+          </Typography.P>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className={contactCardClass}>
               <Mail className="text-primary mb-2 size-8" aria-hidden />
-              <Typography.P className="mb-1 text-lg font-semibold">{t("email")}</Typography.P>
-              <Button variant="link" className="h-auto p-0 text-base font-medium" asChild>
-                <a href="mailto:silvena@all4ruse.com" aria-label={t("emailAriaLabel")}>
+              <Typography.P className="mb-1 text-lg font-semibold">
+                {t("email")}
+              </Typography.P>
+              <Button
+                variant="link"
+                className="h-auto p-0 text-base font-medium"
+                asChild
+              >
+                <a
+                  href="mailto:silvena@all4ruse.com"
+                  aria-label={t("emailAriaLabel")}
+                >
                   <ObfuscatedEmail email="silvena@all4ruse.com" />
                 </a>
               </Button>
             </div>
             <div className={contactCardClass}>
               <FacebookIcon size={32} className="text-primary mb-2" />
-              <Typography.P className="mb-1 text-lg font-semibold">{t("facebookPage")}</Typography.P>
-              <Button variant="link" className="h-auto p-0 text-base font-medium" asChild>
+              <Typography.P className="mb-1 text-lg font-semibold">
+                {t("facebookPage")}
+              </Typography.P>
+              <Button
+                variant="link"
+                className="h-auto p-0 text-base font-medium"
+                asChild
+              >
                 <a href={FACEBOOK_URL} target="_blank" rel="noopener">
                   {t("facebookProfileLinkText")}
                 </a>
@@ -252,8 +305,14 @@ export default async function WhyAll4RusePage() {
             </div>
             <div className={contactCardClass}>
               <InstagramIcon size={32} className="text-primary mb-2" />
-              <Typography.P className="mb-1 text-lg font-semibold">{t("instagramLabel")}</Typography.P>
-              <Button variant="link" className="h-auto p-0 text-base font-medium" asChild>
+              <Typography.P className="mb-1 text-lg font-semibold">
+                {t("instagramLabel")}
+              </Typography.P>
+              <Button
+                variant="link"
+                className="h-auto p-0 text-base font-medium"
+                asChild
+              >
                 <a href={INSTAGRAM_URL} target="_blank" rel="noopener">
                   {t("instagramHandle")}
                 </a>

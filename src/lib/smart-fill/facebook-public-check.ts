@@ -43,9 +43,7 @@ function decodeHtmlEntities(value: string): string {
     .replace(/&#x([0-9a-f]+);/gi, (_, hex) =>
       String.fromCodePoint(parseInt(hex, 16)),
     )
-    .replace(/&#(\d+);/g, (_, num) =>
-      String.fromCodePoint(parseInt(num, 10)),
-    )
+    .replace(/&#(\d+);/g, (_, num) => String.fromCodePoint(parseInt(num, 10)))
     .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
@@ -53,7 +51,10 @@ function decodeHtmlEntities(value: string): string {
     .replace(/&gt;/g, ">");
 }
 
-function extractMetaContent(html: string, property: string): string | undefined {
+function extractMetaContent(
+  html: string,
+  property: string,
+): string | undefined {
   const patterns = [
     new RegExp(
       `property="${property}"\\s+content="([^"]*)"|content="([^"]*)"\\s+property="${property}"`,

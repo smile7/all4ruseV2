@@ -243,45 +243,48 @@ const organizerSchema = (invalidUrl: string) =>
   });
 
 function makeFormSchema(t: ReturnType<typeof useTranslations<"CreateEvent">>) {
-  return z.object({
-    title: z.string().min(3, t("requiredField")),
-    description: z
-      .string()
-      .refine(
-        (html) =>
-          plainTextFromHtml(sanitizeEventDescription(html)).length >= 10,
-        { message: t("requiredField") },
-      ),
-    startDate: z.string().min(1, t("requiredField")),
-    endDate: z.string().min(1, t("requiredField")),
-    startTime: z.string().min(1, t("requiredField")),
-    endTime: z.string().optional(),
-    address: z.string().min(3, t("requiredField")),
-    town: z.string().min(2, t("requiredField")),
-    place: z.string().optional(),
-    price: z.string().optional(),
-    ticketsLink: z
-      .string()
-      .optional()
-      .or(z.literal(""))
-      .refine((val) => isOptionalWebUrl(val), { message: t("invalidUrl") }),
-    fbLink: z
-      .string()
-      .optional()
-      .or(z.literal(""))
-      .refine((val) => isOptionalWebUrl(val), { message: t("invalidUrl") }),
-    youtubeUrl: z
-      .string()
-      .optional()
-      .or(z.literal(""))
-      .refine((val) => !val || isValidYoutubeUrl(val), {
-        message: t("invalidYoutubeUrl"),
-      }),
-    phoneNumber: z.string().optional(),
-    email: z.string().email(t("invalidEmail")).optional().or(z.literal("")),
-    organizers: z.array(organizerSchema(t("invalidUrl"))).min(1, t("atLeastOneOrganizer")),
-    tagIds: z.array(z.number()).optional(),
-  })
+  return z
+    .object({
+      title: z.string().min(3, t("requiredField")),
+      description: z
+        .string()
+        .refine(
+          (html) =>
+            plainTextFromHtml(sanitizeEventDescription(html)).length >= 10,
+          { message: t("requiredField") },
+        ),
+      startDate: z.string().min(1, t("requiredField")),
+      endDate: z.string().min(1, t("requiredField")),
+      startTime: z.string().min(1, t("requiredField")),
+      endTime: z.string().optional(),
+      address: z.string().min(3, t("requiredField")),
+      town: z.string().min(2, t("requiredField")),
+      place: z.string().optional(),
+      price: z.string().optional(),
+      ticketsLink: z
+        .string()
+        .optional()
+        .or(z.literal(""))
+        .refine((val) => isOptionalWebUrl(val), { message: t("invalidUrl") }),
+      fbLink: z
+        .string()
+        .optional()
+        .or(z.literal(""))
+        .refine((val) => isOptionalWebUrl(val), { message: t("invalidUrl") }),
+      youtubeUrl: z
+        .string()
+        .optional()
+        .or(z.literal(""))
+        .refine((val) => !val || isValidYoutubeUrl(val), {
+          message: t("invalidYoutubeUrl"),
+        }),
+      phoneNumber: z.string().optional(),
+      email: z.string().email(t("invalidEmail")).optional().or(z.literal("")),
+      organizers: z
+        .array(organizerSchema(t("invalidUrl")))
+        .min(1, t("atLeastOneOrganizer")),
+      tagIds: z.array(z.number()).optional(),
+    })
     .refine((data) => data.endDate >= data.startDate, {
       message: t("endDateAfterStartDate"),
       path: ["endDate"],
@@ -468,7 +471,8 @@ export function EventForm({
   });
 
   const imagesDirty =
-    uploadableImagesFingerprint(images) !== baselineImagesFingerprintRef.current;
+    uploadableImagesFingerprint(images) !==
+    baselineImagesFingerprintRef.current;
   const togglesDirty =
     isFree !== baselineTogglesRef.current.isFree || isRecurring;
 
@@ -688,8 +692,7 @@ export function EventForm({
         );
       }
 
-      const slug =
-        typeof saved.slug === "string" ? saved.slug.trim() : "";
+      const slug = typeof saved.slug === "string" ? saved.slug.trim() : "";
       if (saved.isEventActive && slug !== "") {
         router.push(`/${slug}`);
       } else {
@@ -754,10 +757,14 @@ export function EventForm({
       const currentOrganizers = form.getValues("organizers");
       if (currentOrganizers.length > 0) {
         if (draft.organizer) {
-          form.setValue("organizers.0.name", draft.organizer, { shouldDirty: true });
+          form.setValue("organizers.0.name", draft.organizer, {
+            shouldDirty: true,
+          });
         }
         if (draft.organizerLink) {
-          form.setValue("organizers.0.link", draft.organizerLink, { shouldDirty: true });
+          form.setValue("organizers.0.link", draft.organizerLink, {
+            shouldDirty: true,
+          });
         }
       } else {
         form.setValue(
@@ -842,9 +849,16 @@ export function EventForm({
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("title")}<RequiredMark /></FormLabel>
+                    <FormLabel>
+                      {t("title")}
+                      <RequiredMark />
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder={t("enterTitle")} aria-required="true" {...field} />
+                      <Input
+                        placeholder={t("enterTitle")}
+                        aria-required="true"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -856,7 +870,10 @@ export function EventForm({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("description")}<RequiredMark /></FormLabel>
+                    <FormLabel>
+                      {t("description")}
+                      <RequiredMark />
+                    </FormLabel>
                     <FormControl>
                       <EventDescriptionEditor
                         key={descriptionEditorKey}
@@ -943,7 +960,10 @@ export function EventForm({
                   name="startDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("fromDate")}<RequiredMark /></FormLabel>
+                      <FormLabel>
+                        {t("fromDate")}
+                        <RequiredMark />
+                      </FormLabel>
                       <FormControl>
                         <DatePopover
                           id={field.name}
@@ -982,7 +1002,10 @@ export function EventForm({
                     name="endDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("toDate")}<RequiredMark /></FormLabel>
+                        <FormLabel>
+                          {t("toDate")}
+                          <RequiredMark />
+                        </FormLabel>
                         <FormControl>
                           <DatePopover
                             id={field.name}
@@ -1028,7 +1051,10 @@ export function EventForm({
                       }}
                       disabled={isSubmitting}
                     >
-                      <SelectTrigger id="recurrencePattern" className="w-full sm:w-64">
+                      <SelectTrigger
+                        id="recurrencePattern"
+                        className="w-full sm:w-64"
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1118,7 +1144,10 @@ export function EventForm({
                   name="startTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("fromTime")}<RequiredMark /></FormLabel>
+                      <FormLabel>
+                        {t("fromTime")}
+                        <RequiredMark />
+                      </FormLabel>
                       <FormControl>
                         <Input type="time" aria-required="true" {...field} />
                       </FormControl>
@@ -1137,9 +1166,7 @@ export function EventForm({
                         <Input
                           type="time"
                           min={
-                            startDate &&
-                            endDate === startDate &&
-                            startTime
+                            startDate && endDate === startDate && startTime
                               ? startTime
                               : undefined
                           }
@@ -1162,16 +1189,25 @@ export function EventForm({
                 {t("address")}
               </CardTitle>
             </CardHeader>
-            <CardContent variant="section" className="grid gap-3 md:grid-cols-3">
-
+            <CardContent
+              variant="section"
+              className="grid gap-3 md:grid-cols-3"
+            >
               <FormField
                 control={form.control}
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("address")}<RequiredMark /></FormLabel>
+                    <FormLabel>
+                      {t("address")}
+                      <RequiredMark />
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder={t("enterAddress")} aria-required="true" {...field} />
+                      <Input
+                        placeholder={t("enterAddress")}
+                        aria-required="true"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1197,9 +1233,16 @@ export function EventForm({
                 name="town"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("town")}<RequiredMark /></FormLabel>
+                    <FormLabel>
+                      {t("town")}
+                      <RequiredMark />
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="Русе" aria-required="true" {...field} />
+                      <Input
+                        placeholder="Русе"
+                        aria-required="true"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1298,7 +1341,7 @@ export function EventForm({
               </CardTitle>
             </CardHeader>
             <CardContent variant="section">
-            <FormField
+              <FormField
                 control={form.control}
                 name="price"
                 render={({ field }) => (
@@ -1391,7 +1434,7 @@ export function EventForm({
               </div>
             </CardHeader>
             <CardContent variant="section">
-            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="phoneNumber"

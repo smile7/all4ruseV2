@@ -2,7 +2,12 @@ import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 
-import { FiltersMobileDrawer, Footer, Header, MobileBottomNav } from "~/components/layout";
+import {
+  FiltersMobileDrawer,
+  Footer,
+  Header,
+  MobileBottomNav,
+} from "~/components/layout";
 import Providers from "~/components/Providers";
 import type { Locale } from "~/constants";
 import { routing } from "~/i18n/routing";

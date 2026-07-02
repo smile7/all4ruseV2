@@ -44,7 +44,10 @@ export async function EventMapAndReport({
         </div>
       )}
       {showReportButton && (
-        <ReportEventButton eventId={eventId} alreadyReported={alreadyReported} />
+        <ReportEventButton
+          eventId={eventId}
+          alreadyReported={alreadyReported}
+        />
       )}
     </>
   );

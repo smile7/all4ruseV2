@@ -132,7 +132,7 @@ export function EventSaveButton({
 
   const icon = (
     <Bookmark
-      className={cn("size-4", isSaved && "fill-current text-primary")}
+      className={cn("size-4", isSaved && "text-primary fill-current")}
       strokeWidth={isSaved ? 2.5 : 2}
     />
   );

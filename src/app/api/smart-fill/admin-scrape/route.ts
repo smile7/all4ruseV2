@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { reuploadImageFromUrl } from "~/lib/smart-fill/image-reupload";
-import {
-  isGraboUrl,
-  scrapeGrabo,
-} from "~/lib/smart-fill/scrape-grabo";
+import { isGraboUrl, scrapeGrabo } from "~/lib/smart-fill/scrape-grabo";
 import {
   isRuseDanubeUrl,
   scrapeRuseDanube,
@@ -70,7 +67,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const draft: EventDraft = { ...scrapeResult.draft, clearOrganizerLink: true };
+    const draft: EventDraft = {
+      ...scrapeResult.draft,
+      clearOrganizerLink: true,
+    };
 
     if (scrapeResult.rawImageUrl) {
       const storagePath = await reuploadImageFromUrl(scrapeResult.rawImageUrl);

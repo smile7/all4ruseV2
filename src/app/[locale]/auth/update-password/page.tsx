@@ -9,12 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   Form,
   FormControl,
@@ -72,7 +67,9 @@ export default function UpdatePasswordPage() {
   async function onSubmit(values: Values) {
     setAuthError(null);
     const supabase = getSupabaseBrowserClient();
-    const { error } = await supabase.auth.updateUser({ password: values.password });
+    const { error } = await supabase.auth.updateUser({
+      password: values.password,
+    });
 
     if (error) {
       setAuthError(t("errorUpdatingPassword"));

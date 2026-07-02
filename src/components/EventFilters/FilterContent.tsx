@@ -6,8 +6,8 @@ import { useMessages, useTranslations } from "next-intl";
 import { addDays, format } from "date-fns";
 import { Search, X } from "lucide-react";
 
-import { DatePopoverRange } from "~/components/layout/DatePopoverRange";
 import { EventTag } from "~/components/EventTag";
+import { DatePopoverRange } from "~/components/layout/DatePopoverRange";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -81,7 +81,7 @@ function QuickDateButton({
       size="sm"
       variant="ghost"
       className={cn(
-        "border-input cursor-pointer border bg-secondary text-xs hover:bg-secondary/60",
+        "border-input bg-secondary hover:bg-secondary/60 cursor-pointer border text-xs",
         // Mobile: fill grid cell; desktop chip uses span for nowrap vs wrap
         "h-auto min-h-9 w-full p-2 text-center",
         // Desktop: single-line chip, natural width
@@ -90,7 +90,7 @@ function QuickDateButton({
       )}
       onClick={() => onSelect(isActive ? "" : from, isActive ? "" : to)}
     >
-      <span className="block w-full text-center text-balance whitespace-normal leading-tight md:inline md:w-auto md:whitespace-nowrap">
+      <span className="block w-full text-center leading-tight text-balance whitespace-normal md:inline md:w-auto md:whitespace-nowrap">
         {label}
       </span>
     </Button>
@@ -117,7 +117,7 @@ function ClearableInput({
   return (
     <div className="relative w-full">
       {icon && (
-        <span className="text-muted-foreground pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2">
+        <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2">
           {icon}
         </span>
       )}
@@ -125,14 +125,14 @@ function ClearableInput({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={cn("h-9 w-full bg-secondary", icon ? "pl-8" : "")}
+        className={cn("bg-secondary h-9 w-full", icon ? "pl-8" : "")}
       />
       {value && (
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 cursor-pointer [&_svg]:size-3.5 opacity-40 hover:opacity-80"
+          className="absolute top-1/2 right-1 h-6 w-6 -translate-y-1/2 cursor-pointer opacity-40 hover:opacity-80 [&_svg]:size-3.5"
           onClick={onClear}
         >
           <X />
@@ -165,9 +165,15 @@ export function FilterContent() {
   // Sync local state when the URL changes externally (e.g. browser back).
   // startTransition defers the update so it doesn't count as a synchronous
   // setState-within-effect, avoiding the cascading-render warning.
-  useEffect(() => { startTransition(() => setLocalSearch(filters.search)); }, [filters.search]);
-  useEffect(() => { startTransition(() => setLocalHost(filters.host)); }, [filters.host]);
-  useEffect(() => { startTransition(() => setLocalPlace(filters.place)); }, [filters.place]);
+  useEffect(() => {
+    startTransition(() => setLocalSearch(filters.search));
+  }, [filters.search]);
+  useEffect(() => {
+    startTransition(() => setLocalHost(filters.host));
+  }, [filters.host]);
+  useEffect(() => {
+    startTransition(() => setLocalPlace(filters.place));
+  }, [filters.place]);
 
   const debouncedSearch = useDebounce(localSearch, DEBOUNCE_MS);
   const debouncedHost = useDebounce(localHost, DEBOUNCE_MS);
@@ -175,12 +181,19 @@ export function FilterContent() {
 
   // Write to URL only when the debounced value actually differs from current URL.
   // Guard prevents the effect from re-triggering after the URL update syncs back.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (debouncedSearch !== filters.search) setFilters({ search: debouncedSearch }); }, [debouncedSearch]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (debouncedHost !== filters.host) setFilters({ host: debouncedHost }); }, [debouncedHost]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (debouncedPlace !== filters.place) setFilters({ place: debouncedPlace }); }, [debouncedPlace]);
+   
+  useEffect(() => {
+    if (debouncedSearch !== filters.search)
+      setFilters({ search: debouncedSearch });
+  }, [debouncedSearch]);
+   
+  useEffect(() => {
+    if (debouncedHost !== filters.host) setFilters({ host: debouncedHost });
+  }, [debouncedHost]);
+   
+  useEffect(() => {
+    if (debouncedPlace !== filters.place) setFilters({ place: debouncedPlace });
+  }, [debouncedPlace]);
 
   const todayStr = todayIso();
   const tomorrowStr = tomorrowIso();
@@ -189,16 +202,18 @@ export function FilterContent() {
 
   return (
     <div className="flex flex-col gap-4">
-
       {/* ━━ Row 1 (desktop) / stacked (mobile): Search · Host · Place ━━ */}
-      <div className="flex flex-col gap-3 justify-between md:flex-row md:items-center">
+      <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
         {/* Title search */}
         <div className="flex-1">
           <ClearableInput
             placeholder={t("searchTitle")}
             value={localSearch}
             onChange={setLocalSearch}
-            onClear={() => { setLocalSearch(""); setFilters({ search: "" }); }}
+            onClear={() => {
+              setLocalSearch("");
+              setFilters({ search: "" });
+            }}
             icon={<Search className="size-4" />}
           />
         </div>
@@ -209,7 +224,10 @@ export function FilterContent() {
             placeholder={t("hostFilter")}
             value={localHost}
             onChange={setLocalHost}
-            onClear={() => { setLocalHost(""); setFilters({ host: "" }); }}
+            onClear={() => {
+              setLocalHost("");
+              setFilters({ host: "" });
+            }}
             icon={<Search className="size-4" />}
           />
         </div>
@@ -220,16 +238,18 @@ export function FilterContent() {
             placeholder={t("placeFilter")}
             value={localPlace}
             onChange={setLocalPlace}
-            onClear={() => { setLocalPlace(""); setFilters({ place: "" }); }}
+            onClear={() => {
+              setLocalPlace("");
+              setFilters({ place: "" });
+            }}
             icon={<Search className="size-4" />}
           />
         </div>
-
       </div>
 
       {/* ━━ Row 2 (desktop): Date + quick buttons + free + clear ━━ */}
       {/* ━━ Mobile: date on its own row, quick buttons + free on one row ━━ */}
-      <div className="flex flex-col gap-4 justify-between md:flex-row md:items-center">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div className="w-full md:max-w-[260px] md:flex-1">
           <DatePopoverRange
             from={filters.from}
@@ -272,13 +292,15 @@ export function FilterContent() {
             onSelect={setDateRange}
           />
         </div>
-        <div className="flex flex-row items-center gap-2 justify-between w-full md:w-auto">
-          <label className="flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 shrink-0">
+        <div className="flex w-full flex-row items-center justify-between gap-2 md:w-auto">
+          <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5">
             <Switch
               checked={filters.isFree}
               onCheckedChange={(v) => setFilters({ isFree: v })}
             />
-            <span className="text-sm font-medium whitespace-nowrap">{t("freeFilter")}</span>
+            <span className="text-sm font-medium whitespace-nowrap">
+              {t("freeFilter")}
+            </span>
           </label>
           <Button
             size="sm"

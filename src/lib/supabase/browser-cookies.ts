@@ -15,7 +15,11 @@ export const browserCookieMethods = {
     }));
   },
   setAll(
-    cookiesToSet: { name: string; value: string; options: Record<string, unknown> }[],
+    cookiesToSet: {
+      name: string;
+      value: string;
+      options: Record<string, unknown>;
+    }[],
   ) {
     const remember = getAuthRememberPreference();
 

@@ -50,12 +50,12 @@ function parseSearchParams(
 function hasEventFilters(params: Partial<GetEventsParams>): boolean {
   return Boolean(
     params.search ||
-      params.tagIds?.length ||
-      params.from ||
-      params.to ||
-      params.isFree ||
-      params.host ||
-      params.place,
+    params.tagIds?.length ||
+    params.from ||
+    params.to ||
+    params.isFree ||
+    params.host ||
+    params.place,
   );
 }
 
@@ -88,7 +88,9 @@ export default async function HomePage({
 
   return (
     <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-1 px-4 py-6 text-center sm:px-6 lg:px-8">
-      <Typography.H1 className="text-center text-3xl">{t("pageTitle")}</Typography.H1>
+      <Typography.H1 className="text-center text-3xl">
+        {t("pageTitle")}
+      </Typography.H1>
 
       <div className="mt-2 flex justify-center">
         <Button asChild variant="outline">

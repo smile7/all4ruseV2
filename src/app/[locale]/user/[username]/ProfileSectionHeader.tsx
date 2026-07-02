@@ -33,7 +33,7 @@ export function ProfileSectionHeader({
       <div className="flex items-center gap-3">
         <div
           className={`h-2.5 rounded-full transition-all duration-500 group-hover/section:w-36 ${
-            muted ? "w-32 bg-border" : "w-24"
+            muted ? "bg-border w-32" : "w-24"
           }`}
           style={muted ? undefined : { backgroundColor: color }}
         />

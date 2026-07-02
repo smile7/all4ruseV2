@@ -99,7 +99,7 @@ export function DatePopover({
             disabled={disabled}
             aria-required={required || undefined}
             className={cn(
-              "border-input h-9 w-full justify-start gap-2 rounded-md border bg-secondary px-3 text-sm font-normal shadow-sm transition-colors",
+              "border-input bg-secondary h-9 w-full justify-start gap-2 rounded-md border px-3 text-sm font-normal shadow-sm transition-colors",
               "hover:bg-secondary/60 focus-visible:ring-ring focus-visible:ring-1",
               !value ? "text-muted-foreground" : "text-foreground",
               disabled && "pointer-events-none opacity-50",
@@ -128,7 +128,7 @@ export function DatePopover({
       </div>
 
       <PopoverContent
-        className="w-auto bg-secondary p-0"
+        className="bg-secondary w-auto p-0"
         align="start"
         side="bottom"
       >
@@ -138,11 +138,7 @@ export function DatePopover({
           selected={selected}
           defaultMonth={selected}
           locale={calLocale}
-          disabled={
-            minDay
-              ? (d) => startOfDay(d) < minDay
-              : undefined
-          }
+          disabled={minDay ? (d) => startOfDay(d) < minDay : undefined}
           onSelect={(d) => {
             if (d) {
               onChange(formatISO9075(d, { representation: "date" }));

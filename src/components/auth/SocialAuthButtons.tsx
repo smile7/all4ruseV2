@@ -27,11 +27,7 @@ function FacebookIcon() {
 
 function GoogleIcon() {
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="size-4 shrink-0"
-    >
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 shrink-0">
       <path
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
         fill="#4285F4"
@@ -79,7 +75,9 @@ export function SocialAuthButtons({ next }: Props) {
     <div className="space-y-3">
       <div className="relative flex items-center gap-3">
         <div className="bg-border h-px flex-1" />
-        <span className="text-muted-foreground text-xs">{t("orContinueWith")}</span>
+        <span className="text-muted-foreground text-xs">
+          {t("orContinueWith")}
+        </span>
         <div className="bg-border h-px flex-1" />
       </div>
 
@@ -116,7 +114,7 @@ export function SocialAuthButtons({ next }: Props) {
       </div>
 
       {error && (
-        <p role="alert" className="text-destructive text-sm text-center">
+        <p role="alert" className="text-destructive text-center text-sm">
           {error}
         </p>
       )}

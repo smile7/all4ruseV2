@@ -1,11 +1,13 @@
 import { z } from "zod";
 
-import { USERNAME_PATTERN, USERNAME_VALIDATION_MESSAGE } from "~/lib/profile-username";
-
 import {
   plainTextFromHtml,
   sanitizeEventDescription,
 } from "~/lib/event-description-html";
+import {
+  USERNAME_PATTERN,
+  USERNAME_VALIDATION_MESSAGE,
+} from "~/lib/profile-username";
 import { isOptionalWebUrl } from "~/lib/url-input";
 import type { Tables } from "~/types/database";
 
@@ -40,7 +42,7 @@ export const getEventsParamsSchema = z.object({
   //   event.endDate >= from  AND  event.startDate <= to
   // This correctly includes multi-day events that span the selected range.
   from: z.string().optional(), // ISO date YYYY-MM-DD
-  to: z.string().optional(),   // ISO date YYYY-MM-DD
+  to: z.string().optional(), // ISO date YYYY-MM-DD
   isFree: z.boolean().optional(),
   host: z.string().trim().optional(),
   place: z.string().trim().optional(),
@@ -55,8 +57,7 @@ export const createEventSchema = z.object({
   description: z
     .string()
     .refine(
-      (html) =>
-        plainTextFromHtml(sanitizeEventDescription(html)).length >= 10,
+      (html) => plainTextFromHtml(sanitizeEventDescription(html)).length >= 10,
       { message: "Описанието е задължително" },
     ),
   startDate: z.string().min(1, "Начална дата е задължителна"),
@@ -135,9 +136,9 @@ export type EventDraft = {
   /** HTML string — simple <p> paragraphs. Ready to set directly into TipTap. */
   description?: string;
   startDate?: string; // YYYY-MM-DD
-  endDate?: string;   // YYYY-MM-DD
+  endDate?: string; // YYYY-MM-DD
   startTime?: string; // HH:MM (24-hour)
-  endTime?: string;   // HH:MM (24-hour)
+  endTime?: string; // HH:MM (24-hour)
   address?: string;
   town?: string;
   place?: string;

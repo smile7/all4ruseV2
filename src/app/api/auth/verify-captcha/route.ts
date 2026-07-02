@@ -10,7 +10,7 @@ type SiteverifyResponse = {
 };
 
 export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => ({})) as { token?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { token?: unknown };
   const token = typeof body.token === "string" ? body.token : null;
 
   if (!token) {

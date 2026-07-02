@@ -79,11 +79,11 @@ export default async function AdvertisePage() {
   const t = await getTranslations("Advertise");
 
   return (
-    <div className="mx-auto flex w-full max-w-[1800px] flex-col items-center gap-16 rounded-xl bg-linear-to-b from-primary/10 via-background to-background px-4 py-10 sm:px-6 lg:px-8">
+    <div className="from-primary/10 via-background to-background mx-auto flex w-full max-w-[1800px] flex-col items-center gap-16 rounded-xl bg-linear-to-b px-4 py-10 sm:px-6 lg:px-8">
       {/* Header */}
       <section className="relative w-full max-w-4xl px-4 pb-8 text-center">
         <div
-          className="absolute inset-x-0 top-0 -z-10 h-40 bg-linear-to-b from-primary/30 via-primary/10 to-transparent opacity-60 blur-2xl"
+          className="from-primary/30 via-primary/10 absolute inset-x-0 top-0 -z-10 h-40 bg-linear-to-b to-transparent opacity-60 blur-2xl"
           aria-hidden
         />
         <Badge
@@ -102,8 +102,13 @@ export default async function AdvertisePage() {
       </section>
 
       {/* Intro */}
-      <AdvertiseSection fadeDelay="why-fade-delay-300" bgTint="bg-background/80">
-        <Typography.P className="text-pretty text-justify">{t("intro")}</Typography.P>
+      <AdvertiseSection
+        fadeDelay="why-fade-delay-300"
+        bgTint="bg-background/80"
+      >
+        <Typography.P className="text-justify text-pretty">
+          {t("intro")}
+        </Typography.P>
       </AdvertiseSection>
 
       {/* Options */}
@@ -111,42 +116,72 @@ export default async function AdvertisePage() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className={optionCardClass}>
             <Store className="text-primary mb-2 size-8" aria-hidden />
-            <Typography.H3 className="mb-2 text-center text-lg">{t("card1Title")}</Typography.H3>
-            <Typography.Small className="text-center leading-snug">{t("card1Desc")}</Typography.Small>
+            <Typography.H3 className="mb-2 text-center text-lg">
+              {t("card1Title")}
+            </Typography.H3>
+            <Typography.Small className="text-center leading-snug">
+              {t("card1Desc")}
+            </Typography.Small>
           </div>
           <div className={optionCardClass}>
             <Crown className="text-primary mb-2 size-8" aria-hidden />
-            <Typography.H3 className="mb-2 text-center text-lg">{t("card2Title")}</Typography.H3>
-            <Typography.Small className="text-center leading-snug">{t("card2Desc")}</Typography.Small>
+            <Typography.H3 className="mb-2 text-center text-lg">
+              {t("card2Title")}
+            </Typography.H3>
+            <Typography.Small className="text-center leading-snug">
+              {t("card2Desc")}
+            </Typography.Small>
           </div>
           <div className={optionCardClass}>
             <Handshake className="text-primary mb-2 size-8" aria-hidden />
-            <Typography.H3 className="mb-2 text-center text-lg">{t("card3Title")}</Typography.H3>
-            <Typography.Small className="text-center leading-snug">{t("card3Desc")}</Typography.Small>
+            <Typography.H3 className="mb-2 text-center text-lg">
+              {t("card3Title")}
+            </Typography.H3>
+            <Typography.Small className="text-center leading-snug">
+              {t("card3Desc")}
+            </Typography.Small>
           </div>
           <div
             className={cn(
               optionCardClass,
-              "bg-linear-to-br from-primary/10 to-secondary/10",
+              "from-primary/10 to-secondary/10 bg-linear-to-br",
             )}
           >
             <MessagesSquare className="text-primary mb-2 size-8" aria-hidden />
-            <Typography.H3 className="mb-2 text-center text-lg">{t("card4Title")}</Typography.H3>
-            <Typography.Small className="text-center leading-snug">{t("card4Desc")}</Typography.Small>
+            <Typography.H3 className="mb-2 text-center text-lg">
+              {t("card4Title")}
+            </Typography.H3>
+            <Typography.Small className="text-center leading-snug">
+              {t("card4Desc")}
+            </Typography.Small>
           </div>
         </div>
       </AdvertiseSection>
 
       {/* Contact */}
-      <AdvertiseSection fadeDelay="why-fade-delay-500" title={t("contactHeadline")}>
+      <AdvertiseSection
+        fadeDelay="why-fade-delay-500"
+        title={t("contactHeadline")}
+      >
         <div className="flex flex-col gap-6">
-          <Typography.P className="text-pretty text-justify">{t("contactInfo")}</Typography.P>
+          <Typography.P className="text-justify text-pretty">
+            {t("contactInfo")}
+          </Typography.P>
           <div className="flex justify-center">
             <div className={contactCardClass}>
               <Mail className="text-primary mb-2 size-8" aria-hidden />
-              <Typography.P className="mb-1 text-lg font-semibold">{t("email")}</Typography.P>
-              <Button variant="link" className="h-auto p-0 text-base font-medium" asChild>
-                <a href="mailto:silvena@all4ruse.com" aria-label={t("emailAriaLabel")}>
+              <Typography.P className="mb-1 text-lg font-semibold">
+                {t("email")}
+              </Typography.P>
+              <Button
+                variant="link"
+                className="h-auto p-0 text-base font-medium"
+                asChild
+              >
+                <a
+                  href="mailto:silvena@all4ruse.com"
+                  aria-label={t("emailAriaLabel")}
+                >
                   <ObfuscatedEmail email="silvena@all4ruse.com" />
                 </a>
               </Button>

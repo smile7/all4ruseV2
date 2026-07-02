@@ -13,14 +13,14 @@ export default function GdprPage() {
   return (
     <article
       lang="bg"
-      className="prose prose-slate max-w-none dark:prose-invert prose-headings:text-balance prose-p:text-pretty prose-a:text-primary"
+      className="prose prose-slate dark:prose-invert prose-headings:text-balance prose-p:text-pretty prose-a:text-primary max-w-none"
     >
       <Typography.H1>Лични данни и GDPR</Typography.H1>
       <Typography.P>
         All4Ruse обработва лични данни в съответствие с Регламент (ЕС) 2016/679
         (GDPR) и българското законодателство. Пълното описание на категориите
-        данни, целите и правните основания, сроковете, правата ви като субект
-        на данни, трансферите извън ЕС и контактите е публикувано в нашата{" "}
+        данни, целите и правните основания, сроковете, правата ви като субект на
+        данни, трансферите извън ЕС и контактите е публикувано в нашата{" "}
         <Link href="/legal/privacy" className="font-semibold underline">
           Политика за поверителност
         </Link>

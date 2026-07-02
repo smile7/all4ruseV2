@@ -93,10 +93,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const formattedTitle = formatEventTitle(event.title);
 
     const description =
-      plainTextFromHtml(sanitizeEventDescription(event.description ?? "")).slice(
-        0,
-        160,
-      ) || formattedTitle;
+      plainTextFromHtml(
+        sanitizeEventDescription(event.description ?? ""),
+      ).slice(0, 160) || formattedTitle;
     const imageUrl = getEventImageUrl(event.image);
     const eventPath = buildEventPath(locale, slug);
     const eventUrl = buildEventUrl(locale, slug);
@@ -149,7 +148,12 @@ export default async function EventDetailPage({ params }: Props) {
     createSupabaseServerClient(),
     Promise.resolve(createSupabasePublicServerClient()),
   ]);
-  const [event, { data: { user } }] = await Promise.all([
+  const [
+    event,
+    {
+      data: { user },
+    },
+  ] = await Promise.all([
     eventsApi.getEventBySlug(publicClient, slug),
     authClient.auth.getUser(),
   ]);
@@ -158,7 +162,9 @@ export default async function EventDetailPage({ params }: Props) {
   const adminUserId = process.env.NEXT_PUBLIC_ADMIN_USER_ID ?? "";
   const hostProfile =
     event.createdBy && event.createdBy !== adminUserId
-      ? await profilesApi.getProfile(publicClient, event.createdBy).then((r) => r.data)
+      ? await profilesApi
+          .getProfile(publicClient, event.createdBy)
+          .then((r) => r.data)
       : null;
 
   const isEventCreator = Boolean(user && event.createdBy === user.id);
@@ -182,7 +188,8 @@ export default async function EventDetailPage({ params }: Props) {
     : null;
 
   // Show report button for authenticated users who are not the event creator.
-  const showReportButton = Boolean(user) && !isEventCreator && user?.id !== adminUserId;
+  const showReportButton =
+    Boolean(user) && !isEventCreator && user?.id !== adminUserId;
 
   const existingReport =
     showReportButton && user
@@ -328,10 +335,9 @@ export default async function EventDetailPage({ params }: Props) {
 
         {/* ── Page body ─────────────────────────────────────────────────── */}
         <div className="mx-auto max-w-7xl px-4 pt-5 pb-4 sm:px-6 sm:pt-7 lg:px-8">
-
           {/* Title + tags */}
           <div className="mb-6 sm:mb-8">
-            <h1 className="mb-3 text-center text-2xl font-bold tracking-tight sm:text-3xl wrap-break-word">
+            <h1 className="mb-3 text-center text-2xl font-bold tracking-tight wrap-break-word sm:text-3xl">
               {formattedTitle}
             </h1>
             {(event.tags?.length ?? 0) > 0 && (
@@ -340,7 +346,10 @@ export default async function EventDetailPage({ params }: Props) {
                   <EventTag
                     key={tag.id}
                     title={tag.title ?? ""}
-                    label={localizedEventTagTitle(tag.title ?? "", eventTagLabels)}
+                    label={localizedEventTagTitle(
+                      tag.title ?? "",
+                      eventTagLabels,
+                    )}
                     size="md"
                   />
                 ))}
@@ -350,100 +359,132 @@ export default async function EventDetailPage({ params }: Props) {
 
           {/* Two-column on desktop: main content + sticky sidebar */}
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
-
             {/* ── Main / left column ──────────────────────────────────── */}
-            <div className="min-w-0 flex-1 flex flex-col gap-5 sm:gap-6">
-
-            <Card>
-              <CardContent className="p-4 sm:px-6 sm:pb-6">
-              {/* Info detail rows */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Date */}
-                <EventDetailRow icon={<Calendar className="size-4" />} label={t("date")}>
-                  <p className="text-sm font-semibold capitalize">{fullDate}</p>
-                  {fullEndDate && (
-                    <p className="text-muted-foreground text-sm">→ {fullEndDate}</p>
-                  )}
-                </EventDetailRow>
-
-                {/* Time */}
-                {startTime && (
-                  <EventDetailRow icon={<Clock className="size-4" />} label={t("time")}>
-                    <p className="text-sm font-semibold">
-                      {startTime}{endTime ? ` – ${endTime}` : ""}
-                    </p>
-                  </EventDetailRow>
-                )}
-
-                {/* Location */}
-                {(event.address || event.town || event.place) && (
-                  <EventDetailRow icon={<MapPin className="size-4" />} label={t("place")}>
-                    {event.place && <p className="text-sm font-semibold">{event.place}</p>}
-                    {event.address && <p className="text-sm">{event.address}</p>}
-                    {event.town && <p className="text-sm">{event.town}</p>}
-                  </EventDetailRow>
-                )}
-
-                {/* Price */}
-                {event.price !== null && event.price !== undefined && event.price !== "" && (
-                  <EventDetailRow icon={<Ticket className="size-4" />} label={t("price")}>
-                    <p className="text-sm font-semibold">
-                      {event.price === "0" || event.price === "0.00"
-                        ? t("free")
-                        : `${event.price} ${t("euros")}`}
-                    </p>
-                  </EventDetailRow>
-                )}
-
-                {/* Hosts */}
-                {hosts.length > 0 && (
-                  <EventDetailRow icon={<Users className="size-4" />} label={t("hosts")}>
-                    <div className="flex flex-col gap-0.5">
-                      {hosts.map((o, i) =>
-                        o.link ? (
-                          <a
-                            key={i}
-                            href={o.link}
-                            target="_blank"
-                            rel="noopener"
-                            className="text-sm font-semibold underline-offset-2 hover:underline"
-                          >
-                            {o.name}
-                          </a>
-                        ) : (
-                          <p key={i} className="text-sm font-semibold">{o.name}</p>
-                        ),
+            <div className="flex min-w-0 flex-1 flex-col gap-5 sm:gap-6">
+              <Card>
+                <CardContent className="p-4 sm:px-6 sm:pb-6">
+                  {/* Info detail rows */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {/* Date */}
+                    <EventDetailRow
+                      icon={<Calendar className="size-4" />}
+                      label={t("date")}
+                    >
+                      <p className="text-sm font-semibold capitalize">
+                        {fullDate}
+                      </p>
+                      {fullEndDate && (
+                        <p className="text-muted-foreground text-sm">
+                          → {fullEndDate}
+                        </p>
                       )}
-                    </div>
-                  </EventDetailRow>
-                )}
+                    </EventDetailRow>
 
-                {/* Phone */}
-                {event.phoneNumber && (
-                  <EventDetailRow icon={<Phone className="size-4" />} label={t("contactPhone")}>
-                    <a
-                      href={`tel:${event.phoneNumber}`}
-                      className="text-sm font-semibold hover:underline"
-                    >
-                      {event.phoneNumber}
-                    </a>
-                  </EventDetailRow>
-                )}
+                    {/* Time */}
+                    {startTime && (
+                      <EventDetailRow
+                        icon={<Clock className="size-4" />}
+                        label={t("time")}
+                      >
+                        <p className="text-sm font-semibold">
+                          {startTime}
+                          {endTime ? ` – ${endTime}` : ""}
+                        </p>
+                      </EventDetailRow>
+                    )}
 
-                {/* Email */}
-                {event.email && (
-                  <EventDetailRow icon={<Mail className="size-4" />} label={t("email")}>
-                    <a
-                      href={`mailto:${event.email}`}
-                      className="text-sm font-semibold hover:underline"
-                    >
-                      <ObfuscatedEmail email={event.email} />
-                    </a>
-                  </EventDetailRow>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    {/* Location */}
+                    {(event.address || event.town || event.place) && (
+                      <EventDetailRow
+                        icon={<MapPin className="size-4" />}
+                        label={t("place")}
+                      >
+                        {event.place && (
+                          <p className="text-sm font-semibold">{event.place}</p>
+                        )}
+                        {event.address && (
+                          <p className="text-sm">{event.address}</p>
+                        )}
+                        {event.town && <p className="text-sm">{event.town}</p>}
+                      </EventDetailRow>
+                    )}
+
+                    {/* Price */}
+                    {event.price !== null &&
+                      event.price !== undefined &&
+                      event.price !== "" && (
+                        <EventDetailRow
+                          icon={<Ticket className="size-4" />}
+                          label={t("price")}
+                        >
+                          <p className="text-sm font-semibold">
+                            {event.price === "0" || event.price === "0.00"
+                              ? t("free")
+                              : `${event.price} ${t("euros")}`}
+                          </p>
+                        </EventDetailRow>
+                      )}
+
+                    {/* Hosts */}
+                    {hosts.length > 0 && (
+                      <EventDetailRow
+                        icon={<Users className="size-4" />}
+                        label={t("hosts")}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          {hosts.map((o, i) =>
+                            o.link ? (
+                              <a
+                                key={i}
+                                href={o.link}
+                                target="_blank"
+                                rel="noopener"
+                                className="text-sm font-semibold underline-offset-2 hover:underline"
+                              >
+                                {o.name}
+                              </a>
+                            ) : (
+                              <p key={i} className="text-sm font-semibold">
+                                {o.name}
+                              </p>
+                            ),
+                          )}
+                        </div>
+                      </EventDetailRow>
+                    )}
+
+                    {/* Phone */}
+                    {event.phoneNumber && (
+                      <EventDetailRow
+                        icon={<Phone className="size-4" />}
+                        label={t("contactPhone")}
+                      >
+                        <a
+                          href={`tel:${event.phoneNumber}`}
+                          className="text-sm font-semibold hover:underline"
+                        >
+                          {event.phoneNumber}
+                        </a>
+                      </EventDetailRow>
+                    )}
+
+                    {/* Email */}
+                    {event.email && (
+                      <EventDetailRow
+                        icon={<Mail className="size-4" />}
+                        label={t("email")}
+                      >
+                        <a
+                          href={`mailto:${event.email}`}
+                          className="text-sm font-semibold hover:underline"
+                        >
+                          <ObfuscatedEmail email={event.email} />
+                        </a>
+                      </EventDetailRow>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
               <div className="flex flex-col gap-3 lg:hidden">
                 <EventActionButtons
                   locale={locale}
@@ -495,9 +536,7 @@ export default async function EventDetailPage({ params }: Props) {
               {galleryImages.length > 1 && (
                 <Card>
                   <CardContent className="p-4 sm:px-6 sm:pb-6">
-                    <Typography.H2>
-                      {t("gallery")}
-                    </Typography.H2>
+                    <Typography.H2>{t("gallery")}</Typography.H2>
                     <EventImagesGallery images={galleryImages} />
                   </CardContent>
                 </Card>
@@ -539,7 +578,10 @@ export default async function EventDetailPage({ params }: Props) {
               <div className="-mx-4 sm:-mx-6 lg:mx-0">
                 <div className="flex gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:px-6 lg:px-0 [&::-webkit-scrollbar]:hidden">
                   {relatedEvents.map((relatedEvent) => (
-                    <div key={relatedEvent.id} className="w-64 shrink-0 sm:w-72">
+                    <div
+                      key={relatedEvent.id}
+                      className="w-64 shrink-0 sm:w-72"
+                    >
                       <EventCard event={relatedEvent} />
                     </div>
                   ))}

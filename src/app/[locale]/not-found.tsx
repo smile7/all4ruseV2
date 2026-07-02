@@ -18,11 +18,14 @@ export default async function NotFoundPage() {
     <div className="flex min-h-[70vh] flex-col items-center justify-center gap-8 px-4 text-center">
       {/* Big 404 */}
       <div className="relative select-none">
-        <span className="text-muted-foreground/10 text-[12rem] font-extrabold leading-none tracking-tighter sm:text-[16rem]">
+        <span className="text-muted-foreground/10 text-[12rem] leading-none font-extrabold tracking-tighter sm:text-[16rem]">
           {t("code")}
         </span>
         <div className="absolute inset-0 flex items-center justify-center">
-          <SearchX className="text-muted-foreground size-16 sm:size-20" aria-hidden />
+          <SearchX
+            className="text-muted-foreground size-16 sm:size-20"
+            aria-hidden
+          />
         </div>
       </div>
 

@@ -52,7 +52,6 @@ type VisibilityCheckState =
     }
   | { status: "error"; message: string };
 
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
@@ -206,7 +205,10 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
         res = await fetch("/api/smart-fill/admin-scrape", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: ruseDanubeUrl, source: "ruse-on-the-danube" }),
+          body: JSON.stringify({
+            url: ruseDanubeUrl,
+            source: "ruse-on-the-danube",
+          }),
           ...fetchOptions,
         });
       }
@@ -269,200 +271,210 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
       {isLoading && <SmartFillImportOverlay onCancel={cancelImport} />}
 
       <div className="border-border bg-muted/20 rounded-lg border">
-      {/* Header — always visible, no toggle */}
-      <div className="flex items-center gap-2 px-4 py-3">
-        <Sparkles className="text-primary size-4 shrink-0" />
-        <span className="text-sm font-medium">{t("toggleLabel")}</span>
-      </div>
-
-      <div className="px-4 pb-4">
-        <Separator className="mb-4" />
-
-        {/* Tabs */}
-        <div className="mb-4 flex gap-4 flex-wrap">
-          <TabButton
-            active={tab === "facebook"}
-            onClick={() => handleTabChange("facebook")}
-            icon={<Link className="size-3.5" />}
-            label="Facebook"
-          />
-          <TabButton
-            active={tab === "text"}
-            onClick={() => handleTabChange("text")}
-            icon={<Type className="size-3.5" />}
-            label={t("tabText")}
-          />
-          <TabButton
-            active={tab === "photo"}
-            onClick={() => handleTabChange("photo")}
-            icon={<FileImage className="size-3.5" />}
-            label={t("tabPhoto")}
-          />
-          {isAdmin &&
-            adminTabs.map((adminTab) => (
-              <TabButton
-                key={adminTab}
-                active={tab === adminTab}
-                onClick={() => handleTabChange(adminTab)}
-                icon={<Link className="size-3.5" />}
-                label={adminTab === "grabo" ? t("tabGrabo") : t("tabRuseDanube")}
-              />
-            ))}
+        {/* Header — always visible, no toggle */}
+        <div className="flex items-center gap-2 px-4 py-3">
+          <Sparkles className="text-primary size-4 shrink-0" />
+          <span className="text-sm font-medium">{t("toggleLabel")}</span>
         </div>
 
-        {/* Tab content */}
-        {tab === "facebook" && (
-          <UrlInput
-            placeholder={t("fbPlaceholder")}
-            value={fbUrl}
-            onChange={(value) => {
-              setFbUrl(value);
-              resetVisibilityCheck();
-            }}
-            disabled={isLoading || isCheckingVisibility}
-          />
-        )}
+        <div className="px-4 pb-4">
+          <Separator className="mb-4" />
 
-        {tab === "text" && (
-          <Textarea
-            placeholder={t("textPlaceholder")}
-            value={promptText}
-            onChange={(e) => setPromptText(e.target.value)}
-            disabled={isLoading}
-            rows={4}
-            className="resize-none text-sm"
-          />
-        )}
-
-        {tab === "photo" && (
-          <div className="space-y-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={handlePhotoChange}
-              disabled={isLoading}
+          {/* Tabs */}
+          <div className="mb-4 flex flex-wrap gap-4">
+            <TabButton
+              active={tab === "facebook"}
+              onClick={() => handleTabChange("facebook")}
+              icon={<Link className="size-3.5" />}
+              label="Facebook"
             />
-            {photoPreview ? (
-              <div className="relative inline-block">
-                <Image
-                  src={photoPreview}
-                  alt={t("photoPreviewAlt")}
-                  width={160}
-                  height={120}
-                  className="rounded-md object-cover"
-                  unoptimized
+            <TabButton
+              active={tab === "text"}
+              onClick={() => handleTabChange("text")}
+              icon={<Type className="size-3.5" />}
+              label={t("tabText")}
+            />
+            <TabButton
+              active={tab === "photo"}
+              onClick={() => handleTabChange("photo")}
+              icon={<FileImage className="size-3.5" />}
+              label={t("tabPhoto")}
+            />
+            {isAdmin &&
+              adminTabs.map((adminTab) => (
+                <TabButton
+                  key={adminTab}
+                  active={tab === adminTab}
+                  onClick={() => handleTabChange(adminTab)}
+                  icon={<Link className="size-3.5" />}
+                  label={
+                    adminTab === "grabo" ? t("tabGrabo") : t("tabRuseDanube")
+                  }
                 />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPhotoFile(null);
-                    setPhotoPreview(null);
-                    resetState();
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                  }}
-                  className="bg-background/80 absolute right-1 top-1 rounded-full p-0.5"
-                  aria-label={t("removePhoto")}
-                >
-                  <X className="size-3" />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
-                className="border-input bg-muted/30 hover:bg-muted/50 flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed py-6 text-sm transition-colors"
-              >
-                <FileImage className="text-muted-foreground size-5" />
-                <span className="text-muted-foreground">{t("photoDropZone")}</span>
-              </button>
-            )}
+              ))}
+          </div>
+
+          {/* Tab content */}
+          {tab === "facebook" && (
+            <UrlInput
+              placeholder={t("fbPlaceholder")}
+              value={fbUrl}
+              onChange={(value) => {
+                setFbUrl(value);
+                resetVisibilityCheck();
+              }}
+              disabled={isLoading || isCheckingVisibility}
+            />
+          )}
+
+          {tab === "text" && (
             <Textarea
-              placeholder={t("photoTextPlaceholder")}
-              value={photoText}
-              onChange={(e) => setPhotoText(e.target.value)}
+              placeholder={t("textPlaceholder")}
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
               disabled={isLoading}
-              rows={3}
+              rows={4}
               className="resize-none text-sm"
             />
-          </div>
-        )}
+          )}
 
-        {tab === "grabo" && (
-          <UrlInput
-            placeholder={t("graboPlaceholder")}
-            value={graboUrl}
-            onChange={setGraboUrl}
-            disabled={isLoading}
-          />
-        )}
+          {tab === "photo" && (
+            <div className="space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handlePhotoChange}
+                disabled={isLoading}
+              />
+              {photoPreview ? (
+                <div className="relative inline-block">
+                  <Image
+                    src={photoPreview}
+                    alt={t("photoPreviewAlt")}
+                    width={160}
+                    height={120}
+                    className="rounded-md object-cover"
+                    unoptimized
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhotoFile(null);
+                      setPhotoPreview(null);
+                      resetState();
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                    className="bg-background/80 absolute top-1 right-1 rounded-full p-0.5"
+                    aria-label={t("removePhoto")}
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                  className="border-input bg-muted/30 hover:bg-muted/50 flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed py-6 text-sm transition-colors"
+                >
+                  <FileImage className="text-muted-foreground size-5" />
+                  <span className="text-muted-foreground">
+                    {t("photoDropZone")}
+                  </span>
+                </button>
+              )}
+              <Textarea
+                placeholder={t("photoTextPlaceholder")}
+                value={photoText}
+                onChange={(e) => setPhotoText(e.target.value)}
+                disabled={isLoading}
+                rows={3}
+                className="resize-none text-sm"
+              />
+            </div>
+          )}
 
-        {tab === "ruse-danube" && (
-          <UrlInput
-            placeholder={t("ruseDanubePlaceholder")}
-            value={ruseDanubeUrl}
-            onChange={setRuseDanubeUrl}
-            disabled={isLoading}
-          />
-        )}
+          {tab === "grabo" && (
+            <UrlInput
+              placeholder={t("graboPlaceholder")}
+              value={graboUrl}
+              onChange={setGraboUrl}
+              disabled={isLoading}
+            />
+          )}
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {tab === "facebook" && (
+          {tab === "ruse-danube" && (
+            <UrlInput
+              placeholder={t("ruseDanubePlaceholder")}
+              value={ruseDanubeUrl}
+              onChange={setRuseDanubeUrl}
+              disabled={isLoading}
+            />
+          )}
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {tab === "facebook" && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleCheckVisibility}
+                disabled={isLoading || isCheckingVisibility || !fbUrl.trim()}
+              >
+                {isCheckingVisibility
+                  ? t("fbCheckChecking")
+                  : t("fbCheckButton")}
+              </Button>
+            )}
             <Button
               type="button"
               size="sm"
-              variant="outline"
-              onClick={handleCheckVisibility}
-              disabled={isLoading || isCheckingVisibility || !fbUrl.trim()}
+              onClick={handleParse}
+              disabled={isLoading || isCheckingVisibility}
             >
-              {isCheckingVisibility ? t("fbCheckChecking") : t("fbCheckButton")}
+              {isLoading ? t("parsing") : t("parseButton")}
             </Button>
+          </div>
+
+          {tab === "facebook" && visibilityCheck.status === "done" && (
+            <VisibilityCheckResult
+              visibility={visibilityCheck.visibility}
+              title={visibilityCheck.title}
+              t={t}
+            />
           )}
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleParse}
-            disabled={isLoading || isCheckingVisibility}
-          >
-            {isLoading ? t("parsing") : t("parseButton")}
-          </Button>
+
+          {tab === "facebook" && visibilityCheck.status === "error" && (
+            <p className="text-destructive mt-2 text-xs">
+              {visibilityCheck.message}
+            </p>
+          )}
+
+          {/* Error */}
+          {parseState.status === "error" && (
+            <p className="text-destructive mt-2 text-xs">
+              {parseState.message}
+            </p>
+          )}
+
+          {/* Applied confirmation */}
+          {parseState.status === "applied" && (
+            <p className="mt-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+              ✓ {t("applied")}
+            </p>
+          )}
+
+          {/* Partial success — image saved but text extraction failed */}
+          {parseState.status === "partialApplied" && (
+            <p className="text-destructive mt-2 flex items-start gap-1.5 text-xs">
+              <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
+              <span>{t("appliedImageOnly")}</span>
+            </p>
+          )}
         </div>
-
-        {tab === "facebook" && visibilityCheck.status === "done" && (
-          <VisibilityCheckResult
-            visibility={visibilityCheck.visibility}
-            title={visibilityCheck.title}
-            t={t}
-          />
-        )}
-
-        {tab === "facebook" && visibilityCheck.status === "error" && (
-          <p className="text-destructive mt-2 text-xs">{visibilityCheck.message}</p>
-        )}
-
-        {/* Error */}
-        {parseState.status === "error" && (
-          <p className="text-destructive mt-2 text-xs">{parseState.message}</p>
-        )}
-
-        {/* Applied confirmation */}
-        {parseState.status === "applied" && (
-          <p className="mt-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-            ✓ {t("applied")}
-          </p>
-        )}
-
-        {/* Partial success — image saved but text extraction failed */}
-        {parseState.status === "partialApplied" && (
-          <p className="text-destructive mt-2 flex items-start gap-1.5 text-xs">
-            <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
-            <span>{t("appliedImageOnly")}</span>
-          </p>
-        )}
       </div>
-    </div>
     </>
   );
 }
@@ -555,4 +567,3 @@ function UrlInput({
     />
   );
 }
-

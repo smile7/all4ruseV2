@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { type Locale,LOCALES } from "~/constants";
+import { type Locale, LOCALES } from "~/constants";
 import { usePathname, useRouter } from "~/i18n/navigation";
 
 const FLAG_FILE: Record<Locale, string> = {

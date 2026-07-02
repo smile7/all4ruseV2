@@ -13,7 +13,7 @@ export default function CookiesPage() {
   return (
     <article
       lang="bg"
-      className="prose prose-slate max-w-none dark:prose-invert prose-headings:text-balance prose-p:text-pretty prose-ul:list-disc prose-ul:pl-6 prose-a:text-primary"
+      className="prose prose-slate dark:prose-invert prose-headings:text-balance prose-p:text-pretty prose-ul:list-disc prose-ul:pl-6 prose-a:text-primary max-w-none"
     >
       <Typography.H1>
         ПОЛИТИКА ЗА БИСКВИТКИ НА УЕБСАЙТА ALL4RUSE.COM
@@ -29,7 +29,7 @@ export default function CookiesPage() {
 
       <Typography.P>1.2. Функция</Typography.P>
       <Typography.P>Бисквитките позволяват сайтът да:</Typography.P>
-      <ul className="list-disc list-inside ml-4">
+      <ul className="ml-4 list-inside list-disc">
         <li>разпознае устройството на потребителя;</li>
         <li>запомни определена информация;</li>
         <li>подобри потребителския опит;</li>
@@ -38,7 +38,7 @@ export default function CookiesPage() {
 
       <Typography.P>1.3. Идентификация</Typography.P>
       <Typography.P>Всяка бисквитка съдържа:</Typography.P>
-      <ul className="list-disc list-inside ml-4">
+      <ul className="ml-4 list-inside list-disc">
         <li>име на домейна, от който произхожда (all4ruse.com);</li>
         <li>време на създаване и изтичане (срок на валидност);</li>
         <li>уникален идентификатор;</li>
@@ -63,7 +63,7 @@ export default function CookiesPage() {
         за функционирането на сайта.
       </Typography.P>
       <Typography.P>Примери:</Typography.P>
-      <ul className="list-disc list-inside ml-4">
+      <ul className="ml-4 list-inside list-disc">
         <li>
           Бисквитка за запомняне на вашия избор в cookie банера
           (приемане/отказ);
@@ -94,7 +94,7 @@ export default function CookiesPage() {
         поведението на потребителя и статистика на сайта.
       </Typography.P>
       <Typography.P>Примери:</Typography.P>
-      <ul className="list-disc list-inside ml-4">
+      <ul className="ml-4 list-inside list-disc">
         <li>_ga – идентификатор за потребителя в GA4;</li>
         <li>
           _ga_&lt;container-id&gt; – поддържане на състоянието на сесията в GA4;
@@ -158,7 +158,7 @@ export default function CookiesPage() {
         На Сайта използваме Google Analytics 4 със следните GDPR-съответни
         настройки:
       </Typography.P>
-      <ul className="list-disc list-inside ml-4">
+      <ul className="ml-4 list-inside list-disc">
         <li>
           IP анонимизиране – включено (последният октет на IP адреса се скрива);
         </li>
@@ -175,7 +175,7 @@ export default function CookiesPage() {
       <Typography.P>
         Google Analytics събира обобщена информация като:
       </Typography.P>
-      <ul className="list-disc list-inside ml-4">
+      <ul className="ml-4 list-inside list-disc">
         <li>кои страници са посетени;</li>
         <li>време на престой на страница;</li>
         <li>тип устройство и браузър;</li>
@@ -189,7 +189,7 @@ export default function CookiesPage() {
         Google Analytics може да прехвърля данни към сървъри на Google в САЩ.
         Трансферът се извършва при спазване на:
       </Typography.P>
-      <ul className="list-disc list-inside ml-4">
+      <ul className="ml-4 list-inside list-disc">
         <li>
           стандартни договорни клаузи (Google Ads Controller-to-Controller DPA);
         </li>
@@ -199,7 +199,7 @@ export default function CookiesPage() {
 
       <Typography.P>4.4. Отказ от GA</Typography.P>
       <Typography.P>Потребителят може да:</Typography.P>
-      <ul className="list-disc list-inside ml-4">
+      <ul className="ml-4 list-inside list-disc">
         <li>
           откаже аналитични cookies през cookie банера при първо посещение;
         </li>
@@ -226,7 +226,7 @@ export default function CookiesPage() {
       <Typography.P>
         При първо посещение на Сайта се показва банер с опции:
       </Typography.P>
-      <ul className="list-disc list-inside ml-4">
+      <ul className="ml-4 list-inside list-disc">
         <li>„приемам всички бисквитки“;</li>
         <li>„само необходими“;</li>
       </ul>
@@ -243,7 +243,7 @@ export default function CookiesPage() {
 
       <Typography.P>5.3. Управление на бисквитки чрез браузър</Typography.P>
       <Typography.P>Повечето браузъри позволяват:</Typography.P>
-      <ul className="list-disc list-inside ml-4">
+      <ul className="ml-4 list-inside list-disc">
         <li>
           блокиране на всички бисквитки – сайтът може да не функционира
           коректно;
@@ -263,7 +263,7 @@ export default function CookiesPage() {
         Ако на Сайта има вграден Facebook линк или събитие, Facebook може да
         задава собствени бисквитки, например:
       </Typography.P>
-      <ul className="list-disc list-inside ml-4">
+      <ul className="ml-4 list-inside list-disc">
         <li>_fbp, sb и други;</li>
         <li>цел – проследяване, реклама и аналитика от страна на Facebook.</li>
       </ul>
@@ -299,7 +299,7 @@ export default function CookiesPage() {
       <Typography.P>
         При съществена промяна потребителите ще бъдат уведомени чрез:
       </Typography.P>
-      <ul className="list-disc list-inside ml-4">
+      <ul className="ml-4 list-inside list-disc">
         <li>нов банер при повторно посещение;</li>
         <li>съобщение на Сайта;</li>
         <li>имейл (когато е възможно).</li>
@@ -328,7 +328,11 @@ export default function CookiesPage() {
       <Typography.P>
         За въпроси относно бисквитките и тяхното използване, свържете се с нас
         на имейл:{" "}
-        <a href={`mailto:silvena.miteva.007@gmail.com`} className="text-primary text-base font-medium underline" aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com">
+        <a
+          href={`mailto:silvena.miteva.007@gmail.com`}
+          className="text-primary text-base font-medium underline"
+          aria-label="Имейл за контакт: silvena.miteva.007 at gmail dot com"
+        >
           <ObfuscatedEmail email="silvena.miteva.007@gmail.com" />
         </a>
         .

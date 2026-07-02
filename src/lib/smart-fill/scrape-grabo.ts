@@ -74,8 +74,9 @@ function extractDraft(
   }
 
   // Time — look for patterns like "19:00ч", "от 19:00", "19:00 часа"
-  const timeMatch =
-    /(?:от\s*|@\s*)?(\d{2}:\d{2})(?:ч|ч\.|часа| ч)?/i.exec(bodyText);
+  const timeMatch = /(?:от\s*|@\s*)?(\d{2}:\d{2})(?:ч|ч\.|часа| ч)?/i.exec(
+    bodyText,
+  );
   if (timeMatch) {
     draft.startTime = timeMatch[1];
   }
@@ -87,13 +88,17 @@ function extractDraft(
   const prices: number[] = [];
 
   // Find the table that contains the "Варианти" header
-  let variantsTable = $("table").filter((_, el) => {
-    return $(el).text().includes("Варианти");
-  }).first();
+  let variantsTable = $("table")
+    .filter((_, el) => {
+      return $(el).text().includes("Варианти");
+    })
+    .first();
 
   // If not found via table element, try common grabo class names
   if (!variantsTable.length) {
-    variantsTable = $("[class*='variant'], [class*='Variant'], [class*='offer']")
+    variantsTable = $(
+      "[class*='variant'], [class*='Variant'], [class*='offer']",
+    )
       .filter((_, el) => $(el).text().includes("€"))
       .first();
   }
@@ -142,7 +147,10 @@ function extractDraft(
     .trim();
 
   if (addrEl) {
-    const parts = addrEl.split(",").map((s) => s.trim()).filter(Boolean);
+    const parts = addrEl
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     if (parts.length >= 2) {
       draft.town = parts[0];
       draft.place = parts.slice(1).join(", ");
@@ -151,8 +159,9 @@ function extractDraft(
     }
   } else {
     // Fallback: look for "Русе, [VenueName]" pattern in body text
-    const venueMatch =
-      /(?:Русе|Ruse)[,\s]+([А-Яа-яA-Za-z][^\n]{3,60})/i.exec(bodyText);
+    const venueMatch = /(?:Русе|Ruse)[,\s]+([А-Яа-яA-Za-z][^\n]{3,60})/i.exec(
+      bodyText,
+    );
     if (venueMatch?.[1]) {
       draft.town = "Русе";
       draft.place = venueMatch[1].trim();
@@ -165,7 +174,9 @@ function extractDraft(
   // Grabo main description is in a div with "За концерта" / "За събитието" heading
   // or in a generic description container
   let descText = "";
-  $("[class*='description'], [class*='details'], .offerText, .eventDescription").each((_, el) => {
+  $(
+    "[class*='description'], [class*='details'], .offerText, .eventDescription",
+  ).each((_, el) => {
     const t = $(el).text().trim();
     if (t.length > descText.length) descText = t;
   });
@@ -177,7 +188,10 @@ function extractDraft(
       if (heading.startsWith("за ") || heading.includes("описание")) {
         const sibling = $(el).next();
         const t = sibling.text().trim();
-        if (t.length > 50) { descText = t; return false; }
+        if (t.length > 50) {
+          descText = t;
+          return false;
+        }
       }
     });
   }
@@ -187,24 +201,29 @@ function extractDraft(
   }
 
   // ── Organizer — "Осигурено от [Name]" section ─────────────────────────────
-  $("h2, h3, strong, [class*='provider'], [class*='organizer']").each((_, el) => {
-    const text = $(el).text().trim();
-    // Match "Осигурено от СТЕЙДЖ ХЪБ" pattern
-    const m = /осигурено\s+от\s+(.+)/iu.exec(text);
-    if (m?.[1]) {
-      draft.organizer = m[1].trim();
-      return false;
-    }
-    // Or a dedicated provider element
-    if (
-      $(el).hasClass("provider") ||
-      $(el).attr("class")?.includes("organizer") ||
-      $(el).attr("class")?.includes("provider")
-    ) {
-      const name = $(el).text().trim();
-      if (name) { draft.organizer = name; return false; }
-    }
-  });
+  $("h2, h3, strong, [class*='provider'], [class*='organizer']").each(
+    (_, el) => {
+      const text = $(el).text().trim();
+      // Match "Осигурено от СТЕЙДЖ ХЪБ" pattern
+      const m = /осигурено\s+от\s+(.+)/iu.exec(text);
+      if (m?.[1]) {
+        draft.organizer = m[1].trim();
+        return false;
+      }
+      // Or a dedicated provider element
+      if (
+        $(el).hasClass("provider") ||
+        $(el).attr("class")?.includes("organizer") ||
+        $(el).attr("class")?.includes("provider")
+      ) {
+        const name = $(el).text().trim();
+        if (name) {
+          draft.organizer = name;
+          return false;
+        }
+      }
+    },
+  );
 
   // ── Tickets link — the grabo page URL itself is the ticket link ───────────
   draft.ticketsLink = pageUrl;
@@ -219,9 +238,18 @@ function ogImage($: cheerio.CheerioAPI): string | null {
 }
 
 const BG_MONTHS: Record<string, string> = {
-  януари: "01", февруари: "02", март: "03", април: "04",
-  май: "05", юни: "06", юли: "07", август: "08",
-  септември: "09", октомври: "10", ноември: "11", декември: "12",
+  януари: "01",
+  февруари: "02",
+  март: "03",
+  април: "04",
+  май: "05",
+  юни: "06",
+  юли: "07",
+  август: "08",
+  септември: "09",
+  октомври: "10",
+  ноември: "11",
+  декември: "12",
 };
 
 function parseBgDate(

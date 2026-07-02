@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { extractDraftFromText, QuotaExceededError } from "~/lib/smart-fill/gemini";
 import {
+  extractDraftFromText,
+  QuotaExceededError,
+} from "~/lib/smart-fill/gemini";
+import {
+  consumeSmartFillImport,
   SmartFillDailyLimitError,
   smartFillDailyLimitResponse,
-  consumeSmartFillImport,
 } from "~/lib/smart-fill/rate-limit";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 

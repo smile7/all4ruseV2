@@ -43,7 +43,9 @@ export function smartFillDailyLimitResponse(err: SmartFillDailyLimitError) {
  * Atomically checks and increments today's smart-fill import count for a user.
  * Throws SmartFillDailyLimitError when the daily cap is reached.
  */
-export async function consumeSmartFillImport(userId: string): Promise<ConsumeRow> {
+export async function consumeSmartFillImport(
+  userId: string,
+): Promise<ConsumeRow> {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.rpc("consume_smart_fill_import", {
     p_user_id: userId,

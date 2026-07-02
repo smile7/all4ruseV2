@@ -12,10 +12,62 @@ export type EventSchedule = {
 
 /** 3-letter uppercase month abbreviations per locale — used in the EventCard badge. */
 const MONTH_ABBREVS: Record<string, readonly string[]> = {
-  "bg-BG": ["ЯНУ", "ФЕВ", "МАР", "АПР", "МАЙ", "ЮНИ", "ЮЛИ", "АВГ", "СЕП", "ОКТ", "НОЕ", "ДЕК"],
-  "en-GB": ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
-  "uk-UA": ["СІЧ", "ЛЮТ", "БЕР", "КВІ", "ТРА", "ЧЕР", "ЛИП", "СЕР", "ВЕР", "ЖОВ", "ЛИС", "ГРУ"],
-  "ro-RO": ["IAN", "FEB", "MAR", "APR", "MAI", "IUN", "IUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+  "bg-BG": [
+    "ЯНУ",
+    "ФЕВ",
+    "МАР",
+    "АПР",
+    "МАЙ",
+    "ЮНИ",
+    "ЮЛИ",
+    "АВГ",
+    "СЕП",
+    "ОКТ",
+    "НОЕ",
+    "ДЕК",
+  ],
+  "en-GB": [
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC",
+  ],
+  "uk-UA": [
+    "СІЧ",
+    "ЛЮТ",
+    "БЕР",
+    "КВІ",
+    "ТРА",
+    "ЧЕР",
+    "ЛИП",
+    "СЕР",
+    "ВЕР",
+    "ЖОВ",
+    "ЛИС",
+    "ГРУ",
+  ],
+  "ro-RO": [
+    "IAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAI",
+    "IUN",
+    "IUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC",
+  ],
 };
 
 const localeMap: Record<string, string> = {
@@ -101,8 +153,16 @@ export function formatDateBadge(
   // Today / tomorrow: single uppercase label, no weekday line
   if (labels) {
     const dayDiff = getCalendarDayDiff(date, new Date());
-    if (dayDiff === 0) return { primary: labels.today.toLocaleUpperCase(intlLocale), secondary: null };
-    if (dayDiff === 1) return { primary: labels.tomorrow.toLocaleUpperCase(intlLocale), secondary: null };
+    if (dayDiff === 0)
+      return {
+        primary: labels.today.toLocaleUpperCase(intlLocale),
+        secondary: null,
+      };
+    if (dayDiff === 1)
+      return {
+        primary: labels.tomorrow.toLocaleUpperCase(intlLocale),
+        secondary: null,
+      };
   }
 
   const day = date.getDate();
@@ -111,7 +171,9 @@ export function formatDateBadge(
   const primary = `${day} ${monthAbbrevs[date.getMonth()]!}`;
 
   // Full weekday name, uppercase (e.g. "ЧЕТВЪРТЪК") — long weekday works in all environments
-  const weekday = new Intl.DateTimeFormat(intlLocale, { weekday: "long" }).format(date);
+  const weekday = new Intl.DateTimeFormat(intlLocale, {
+    weekday: "long",
+  }).format(date);
   const secondary = weekday.toLocaleUpperCase(intlLocale);
 
   return { primary, secondary };
@@ -138,7 +200,10 @@ export function formatFullDate(
   }).format(date);
 }
 
-export function formatEventMonthHeading(dateStr: string, locale: string): string {
+export function formatEventMonthHeading(
+  dateStr: string,
+  locale: string,
+): string {
   const date = parseLocalDate(dateStr);
   const intlLocale = getIntlLocale(locale);
   const month = new Intl.DateTimeFormat(intlLocale, {
@@ -210,7 +275,10 @@ export function getEventEndMs(event: EventSchedule): number {
   }
 }
 
-export function isEventEnded(event: EventSchedule, now: Date = new Date()): boolean {
+export function isEventEnded(
+  event: EventSchedule,
+  now: Date = new Date(),
+): boolean {
   try {
     return now.getTime() > getEventEndMs(event);
   } catch {
@@ -226,7 +294,10 @@ const LIVE_FALLBACK_DURATION_MS = 90 * 60 * 1000; // 1.5 hours
  * - If `endTime` is set → live between start and end instants (inclusive).
  * - If `endTime` is absent → live for up to 1.5 hours after `startTime`.
  */
-export function isLiveNow(event: EventSchedule, now: Date = new Date()): boolean {
+export function isLiveNow(
+  event: EventSchedule,
+  now: Date = new Date(),
+): boolean {
   try {
     const t = now.getTime();
     const startMs = getEventStartMs(event);
@@ -244,15 +315,24 @@ export function isLiveNow(event: EventSchedule, now: Date = new Date()): boolean
  *
  * Intended for client-side use only — relies on browser Intl data.
  */
-export function formatLiveElapsed(event: EventSchedule, locale: string, now = new Date()): string {
+export function formatLiveElapsed(
+  event: EventSchedule,
+  locale: string,
+  now = new Date(),
+): string {
   const intlLocale = getIntlLocale(locale);
   const elapsedMs = now.getTime() - getEventStartMs(event);
   const elapsedMinutes = Math.max(1, Math.floor(elapsedMs / 60000));
-  const rtf = new Intl.RelativeTimeFormat(intlLocale, { numeric: "always", style: "long" });
+  const rtf = new Intl.RelativeTimeFormat(intlLocale, {
+    numeric: "always",
+    style: "long",
+  });
   if (elapsedMinutes < 60) {
     return rtf.format(-elapsedMinutes, "minutes").toLocaleUpperCase(intlLocale);
   }
-  return rtf.format(-Math.floor(elapsedMinutes / 60), "hours").toLocaleUpperCase(intlLocale);
+  return rtf
+    .format(-Math.floor(elapsedMinutes / 60), "hours")
+    .toLocaleUpperCase(intlLocale);
 }
 
 /**

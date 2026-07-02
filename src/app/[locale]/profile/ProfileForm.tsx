@@ -5,13 +5,28 @@ import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "next-intl";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Copy, ExternalLink, Globe, ImagePlus, Phone, Sparkles, User } from "lucide-react";
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  Globe,
+  ImagePlus,
+  Phone,
+  Sparkles,
+  User,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useRegisterUnsavedChanges } from "~/components/layout/UnsavedChangesGuard";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
   Form,
@@ -25,7 +40,11 @@ import { Input } from "~/components/ui/input";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Textarea } from "~/components/ui/textarea";
-import { AVATARS_BUCKET, DEFAULT_PROFILE_COLOR, PROFILE_COLOR_SWATCHES } from "~/constants";
+import {
+  AVATARS_BUCKET,
+  DEFAULT_PROFILE_COLOR,
+  PROFILE_COLOR_SWATCHES,
+} from "~/constants";
 import { DEBOUNCE_DELAY, useDebounce } from "~/hooks/useDebounce";
 import { Link, useRouter } from "~/i18n/navigation";
 import { profilesApi } from "~/lib/api";
@@ -58,7 +77,11 @@ import {
 } from "~/lib/profile-username";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 import { cn } from "~/lib/utils";
-import { type Profile, type UpdateProfileInput, updateProfileSchema } from "~/types";
+import {
+  type Profile,
+  type UpdateProfileInput,
+  updateProfileSchema,
+} from "~/types";
 
 import { ProfileAccountSecurity } from "./ProfileAccountSecurity";
 
@@ -78,11 +101,12 @@ function toFormDefaults(
 ): UpdateProfileInput {
   // show_saved_events will be properly typed once the DB column is on profiles
   // and db:types is re-run. Until then we use a cast.
-  const p = profile as (Profile & { show_saved_events?: boolean | null }) | null;
+  const p = profile as
+    | (Profile & { show_saved_events?: boolean | null })
+    | null;
   return {
     full_name: p?.full_name ?? "",
-    username:
-      p?.username && !isUsernameInvalid(p.username) ? p.username : "",
+    username: p?.username && !isUsernameInvalid(p.username) ? p.username : "",
     bio: p?.bio ?? "",
     name_to_show: p?.name_to_show ?? "",
     phone: p?.phone ?? "",
@@ -99,12 +123,21 @@ function toFormDefaults(
   };
 }
 
-function avatarFallbackLetter(fullName: string | undefined, email: string): string {
+function avatarFallbackLetter(
+  fullName: string | undefined,
+  email: string,
+): string {
   const raw = fullName?.trim() || email;
   return raw.charAt(0).toUpperCase() || "?";
 }
 
-export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreatedEvents }: Props) {
+export function ProfileForm({
+  profile,
+  userEmail,
+  userId,
+  hasEmailAuth,
+  hasCreatedEvents,
+}: Props) {
   const t = useTranslations("Profile");
   const tPub = useTranslations("PublicProfile");
   const locale = useLocale();
@@ -128,7 +161,8 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
 
   const serverAvatarUrl = profile?.avatar_url ?? null;
   const displayAvatarSrc =
-    previewAvatarUrl ?? (!avatarRemoved ? serverAvatarUrl ?? undefined : undefined);
+    previewAvatarUrl ??
+    (!avatarRemoved ? (serverAvatarUrl ?? undefined) : undefined);
   const avatarDirty =
     pendingAvatarFile !== null || (avatarRemoved && Boolean(serverAvatarUrl));
 
@@ -150,14 +184,15 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
 
   const serverHeaderUrl = profile?.header_url ?? null;
   const displayHeaderSrc =
-    previewHeaderUrl ?? (!headerRemoved ? serverHeaderUrl ?? undefined : undefined);
+    previewHeaderUrl ??
+    (!headerRemoved ? (serverHeaderUrl ?? undefined) : undefined);
   const headerDirty =
     pendingHeaderFile !== null || (headerRemoved && Boolean(serverHeaderUrl));
 
   // ── Profile gallery state ───────────────────────────────────────────────────
   const galleryFileInputRef = useRef<HTMLInputElement>(null);
-  const [galleryUrls, setGalleryUrls] = useState<string[]>(
-    () => parseProfileGallery(profile?.profile_gallery),
+  const [galleryUrls, setGalleryUrls] = useState<string[]>(() =>
+    parseProfileGallery(profile?.profile_gallery),
   );
   const [pendingGalleryFiles, setPendingGalleryFiles] = useState<File[]>([]);
   const [removedGalleryUrls, setRemovedGalleryUrls] = useState<string[]>([]);
@@ -173,7 +208,8 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
     };
   }, [previewGalleryUrls]);
 
-  const galleryDirty = pendingGalleryFiles.length > 0 || removedGalleryUrls.length > 0;
+  const galleryDirty =
+    pendingGalleryFiles.length > 0 || removedGalleryUrls.length > 0;
   const displayGalleryUrls = [...galleryUrls, ...previewGalleryUrls];
 
   // ── Form ─────────────────────────────────────────────────────────────────────
@@ -194,10 +230,13 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
     normalizedWatchUsername !== normalizedDebouncedUsername &&
     USERNAME_PATTERN.test(normalizedWatchUsername);
 
-  const immediateUsernameAvailability = useMemo((): UsernameAvailability | "pending-check" => {
+  const immediateUsernameAvailability = useMemo(():
+    | UsernameAvailability
+    | "pending-check" => {
     if (!normalizedDebouncedUsername) return "idle";
     if (!USERNAME_PATTERN.test(normalizedDebouncedUsername)) return "idle";
-    if (normalizedDebouncedUsername === normalizedSavedUsername) return "available";
+    if (normalizedDebouncedUsername === normalizedSavedUsername)
+      return "available";
     return "pending-check";
   }, [normalizedDebouncedUsername, normalizedSavedUsername]);
 
@@ -236,11 +275,18 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
     if (immediateUsernameAvailability !== "pending-check") {
       return immediateUsernameAvailability;
     }
-    if (!usernameLookup || usernameLookup.username !== normalizedDebouncedUsername) {
+    if (
+      !usernameLookup ||
+      usernameLookup.username !== normalizedDebouncedUsername
+    ) {
       return "checking";
     }
     return usernameLookup.status;
-  }, [immediateUsernameAvailability, usernameLookup, normalizedDebouncedUsername]);
+  }, [
+    immediateUsernameAvailability,
+    usernameLookup,
+    normalizedDebouncedUsername,
+  ]);
 
   useRegisterUnsavedChanges(
     form.formState.isDirty || avatarDirty || headerDirty || galleryDirty,
@@ -264,14 +310,23 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
     event.target.value = "";
     if (!file) return;
     const err = validateAvatarFile(file);
-    if (err === "type") { toast.error(t("avatarInvalidType")); return; }
-    if (err === "size")  { toast.error(t("avatarTooLarge")); return; }
+    if (err === "type") {
+      toast.error(t("avatarInvalidType"));
+      return;
+    }
+    if (err === "size") {
+      toast.error(t("avatarTooLarge"));
+      return;
+    }
     setAvatarRemoved(false);
     setPendingAvatarFile(file);
   }
 
   function handleRemoveAvatarClick() {
-    if (pendingAvatarFile) { setPendingAvatarFile(null); return; }
+    if (pendingAvatarFile) {
+      setPendingAvatarFile(null);
+      return;
+    }
     if (serverAvatarUrl) setAvatarRemoved(true);
   }
 
@@ -281,14 +336,23 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
     event.target.value = "";
     if (!file) return;
     const err = validateHeaderFile(file);
-    if (err === "type") { toast.error(tPub("headerPhotoInvalidType")); return; }
-    if (err === "size")  { toast.error(tPub("headerPhotoTooLarge")); return; }
+    if (err === "type") {
+      toast.error(tPub("headerPhotoInvalidType"));
+      return;
+    }
+    if (err === "size") {
+      toast.error(tPub("headerPhotoTooLarge"));
+      return;
+    }
     setHeaderRemoved(false);
     setPendingHeaderFile(file);
   }
 
   function handleRemoveHeaderClick() {
-    if (pendingHeaderFile) { setPendingHeaderFile(null); return; }
+    if (pendingHeaderFile) {
+      setPendingHeaderFile(null);
+      return;
+    }
     if (serverHeaderUrl) setHeaderRemoved(true);
   }
 
@@ -299,7 +363,9 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
     if (files.length === 0) return;
 
     const remainingSlots =
-      MAX_PROFILE_GALLERY_IMAGES - galleryUrls.length - pendingGalleryFiles.length;
+      MAX_PROFILE_GALLERY_IMAGES -
+      galleryUrls.length -
+      pendingGalleryFiles.length;
     if (remainingSlots <= 0) {
       toast.error(tPub("galleryMaxImagesExceeded"));
       return;
@@ -322,7 +388,8 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
       nextFiles.push(file);
     }
 
-    if (files.length > remainingSlots) toast.error(tPub("galleryMaxImagesExceeded"));
+    if (files.length > remainingSlots)
+      toast.error(tPub("galleryMaxImagesExceeded"));
     if (hadTypeError) toast.error(tPub("galleryInvalidType"));
     if (hadSizeError) toast.error(tPub("galleryTooLarge"));
     if (nextFiles.length > 0) {
@@ -341,11 +408,16 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
     }
 
     const pendingIndex = index - galleryUrls.length;
-    setPendingGalleryFiles((current) => current.filter((_, i) => i !== pendingIndex));
+    setPendingGalleryFiles((current) =>
+      current.filter((_, i) => i !== pendingIndex),
+    );
   }
 
   // ── Storage helpers ──────────────────────────────────────────────────────────
-  async function removeStoredObject(bucket: string, previousPublicUrl: string | null) {
+  async function removeStoredObject(
+    bucket: string,
+    previousPublicUrl: string | null,
+  ) {
     const supabase = getSupabaseBrowserClient();
     const marker = `/object/public/${bucket}/`;
     const i = previousPublicUrl?.indexOf(marker) ?? -1;
@@ -353,7 +425,9 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
     const path = previousPublicUrl!.slice(i + marker.length);
     try {
       await supabase.storage.from(bucket).remove([path]);
-    } catch { /* best-effort */ }
+    } catch {
+      /* best-effort */
+    }
   }
 
   async function uploadAvatarToStorage(file: File): Promise<string> {
@@ -436,10 +510,16 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
         username,
         ...(nextAvatarUrl !== undefined && { avatar_url: nextAvatarUrl }),
         ...(nextHeaderUrl !== undefined && { header_url: nextHeaderUrl }),
-        ...(nextGalleryUrls !== undefined && { profile_gallery: nextGalleryUrls }),
+        ...(nextGalleryUrls !== undefined && {
+          profile_gallery: nextGalleryUrls,
+        }),
       };
 
-      const { error } = await profilesApi.updateProfile(supabase, userId, payload);
+      const { error } = await profilesApi.updateProfile(
+        supabase,
+        userId,
+        payload,
+      );
       if (error) {
         if (error.code === "23505") {
           form.setError("username", { message: t("usernameTaken") });
@@ -450,7 +530,9 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
       }
 
       if (nextAvatarUrl !== undefined) {
-        await supabase.auth.updateUser({ data: { avatar_url: nextAvatarUrl ?? "" } }).catch(console.error);
+        await supabase.auth
+          .updateUser({ data: { avatar_url: nextAvatarUrl ?? "" } })
+          .catch(console.error);
         const previous = serverAvatarUrl;
         if (previous && previous !== nextAvatarUrl) {
           await removeStoredObject(AVATARS_BUCKET, previous);
@@ -465,8 +547,12 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
           const path = extractHeaderStoragePathFromPublicUrl(previous);
           if (path) {
             try {
-              await getSupabaseBrowserClient().storage.from(AVATARS_BUCKET).remove([path]);
-            } catch { /* best-effort */ }
+              await getSupabaseBrowserClient()
+                .storage.from(AVATARS_BUCKET)
+                .remove([path]);
+            } catch {
+              /* best-effort */
+            }
           }
         }
         setPendingHeaderFile(null);
@@ -478,8 +564,12 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
           const path = extractProfileGalleryStoragePathFromPublicUrl(previous);
           if (path) {
             try {
-              await getSupabaseBrowserClient().storage.from(AVATARS_BUCKET).remove([path]);
-            } catch { /* best-effort */ }
+              await getSupabaseBrowserClient()
+                .storage.from(AVATARS_BUCKET)
+                .remove([path]);
+            } catch {
+              /* best-effort */
+            }
           }
         }
         setGalleryUrls(nextGalleryUrls);
@@ -504,7 +594,9 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
           ? tPub("headerPhotoUploadFailed")
           : isGalleryError
             ? tPub("galleryUploadFailed")
-            : (pendingAvatarFile ? t("avatarUploadFailed") : t("errorMessage")),
+            : pendingAvatarFile
+              ? t("avatarUploadFailed")
+              : t("errorMessage"),
       );
     }
   }
@@ -521,537 +613,589 @@ export function ProfileForm({ profile, userEmail, userId, hasEmailAuth, hasCreat
       </TabsList>
 
       <TabsContent value="information" className="mt-0 space-y-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
-        {/* ── Personal information ──────────────────────────────────── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <User className="size-5 text-primary" />
-              {t("personalInformation")}
-            </CardTitle>
-            <CardDescription>{t("personalInformationDescr")}</CardDescription>
-          </CardHeader>
-          <CardContent variant="section">
-            <div className="mb-6 flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:gap-4 sm:text-left">
-              <Avatar className="size-24 shrink-0 rounded-lg border bg-muted">
-                <AvatarImage
-                  src={displayAvatarSrc}
-                  alt={t("avatarLabel")}
-                  className="object-contain"
-                />
-                <AvatarFallback className="rounded-lg text-lg font-semibold">
-                  {avatarFallbackLetter(profile?.full_name ?? undefined, userEmail)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex w-full min-w-0 flex-1 flex-col gap-3 sm:min-h-24 sm:gap-0">
-                <p className="text-sm font-medium leading-none">{t("avatarLabel")}</p>
-                <div className="flex w-full justify-center sm:flex-1 sm:items-center sm:justify-start">
-                  <p className="text-muted-foreground text-sm">{t("avatarHint")}</p>
-                </div>
-                <input
-                  ref={avatarFileInputRef}
-                  type="file"
-                  accept={AVATAR_INPUT_ACCEPT}
-                  className="sr-only"
-                  aria-label={t("avatarUploadButton")}
-                  onChange={onAvatarFileChange}
-                />
-                <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => avatarFileInputRef.current?.click()}
-                  >
-                    {t("avatarUploadButton")}
-                  </Button>
-                  {(Boolean(displayAvatarSrc) || pendingAvatarFile !== null) && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground"
-                      onClick={handleRemoveAvatarClick}
-                    >
-                      {t("avatarRemoveButton")}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="full_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("fullName")}</FormLabel>
-                    <FormControl>
-                      <Input autoComplete="name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="name_to_show"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("nameToShow")}</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="bio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("bio")}</FormLabel>
-                  <FormControl>
-                    <Textarea rows={3} className="resize-none" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Username + public link ────────────────────────────── */}
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("username")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      autoComplete="username"
-                      placeholder="your-name"
-                      {...field}
-                      onChange={(e) => field.onChange(sanitizeUsernameInput(e.target.value))}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* ── Personal information ──────────────────────────────────── */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <User className="text-primary size-5" />
+                  {t("personalInformation")}
+                </CardTitle>
+                <CardDescription>
+                  {t("personalInformationDescr")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent variant="section">
+                <div className="mb-6 flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:gap-4 sm:text-left">
+                  <Avatar className="bg-muted size-24 shrink-0 rounded-lg border">
+                    <AvatarImage
+                      src={displayAvatarSrc}
+                      alt={t("avatarLabel")}
+                      className="object-contain"
                     />
-                  </FormControl>
-                  {usernameAvailability === "checking" ? (
-                    <p className="text-muted-foreground text-xs">{t("usernameChecking")}</p>
-                  ) : null}
-                  {usernameAvailability === "available" &&
-                  debouncedUsername.trim().length >= 3 ? (
-                    <p className="text-xs text-green-600 dark:text-green-500">
-                      {t("usernameAvailable")}
-                    </p>
-                  ) : null}
-                  {usernameAvailability === "taken" ? (
-                    <p className="text-destructive text-xs">{t("usernameTaken")}</p>
-                  ) : null}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Public link chip — shown when username is saved */}
-            {watchUsername && watchUsername.length >= 3 ? (
-              <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
-                <ExternalLink className="text-muted-foreground size-3.5 shrink-0" />
-                <Link
-                  href={`/user/${watchUsername}`}
-                  target="_blank"
-                  rel="noopener"
-                  className="text-primary min-w-0 flex-1 truncate text-xs underline-offset-2 hover:underline"
-                >
-                  all4ruse.com/{locale}/user/{watchUsername}
-                </Link>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-7 shrink-0"
-                  onClick={handleCopyLink}
-                  aria-label={tPub("yourPublicLink")}
-                >
-                  {copied ? (
-                    <Check className="size-3.5 text-green-500" />
-                  ) : (
-                    <Copy className="size-3.5" />
-                  )}
-                </Button>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-xs">
-                {tPub("setUsernameNudge")}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* ── Public profile appearance ──────────────────────────────── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Sparkles className="size-5 text-primary" />
-              {tPub("publicProfileCard")}
-            </CardTitle>
-            <CardDescription>{tPub("publicProfileCardDescr")}</CardDescription>
-          </CardHeader>
-          <CardContent variant="section">
-            {/* Show saved events toggle */}
-            <FormField
-              control={form.control}
-              name="show_saved_events"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-start gap-3">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value ?? false}
-                        onCheckedChange={field.onChange}
-                        className="mt-0.5"
-                      />
-                    </FormControl>
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-sm font-medium leading-snug">
-                        {tPub("showSavedEventsLabel")}
-                      </FormLabel>
-                      {/* <p className="text-muted-foreground text-xs">
-                        {tPub("showSavedEventsHint")}
-                      </p> */}
-                    </div>
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            {/* Color swatches */}
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-medium">{tPub("colorLabel")}</p>
-                <p className="text-muted-foreground text-xs">{tPub("colorHint")}</p>
-              </div>
-              <div className="flex flex-wrap gap-2.5">
-                {PROFILE_COLOR_SWATCHES.map((swatch) => {
-                  const isActive = activeColor === swatch.value;
-                  return (
-                    <button
-                      key={swatch.value}
-                      type="button"
-                      aria-label={swatch.label}
-                      title={swatch.label}
-                      onClick={() =>
-                        form.setValue("color", swatch.value, { shouldDirty: true })
-                      }
-                      className={cn(
-                        "size-8 rounded-full border-2 transition-all duration-150 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-                        isActive
-                          ? "scale-110 border-white ring-2 ring-offset-2"
-                          : "border-transparent",
+                    <AvatarFallback className="rounded-lg text-lg font-semibold">
+                      {avatarFallbackLetter(
+                        profile?.full_name ?? undefined,
+                        userEmail,
                       )}
-                      style={{
-                        backgroundColor: swatch.value,
-                        ...(isActive && { boxShadow: `0 0 0 2px ${swatch.value}` }),
-                      }}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex w-full min-w-0 flex-1 flex-col gap-3 sm:min-h-24 sm:gap-0">
+                    <p className="text-sm leading-none font-medium">
+                      {t("avatarLabel")}
+                    </p>
+                    <div className="flex w-full justify-center sm:flex-1 sm:items-center sm:justify-start">
+                      <p className="text-muted-foreground text-sm">
+                        {t("avatarHint")}
+                      </p>
+                    </div>
+                    <input
+                      ref={avatarFileInputRef}
+                      type="file"
+                      accept={AVATAR_INPUT_ACCEPT}
+                      className="sr-only"
+                      aria-label={t("avatarUploadButton")}
+                      onChange={onAvatarFileChange}
                     />
-                  );
-                })}
-              </div>
-              {/* Live preview strip */}
-              <div
-                className="h-10 w-full rounded-xl transition-all duration-300"
-                style={{
-                  background: `linear-gradient(135deg, ${activeColor}30 0%, ${activeColor}80 50%, ${activeColor} 100%)`,
-                }}
-              />
-            </div>
-
-            <Separator />
-
-            {/* Header / cover photo */}
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-medium">{tPub("headerPhotoLabel")}</p>
-                <p className="text-muted-foreground text-xs">{tPub("headerPhotoHint")}</p>
-              </div>
-
-              {displayHeaderSrc ? (
-                <div className="relative w-full overflow-hidden rounded-xl border">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={displayHeaderSrc}
-                    alt={tPub("headerPhotoLabel")}
-                    className="aspect-3/1 w-full object-cover"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity hover:opacity-100">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => headerFileInputRef.current?.click()}
-                    >
-                      {tPub("headerPhotoUploadButton")}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="destructive"
-                      onClick={handleRemoveHeaderClick}
-                    >
-                      {tPub("headerPhotoRemoveButton")}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => headerFileInputRef.current?.click()}
-                  className="flex aspect-3/1 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors hover:border-primary hover:bg-muted/30"
-                >
-                  <ImagePlus className="text-muted-foreground size-8" />
-                  <span className="text-muted-foreground text-sm">
-                    {tPub("headerPhotoUploadButton")}
-                  </span>
-                </button>
-              )}
-
-              <input
-                ref={headerFileInputRef}
-                type="file"
-                accept={HEADER_INPUT_ACCEPT}
-                className="sr-only"
-                aria-label={tPub("headerPhotoUploadButton")}
-                onChange={onHeaderFileChange}
-              />
-            </div>
-
-            <Separator />
-
-            {/* Profile gallery */}
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-medium">{tPub("galleryLabel")}</p>
-                <p className="text-muted-foreground text-xs">{tPub("galleryHint")}</p>
-              </div>
-
-              {displayGalleryUrls.length > 0 && (
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {displayGalleryUrls.map((url, index) => (
-                    <div
-                      key={`${url}-${index}`}
-                      className="relative h-28 w-40 shrink-0 overflow-hidden rounded-xl border bg-muted"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={url}
-                        alt={tPub("galleryLabel")}
-                        className="size-full object-cover"
-                      />
+                    <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
                       <Button
                         type="button"
+                        variant="outline"
                         size="sm"
-                        variant="destructive"
-                        className="absolute right-2 top-2 h-7 px-2 text-xs"
-                        onClick={() => handleRemoveGalleryImage(index)}
+                        onClick={() => avatarFileInputRef.current?.click()}
                       >
-                        {tPub("galleryRemoveButton")}
+                        {t("avatarUploadButton")}
                       </Button>
+                      {(Boolean(displayAvatarSrc) ||
+                        pendingAvatarFile !== null) && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground"
+                          onClick={handleRemoveAvatarClick}
+                        >
+                          {t("avatarRemoveButton")}
+                        </Button>
+                      )}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
 
-              <input
-                ref={galleryFileInputRef}
-                type="file"
-                multiple
-                accept={PROFILE_GALLERY_INPUT_ACCEPT}
-                className="sr-only"
-                aria-label={tPub("galleryUploadButton")}
-                onChange={onGalleryFilesChange}
-              />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="full_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("fullName")}</FormLabel>
+                        <FormControl>
+                          <Input autoComplete="name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="name_to_show"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("nameToShow")}</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-              {displayGalleryUrls.length < MAX_PROFILE_GALLERY_IMAGES && (
-                <button
-                  type="button"
-                  onClick={() => galleryFileInputRef.current?.click()}
-                  className="flex min-h-28 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors hover:border-primary hover:bg-muted/30"
-                >
-                  <ImagePlus className="text-muted-foreground size-8" />
-                  <span className="text-muted-foreground text-sm">
-                    {tPub("galleryUploadButton")}
-                  </span>
-                </button>
-              )}
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("bio")}</FormLabel>
+                      <FormControl>
+                        <Textarea rows={3} className="resize-none" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Username + public link ────────────────────────────── */}
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("username")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          autoComplete="username"
+                          placeholder="your-name"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(
+                              sanitizeUsernameInput(e.target.value),
+                            )
+                          }
+                        />
+                      </FormControl>
+                      {usernameAvailability === "checking" ? (
+                        <p className="text-muted-foreground text-xs">
+                          {t("usernameChecking")}
+                        </p>
+                      ) : null}
+                      {usernameAvailability === "available" &&
+                      debouncedUsername.trim().length >= 3 ? (
+                        <p className="text-xs text-green-600 dark:text-green-500">
+                          {t("usernameAvailable")}
+                        </p>
+                      ) : null}
+                      {usernameAvailability === "taken" ? (
+                        <p className="text-destructive text-xs">
+                          {t("usernameTaken")}
+                        </p>
+                      ) : null}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Public link chip — shown when username is saved */}
+                {watchUsername && watchUsername.length >= 3 ? (
+                  <div className="bg-muted/50 flex items-center gap-2 rounded-lg border px-3 py-2">
+                    <ExternalLink className="text-muted-foreground size-3.5 shrink-0" />
+                    <Link
+                      href={`/user/${watchUsername}`}
+                      target="_blank"
+                      rel="noopener"
+                      className="text-primary min-w-0 flex-1 truncate text-xs underline-offset-2 hover:underline"
+                    >
+                      all4ruse.com/{locale}/user/{watchUsername}
+                    </Link>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="size-7 shrink-0"
+                      onClick={handleCopyLink}
+                      aria-label={tPub("yourPublicLink")}
+                    >
+                      {copied ? (
+                        <Check className="size-3.5 text-green-500" />
+                      ) : (
+                        <Copy className="size-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-xs">
+                    {tPub("setUsernameNudge")}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ── Public profile appearance ──────────────────────────────── */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Sparkles className="text-primary size-5" />
+                  {tPub("publicProfileCard")}
+                </CardTitle>
+                <CardDescription>
+                  {tPub("publicProfileCardDescr")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent variant="section">
+                {/* Show saved events toggle */}
+                <FormField
+                  control={form.control}
+                  name="show_saved_events"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-start gap-3">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value ?? false}
+                            onCheckedChange={field.onChange}
+                            className="mt-0.5"
+                          />
+                        </FormControl>
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-sm leading-snug font-medium">
+                            {tPub("showSavedEventsLabel")}
+                          </FormLabel>
+                          {/* <p className="text-muted-foreground text-xs">
+                        {tPub("showSavedEventsHint")}
+                      </p> */}
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Color swatches */}
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">{tPub("colorLabel")}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {tPub("colorHint")}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2.5">
+                    {PROFILE_COLOR_SWATCHES.map((swatch) => {
+                      const isActive = activeColor === swatch.value;
+                      return (
+                        <button
+                          key={swatch.value}
+                          type="button"
+                          aria-label={swatch.label}
+                          title={swatch.label}
+                          onClick={() =>
+                            form.setValue("color", swatch.value, {
+                              shouldDirty: true,
+                            })
+                          }
+                          className={cn(
+                            "size-8 rounded-full border-2 transition-all duration-150 hover:scale-110 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                            isActive
+                              ? "scale-110 border-white ring-2 ring-offset-2"
+                              : "border-transparent",
+                          )}
+                          style={{
+                            backgroundColor: swatch.value,
+                            ...(isActive && {
+                              boxShadow: `0 0 0 2px ${swatch.value}`,
+                            }),
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                  {/* Live preview strip */}
+                  <div
+                    className="h-10 w-full rounded-xl transition-all duration-300"
+                    style={{
+                      background: `linear-gradient(135deg, ${activeColor}30 0%, ${activeColor}80 50%, ${activeColor} 100%)`,
+                    }}
+                  />
+                </div>
+
+                <Separator />
+
+                {/* Header / cover photo */}
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {tPub("headerPhotoLabel")}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      {tPub("headerPhotoHint")}
+                    </p>
+                  </div>
+
+                  {displayHeaderSrc ? (
+                    <div className="relative w-full overflow-hidden rounded-xl border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={displayHeaderSrc}
+                        alt={tPub("headerPhotoLabel")}
+                        className="aspect-3/1 w-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity hover:opacity-100">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => headerFileInputRef.current?.click()}
+                        >
+                          {tPub("headerPhotoUploadButton")}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          onClick={handleRemoveHeaderClick}
+                        >
+                          {tPub("headerPhotoRemoveButton")}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => headerFileInputRef.current?.click()}
+                      className="hover:border-primary hover:bg-muted/30 flex aspect-3/1 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors"
+                    >
+                      <ImagePlus className="text-muted-foreground size-8" />
+                      <span className="text-muted-foreground text-sm">
+                        {tPub("headerPhotoUploadButton")}
+                      </span>
+                    </button>
+                  )}
+
+                  <input
+                    ref={headerFileInputRef}
+                    type="file"
+                    accept={HEADER_INPUT_ACCEPT}
+                    className="sr-only"
+                    aria-label={tPub("headerPhotoUploadButton")}
+                    onChange={onHeaderFileChange}
+                  />
+                </div>
+
+                <Separator />
+
+                {/* Profile gallery */}
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {tPub("galleryLabel")}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      {tPub("galleryHint")}
+                    </p>
+                  </div>
+
+                  {displayGalleryUrls.length > 0 && (
+                    <div className="flex gap-3 overflow-x-auto pb-2">
+                      {displayGalleryUrls.map((url, index) => (
+                        <div
+                          key={`${url}-${index}`}
+                          className="bg-muted relative h-28 w-40 shrink-0 overflow-hidden rounded-xl border"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={url}
+                            alt={tPub("galleryLabel")}
+                            className="size-full object-cover"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            className="absolute top-2 right-2 h-7 px-2 text-xs"
+                            onClick={() => handleRemoveGalleryImage(index)}
+                          >
+                            {tPub("galleryRemoveButton")}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <input
+                    ref={galleryFileInputRef}
+                    type="file"
+                    multiple
+                    accept={PROFILE_GALLERY_INPUT_ACCEPT}
+                    className="sr-only"
+                    aria-label={tPub("galleryUploadButton")}
+                    onChange={onGalleryFilesChange}
+                  />
+
+                  {displayGalleryUrls.length < MAX_PROFILE_GALLERY_IMAGES && (
+                    <button
+                      type="button"
+                      onClick={() => galleryFileInputRef.current?.click()}
+                      className="hover:border-primary hover:bg-muted/30 flex min-h-28 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors"
+                    >
+                      <ImagePlus className="text-muted-foreground size-8" />
+                      <span className="text-muted-foreground text-sm">
+                        {tPub("galleryUploadButton")}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* ── Contact information ───────────────────────────────────── */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Phone className="text-primary size-5" />
+                  {t("contactInfo")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent variant="section">
+                <FormItem>
+                  <FormLabel>{t("email")}</FormLabel>
+                  <Input value={userEmail} disabled />
+                </FormItem>
+
+                <Separator />
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="email_to_show"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("emailToShow")}</FormLabel>
+                        <FormControl>
+                          <Input type="email" autoComplete="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("phone")}</FormLabel>
+                        <FormControl>
+                          <Input type="tel" autoComplete="tel" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="address_physical"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("addressPhysical")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            autoComplete="street-address"
+                            {...field}
+                            placeholder={t("addressPhysicalPlaceholder")}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="place"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("place")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder={t("placePlaceholder")}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* ── Social links ──────────────────────────────────────────── */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Globe className="text-primary size-5" />
+                  {t("socialLinks")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent variant="section">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="website"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("website")}</FormLabel>
+                        <FormControl>
+                          <Input type="url" placeholder="https://" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="fb"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Facebook</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="url"
+                            placeholder="https://facebook.com/..."
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="instagram"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Instagram</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="url"
+                            placeholder="https://instagram.com/..."
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tiktok"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>TikTok</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="url"
+                            placeholder="https://tiktok.com/..."
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="bg-background/80 sticky bottom-4 z-10 mt-8 flex items-center justify-end gap-3 rounded-xl border p-4 shadow-lg backdrop-blur-md">
+              <Button
+                type="submit"
+                disabled={
+                  form.formState.isSubmitting ||
+                  usernamePendingDebounce ||
+                  usernameAvailability === "checking" ||
+                  usernameAvailability === "taken"
+                }
+                size="lg"
+                className="min-w-32"
+              >
+                {t("edit")}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* ── Contact information ───────────────────────────────────── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Phone className="size-5 text-primary" />
-              {t("contactInfo")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent variant="section">
-            <FormItem>
-              <FormLabel>{t("email")}</FormLabel>
-              <Input value={userEmail} disabled />
-            </FormItem>
-
-            <Separator />
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="email_to_show"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("emailToShow")}</FormLabel>
-                    <FormControl>
-                      <Input type="email" autoComplete="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("phone")}</FormLabel>
-                    <FormControl>
-                      <Input type="tel" autoComplete="tel" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="address_physical"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("addressPhysical")}</FormLabel>
-                    <FormControl>
-                      <Input autoComplete="street-address" {...field} placeholder={t("addressPhysicalPlaceholder")} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="place"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("place")}</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder={t("placePlaceholder")} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ── Social links ──────────────────────────────────────────── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Globe className="size-5 text-primary" />
-              {t("socialLinks")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent variant="section">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="website"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("website")}</FormLabel>
-                    <FormControl>
-                      <Input type="url" placeholder="https://" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="fb"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Facebook</FormLabel>
-                    <FormControl>
-                      <Input type="url" placeholder="https://facebook.com/..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="instagram"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Instagram</FormLabel>
-                    <FormControl>
-                      <Input type="url" placeholder="https://instagram.com/..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="tiktok"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>TikTok</FormLabel>
-                    <FormControl>
-                      <Input type="url" placeholder="https://tiktok.com/..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="bg-background/80 sticky bottom-4 z-10 mt-8 flex items-center justify-end gap-3 rounded-xl border p-4 shadow-lg backdrop-blur-md">
-          <Button
-            type="submit"
-            disabled={
-              form.formState.isSubmitting ||
-              usernamePendingDebounce ||
-              usernameAvailability === "checking" ||
-              usernameAvailability === "taken"
-            }
-            size="lg"
-            className="min-w-32"
-          >
-            {t("edit")}
-          </Button>
-        </div>
-        </form>
-      </Form>
+          </form>
+        </Form>
       </TabsContent>
 
       <TabsContent value="security" className="mt-0">

@@ -15,7 +15,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import { FacebookIcon, InstagramIcon, TikTokIcon } from "~/components/icons/SocialIcons";
+import {
+  FacebookIcon,
+  InstagramIcon,
+  TikTokIcon,
+} from "~/components/icons/SocialIcons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -162,7 +166,7 @@ export function Footer() {
             target="_blank"
             rel="noopener"
             aria-label="TikTok"
-            className="text-black dark:text-white transition-opacity hover:opacity-80"
+            className="text-black transition-opacity hover:opacity-80 dark:text-white"
           >
             <TikTokIcon size={15} />
           </a>

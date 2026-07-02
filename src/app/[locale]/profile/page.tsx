@@ -47,7 +47,9 @@ export default async function ProfilePage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
       <div className="mb-8">
-        <Typography.H1 className="tracking-tight">{t("accountSettings")}</Typography.H1>
+        <Typography.H1 className="tracking-tight">
+          {t("accountSettings")}
+        </Typography.H1>
       </div>
       <ProfileForm
         key={`${user.id}:${profile?.updated_at ?? "none"}:${profile?.avatar_url ?? ""}`}

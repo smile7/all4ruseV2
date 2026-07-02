@@ -1,6 +1,9 @@
 import { transliterateCyrillicToLatin } from "~/lib/transliterate-cyrillic";
 
-export function buildEventSlugFromTitle(title: string, eventId: number): string {
+export function buildEventSlugFromTitle(
+  title: string,
+  eventId: number,
+): string {
   let base = transliterateCyrillicToLatin(
     title.normalize("NFKC").trim().toLowerCase(),
   )
