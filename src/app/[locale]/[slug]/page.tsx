@@ -225,6 +225,7 @@ export default async function EventDetailPage({ params }: Props) {
     publicClient,
     event.id,
     (event.tags ?? []).map((tag) => tag.id),
+    event.title,
   );
 
   const eventUrl = buildEventUrl(locale, slug);

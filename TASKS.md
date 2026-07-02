@@ -101,7 +101,7 @@
 - [x] Add color picker (curated swatch palette) to `ProfileForm`
 - [x] Add header/cover photo upload to `ProfileForm` — `headers/{userId}` path
 - [x] Show copyable public profile link on profile page after username is set
-- [x] Username validation in `ProfileForm`: debounced uniqueness check (format + inline sanitize done; DB uniqueness on save only)
+- [x] Username validation in `ProfileForm`: format + inline sanitize + debounced `profilesApi.isUsernameAvailable` check before save
 - [x] Show banner nudge on profile page when no username set
 
 ### Public profile page
@@ -178,12 +178,13 @@ Smart-fill helpers that pre-populate `EventForm` from a Facebook URL, freeform t
 
 ## Phase 10 — Quality
 
-- [ ] SEO metadata on all public pages (generateMetadata)
+- [x] SEO metadata on main public pages — home, current, past, event detail, public profile, saved events, why-all4ruse, advertise (`generateMetadata`)
+- [ ] SEO metadata on remaining pages — auth, profile, my-events, create-event; legal pages still use hardcoded Bulgarian `metadata`
 - [x] JSON-LD structured data on event detail (`[slug]` page — `Event` schema)
-- [ ] loading.tsx and error.tsx for key routes
+- [ ] `loading.tsx` and `error.tsx` for key routes
 - [ ] Mobile responsiveness review
 - [ ] Accessibility review (keyboard nav, contrast, ARIA)
-- [ ] i18n audit — all UI strings through t(), all 4 languages complete
+- [ ] i18n audit — all UI strings through `t()`, all 4 languages complete (legal page body copy still BG-only)
 - [x] PWA service worker + offline fallback — Serwist (`@serwist/next`), minimal SW (static assets + images only, no navigation cache to protect Supabase SSR auth), offline page at `/[locale]/offline`, all icons in `public/`
 
 ## Phase 11 — Quick Fixes & UI Polish
@@ -277,6 +278,12 @@ Small targeted fixes and visual consistency improvements.
 - [x] Success / duplicate / error toasts
 - [x] i18n keys in all 4 locale files (`SingleEvent` namespace)
 
+### Email notifications (pending)
+
+- [ ] Admin email when a user submits an event claim (with signed approve/decline action links)
+- [ ] Admin email when a user reports an event
+- [ ] Claimant email on approve/decline
+
 ## Phase 14 — Homepage Hero & Calendar View
 
 ### Homepage create event CTA
@@ -332,8 +339,16 @@ Small targeted fixes and visual consistency improvements.
 
 ### Sponsorship page
 
-- [ ] Create `src/app/[locale]/advertise/page.tsx` — clean static page: what All4Ruse is, audience, why sponsor, sponsorship tiers (visual cards), contact CTA
-- [ ] Add to footer navigation and "More" mobile sheet
+- [x] Create `src/app/[locale]/advertise/page.tsx` — static page with intro, 4 option cards, contact CTA, `generateMetadata`
+- [x] Add to footer navigation and "More" mobile sheet
+- [x] Add to `sitemap.ts`
+- [ ] Cross-link from `why-all4ruse/page.tsx`
+
+### Revolut support ("Подкрепи ни")
+
+- [ ] Desktop footer link → `https://revolut.me/silvenamiteva`
+- [ ] Mobile "More" sheet item with coffee icon
+- [ ] (Optional) subtle link on profile page
 
 ## Phase 18 — Advanced Filters & Premium
 

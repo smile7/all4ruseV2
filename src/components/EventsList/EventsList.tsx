@@ -131,9 +131,9 @@ function ActiveEventsList({
     initialData,
   });
 
-  // On mobile in calendar view: measure the calendar slot's viewport-top, fill
-  // the remaining space down to the bottom nav, then lock page scroll so there
-  // is only one scrollable surface (the calendar grid itself).
+  // In calendar view: measure the calendar slot's viewport-top, fill the remaining
+  // space down to the bottom chrome (mobile nav or desktop footer), then lock page
+  // scroll so only the calendar grid scrolls internally.
   useEffect(() => {
     if (view !== "calendar") {
       document.documentElement.style.overflow = "";
@@ -141,28 +141,33 @@ function ActiveEventsList({
       return () => cancelAnimationFrame(frame);
     }
 
-    const isMobile = window.innerWidth < 768;
-    if (!isMobile) {
-      document.documentElement.style.overflow = "";
-      const frame = requestAnimationFrame(() => setCalendarHeight(null));
-      return () => cancelAnimationFrame(frame);
+    window.scrollTo({ top: 0 });
+
+    function getBottomChromeHeight(): number {
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
+      if (isMobile) {
+        return document.querySelector<HTMLElement>("nav.fixed")?.offsetHeight ?? 0;
+      }
+      return document.querySelector<HTMLElement>("footer.fixed")?.offsetHeight ?? 0;
     }
 
-    // Wait one frame so the calendar slot has rendered at its natural position.
-    const frame = requestAnimationFrame(() => {
+    function updateCalendarHeight() {
       if (!calendarSlotRef.current) return;
       const slotTop = calendarSlotRef.current.getBoundingClientRect().top;
-      const bottomNavEl = document.querySelector<HTMLElement>("nav.fixed");
-      const bottomNavH = bottomNavEl?.offsetHeight ?? 0;
-      const height = window.innerHeight - slotTop - bottomNavH;
+      const height = window.innerHeight - slotTop - getBottomChromeHeight();
       if (height > 100) {
         document.documentElement.style.overflow = "hidden";
         setCalendarHeight(height);
       }
-    });
+    }
+
+    // Wait one frame so the calendar slot has rendered at its natural position.
+    const frame = requestAnimationFrame(updateCalendarHeight);
+    window.addEventListener("resize", updateCalendarHeight);
 
     return () => {
       cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updateCalendarHeight);
       document.documentElement.style.overflow = "";
       setCalendarHeight(null);
     };

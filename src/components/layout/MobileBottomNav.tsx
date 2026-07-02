@@ -14,6 +14,7 @@ import {
   History,
   Info,
   LogOut,
+  Megaphone,
   MoreHorizontal,
   Plus,
   Scale,
@@ -261,6 +262,14 @@ export function MobileBottomNav() {
             >
               <Info className="text-muted-foreground size-4 shrink-0" />
               <span>{t("menuWhyAll4Ruse")}</span>
+            </Link>
+            <Link
+              href="/advertise"
+              onClick={() => setMoreOpen(false)}
+              className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
+            >
+              <Megaphone className="text-muted-foreground size-4 shrink-0" />
+              <span>{t("menuAdvertise")}</span>
             </Link>
 
             <Separator className="my-3" />

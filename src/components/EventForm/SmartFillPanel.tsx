@@ -69,6 +69,7 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
   const [promptText, setPromptText] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoText, setPhotoText] = useState("");
   const [graboUrl, setGraboUrl] = useState("");
   const [ruseDanubeUrl, setRuseDanubeUrl] = useState("");
 
@@ -188,6 +189,7 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
         const compressedPhoto = await compressImageForExtraction(photoFile);
         const form = new FormData();
         form.append("image", compressedPhoto);
+        if (photoText.trim()) form.append("text", photoText.trim());
         res = await fetch("/api/smart-fill/photo", {
           method: "POST",
           body: form,
@@ -377,6 +379,14 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
                 <span className="text-muted-foreground">{t("photoDropZone")}</span>
               </button>
             )}
+            <Textarea
+              placeholder={t("photoTextPlaceholder")}
+              value={photoText}
+              onChange={(e) => setPhotoText(e.target.value)}
+              disabled={isLoading}
+              rows={3}
+              className="resize-none text-sm"
+            />
           </div>
         )}
 
@@ -446,8 +456,9 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
 
         {/* Partial success — image saved but text extraction failed */}
         {parseState.status === "partialApplied" && (
-          <p className="text-muted-foreground mt-2 text-xs">
-            {t("appliedImageOnly")}
+          <p className="text-destructive mt-2 flex items-start gap-1.5 text-xs">
+            <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
+            <span>{t("appliedImageOnly")}</span>
           </p>
         )}
       </div>

@@ -213,7 +213,7 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
           />
         </div>
         <div className="flex min-w-0 flex-1 items-start overflow-hidden px-1 pt-1 md:flex-col md:justify-center md:px-2 md:py-1">
-          <span className="line-clamp-3 md:line-clamp-2 text-[10px] font-semibold leading-tight md:text-[11px] w-full">
+          <span className="line-clamp-3 md:line-clamp-2 text-xs font-semibold leading-tight md:text-sm w-full">
             {formatEventTitle(event.title)}
           </span>
         </div>
@@ -231,7 +231,7 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
           />
         </div>
         <div className="flex min-w-0 flex-col justify-center gap-0.5 px-2 py-1">
-          <span className="line-clamp-2 text-[11px] font-semibold leading-tight">
+          <span className="line-clamp-2 text-xs font-semibold leading-tight md:text-sm">
             {formatEventTitle(event.title)}
           </span>
         </div>
@@ -240,7 +240,7 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
   ) : (
     /* Continuation bar — no image, title repeated so multi-week events stay readable */
     <div className="flex min-w-0 items-center px-2 py-1">
-      <span className="truncate text-[11px] font-semibold leading-tight">
+      <span className="truncate text-xs font-semibold leading-tight md:text-sm">
         {formatEventTitle(event.title)}
       </span>
     </div>
@@ -270,8 +270,8 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
 
 type Props = {
   events: Event[];
-  /** On mobile only: explicit pixel height for the whole component so it fills
-   *  the remaining viewport without a page-level scrollbar. */
+  /** Explicit pixel height so the component fills the remaining viewport without
+   *  a page-level scrollbar; the calendar grid scrolls internally. */
   calendarHeight?: number;
 };
 
@@ -419,9 +419,9 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
     year === now.getFullYear() && month === now.getMonth();
 
   return (
-    // calendarHeight: fills the measured remaining viewport space on mobile,
-    // flex column so month nav takes natural height and grid fills the rest.
-    // No calendarHeight: normal mt-4 layout with a max-height cap on mobile.
+    // calendarHeight: fills measured remaining viewport space; flex column so
+    // month nav takes natural height and grid fills the rest.
+    // No calendarHeight: brief fallback before measurement (grid view path).
     <div
       className={cn("w-full", calendarHeight ? "flex flex-col" : "mt-4")}
       style={calendarHeight ? { height: calendarHeight } : undefined}
@@ -470,17 +470,13 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
         </Button>
       </div>
 
-      {/* Calendar grid
-          calendarHeight set: flex-1 + min-h-0 fills the remainder after month nav.
-          Otherwise: internal scroll on both mobile and desktop so the sticky
-          header works at all viewport sizes.                                */}
+      {/* Calendar grid — flex-1 + min-h-0 when height is measured; otherwise a
+          conservative cap until EventsList finishes layout measurement.         */}
       <div
         ref={scrollContainerRef}
         className={cn(
           "rounded-xl border overflow-auto",
-          calendarHeight
-            ? "flex-1 min-h-0"
-            : "max-h-[60svh] md:max-h-[80vh]",
+          calendarHeight ? "flex-1 min-h-0" : "max-h-[60svh]",
         )}
       >
         <div className="min-w-[560px] md:min-w-0">

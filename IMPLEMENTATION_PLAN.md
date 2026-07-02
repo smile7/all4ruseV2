@@ -307,12 +307,10 @@ Authenticated users can bookmark events; bookmarks persist in the database. Gues
 
 Every registered user gets a public profile page at `/[locale]/user/[username]`. Implemented in `src/app/[locale]/user/[username]/page.tsx` with host vs user layout branching on event count.
 
-**Remaining:** `UNIQUE` constraint on `profiles.username` (migration); debounced username uniqueness check in `ProfileForm` before save.
-
 ### 5.1 DB schema additions ✅
 
 - `header_url` column present in `database.ts`; `color` column in use.
-- **Pending:** `UNIQUE` on `profiles.username`.
+- `UNIQUE` on `profiles.username` — migration applied.
 - RLS: public `SELECT` on profiles; cover uploads to `headers/{userId}` in existing bucket.
 
 ### 5.2 Edit profile additions ✅
@@ -336,10 +334,10 @@ Every registered user gets a public profile page at `/[locale]/user/[username]`.
 
 - `Organization` JSON-LD for host-mode profiles.
 
-### 5.7 Username enforcement + UX
+### 5.7 Username enforcement + UX ✅
 
 - Format validation + nudge + copyable link ✅.
-- **Pending:** debounced uniqueness check before save.
+- Debounced uniqueness check in `ProfileForm` via `profilesApi.isUsernameAvailable` before save ✅.
 
 ### 5.8 Acceptance checks ✅
 
@@ -384,26 +382,34 @@ Promotional Bulgarian description instructions in text and photo route system pr
 
 ## Phase 7 — i18n, SEO, and Polish
 
+**Remaining:** legal page copy still hardcoded in Bulgarian; auth/profile/create-event pages lack translated metadata; no route-level `loading.tsx` / `error.tsx`; full mobile + a11y pass.
+
 ### 7.1 Complete Bulgarian message file
 
 - Audit every page and component for hardcoded Bulgarian or English strings.
 - Move all UI strings into `src/i18n/messages/bg.json` — organized by page/feature key (`nav`, `home`, `events`, `auth`, `profile`, `saved`, `common`, `errors`).
+- **Still hardcoded:** legal pages (`legal/*`) body copy and static `metadata` titles.
 
 ### 7.2 Translate to other languages
 
 - Copy `bg.json` structure to `en.json`, `uk.json`, `ro.json`.
 - Translate manually or using a script. (Auto-translate via Google Translate API is Phase 9 scope — for now, best-effort manual translation is fine.)
+- Most UI namespaces are synced; legal page content is not locale-aware yet.
 
 ### 7.3 Wire all strings through `t()`
 
 - Replace every hardcoded string in components with `t("key")` or `useTranslations("namespace")`.
 - Verify locale switching works end-to-end on all pages.
 
-### 7.4 SEO metadata
+### 7.4 SEO metadata — partial ✅
 
-- Add `generateMetadata` to `app/[locale]/page.tsx` and `past/page.tsx` — translated titles and descriptions.
-- Verify event detail `generateMetadata` includes Open Graph image, title, description.
-- Add `<link rel="alternate" hreflang>` via next-intl's alternates support.
+Translated `generateMetadata` on: home, current, past, event detail, public profile, saved events, why-all4ruse, advertise, offline, not-found.
+
+**Remaining:**
+
+- Auth pages (login, signup, forgot/update password), profile, my-events, create-event.
+- Legal pages — replace static Bulgarian `metadata` exports with translated `generateMetadata`.
+- Verify hreflang alternates on all public pages (event detail already has them).
 
 ### 7.5 JSON-LD structured data ✅
 
@@ -521,11 +527,9 @@ Supabase Auth handles the OAuth flow. Reference: https://supabase.com/ui/docs/ne
 - Profile page auto-corrects email-based usernames inserted by the DB trigger (detects `@` in username, derives clean slug from email prefix on first visit).
 - Duplicate email on signup: map explicit Supabase errors **and** detect confirmed duplicates via empty `data.user.identities` (Supabase anti-enumeration — no error, no email sent); show translated message with link to login instead of signup-success.
 
-### 9.2 Remember me
+### 9.2 Remember me ✅
 
-- Add `<Checkbox>` labeled "Запомни ме" to the login form.
-- Supabase JS `createBrowserClient` persists session in `localStorage` by default. When "Remember me" is unchecked, instead use `persistSession: false` by passing it to `signInWithPassword` options — this stores the session only in memory, not in `localStorage`.
-- Default state: unchecked (session-only). This matches what most users expect.
+Implemented in Phase 3.1 — `a4r-remember` cookie + cookie maxAge stripping in browser/server/middleware when unchecked. Default: unchecked (session-only).
 
 ### 9.3 Duplicate email on signup ✅
 
@@ -536,17 +540,11 @@ Two cases:
 
 Unconfirmed duplicate (same email, never confirmed): Supabase resends the confirmation email and returns a user **with** identities — signup-success is correct.
 
-### 9.4 reCAPTCHA v3
+### 9.4 reCAPTCHA v3 ✅
 
-reCAPTCHA v3 is invisible and score-based. Integration:
-
-1. Load the reCAPTCHA script in `src/app/[locale]/layout.tsx` via `<Script>` (strategy `lazyOnload`).
-2. On login and signup form submit, call `grecaptcha.execute(siteKey, { action: 'login' | 'signup' })` to get a token.
-3. Pass the token to a server-side API route (`/api/auth/verify-captcha`) which POSTs to `https://www.google.com/recaptcha/api/siteverify` with `RECAPTCHA_SECRET_KEY`.
-4. If score < 0.5, return 400 and show a generic error. Otherwise proceed with Supabase auth.
-5. Env: `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` (public), `RECAPTCHA_SECRET_KEY` (server-only).
-
-Keep the verification route thin — just the captcha check. Supabase auth call stays in the client component.
+- Script loaded in `src/app/[locale]/auth/layout.tsx`; `executeRecaptcha` in `src/lib/recaptcha.ts`.
+- Login + signup verify via `POST /api/auth/verify-captcha` before Supabase auth (score threshold 0.5).
+- Env: `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY`.
 
 ### 9.5 Terms checkbox on signup ✅
 
@@ -630,17 +628,9 @@ RLS: INSERT for authenticated users; SELECT restricted to admin via service role
 
 ## Phase 11 — Homepage Hero & Calendar View
 
-### 11.1 Homepage create event hero
+### 11.1 Homepage create event hero ✅
 
-Add a section at the top of `src/app/[locale]/page.tsx` (above the filters and event list), visible to all users:
-
-- **Heading**: "СЪБИТИЯ В РУСЕ" (or translated equivalent from i18n).
-- **Subtitle**: "Всички културни и некултурни събития на едно място" (translated).
-- **CTA button**: "Създай събитие +" — `variant="default"` (primary), large size.
-  - Authenticated: links to `/[locale]/create-event`.
-  - Guest: links to `/[locale]/auth/login?next=/[locale]/create-event`.
-- Server Component — no client-side JS needed for the section itself.
-- Keep it compact; the events list should start without excessive scrolling on mobile.
+Compact hero on `src/app/[locale]/page.tsx`: translated `HomePage.pageTitle` H1 + "Създай събитие" CTA (`Link` to `/create-event`; middleware redirects guests to login with `next`). Server Component — no extra client JS.
 
 ### 11.2 Calendar month view ✅
 
@@ -772,32 +762,25 @@ When a new event with a followed tag is published (future automation, manual for
 
 ## Phase 14 — Advertisement & Support Pages
 
-### 14.1 Sponsorship/advertisement page
+### 14.1 Sponsorship/advertisement page — mostly ✅
 
-Route: `src/app/[locale]/advertise/page.tsx` — static Server Component.
+Route: `src/app/[locale]/advertise/page.tsx` — static Server Component with `generateMetadata`, `Advertise` i18n namespace (all 4 locales), intro + 4 option cards + contact section with obfuscated email.
 
-Sections:
+Wired in: desktop footer dropdown, mobile "More" sheet, `sitemap.ts`.
 
-1. **Hero**: "Рекламирай в All4Ruse" — headline + 1-sentence value prop.
-2. **Аудитория**: audience size, demographics, growth (keep honest and current; update numbers manually).
-3. **Защо да рекламирате**: 3–4 benefit cards (reach, targeted audience, affordable, local).
-4. **Пакети**: 2–3 sponsorship tier cards (e.g. "Събитие" — single event highlight; "Месечен" — month banner; "Партньор" — extended co-branding). Price ranges or "Contact us" CTA.
-5. **Свържете се**: contact email (obfuscated) + social links.
-
-Add to: footer navigation, "More" mobile sheet, and `Why All4Ruse` page as a cross-link.
-Add `generateMetadata` with SEO title/description.
+**Remaining:** cross-link from `why-all4ruse/page.tsx`.
 
 ### 14.2 "Подкрепи ни" (Revolut support)
 
 Revolut link: `https://revolut.me/silvenamiteva`.
 
-Placement:
+**Not implemented yet.** Planned placement:
 
-- Desktop footer: small "☕ Подкрепи ни" text link, rightmost position.
+- Desktop footer: small "☕ Подкрепи ни" text link, rightmost position (before social icons).
 - Mobile "More" sheet: listed item with a coffee emoji icon.
 - (Optional) Profile page dropdown: subtle link in the "About" section.
 
-Open link in new tab. Do not use a modal or any special overlay — a simple `<a href="..." target="_blank" rel="noopener">` is sufficient.
+Open link in new tab. Simple `<a href="..." target="_blank" rel="noopener">` — no modal.
 
 ---
 

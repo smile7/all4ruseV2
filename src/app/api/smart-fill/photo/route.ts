@@ -15,6 +15,7 @@ const EVENTS_BUCKET = "event-images";
 const SMART_FILL_PREFIX = "smart-fill";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_TEXT_LENGTH = 3000;
 
 export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
@@ -55,6 +56,12 @@ export async function POST(request: Request) {
 
   const imageBytes = new Uint8Array(await file.arrayBuffer());
 
+  const rawText = formData.get("text");
+  const additionalText =
+    typeof rawText === "string" && rawText.trim()
+      ? rawText.trim().slice(0, MAX_TEXT_LENGTH)
+      : undefined;
+
   try {
     await consumeSmartFillImport(user.id);
   } catch (err) {
@@ -85,6 +92,7 @@ export async function POST(request: Request) {
     const draft: EventDraft = await extractDraftFromImageBytes(
       extractionBytes,
       extractionMime,
+      additionalText,
     );
     draft.image = storagePath;
     return NextResponse.json({ draft });

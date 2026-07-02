@@ -9,6 +9,7 @@ import {
   Cookie,
   History,
   Info,
+  Megaphone,
   Scale,
   ScrollText,
   ShieldCheck,
@@ -80,6 +81,15 @@ export function Footer() {
               >
                 <Info className="text-muted-foreground size-4 shrink-0" />
                 {t("menuWhyAll4Ruse")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                href="/advertise"
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+              >
+                <Megaphone className="text-muted-foreground size-4 shrink-0" />
+                {t("menuAdvertise")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
