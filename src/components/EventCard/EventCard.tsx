@@ -9,6 +9,7 @@ import { CopyPlus, Pencil, User } from "lucide-react";
 import { EventTag } from "~/components/EventTag";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { Link, useRouter } from "~/i18n/navigation";
+import { HIDDEN_TAG_KEYS, normalizeEventTagKey } from "~/lib/event-tag-styles";
 import {
   formatDateBadge,
   formatEventTitle,
@@ -215,14 +216,17 @@ export function EventCard({
 
           {(event.tags?.length ?? 0) > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {event.tags!.slice(0, 3).map((tag) => (
-                <EventTag
-                  key={tag.id}
-                  title={tag.title}
-                  label={localizedEventTagTitle(tag.title, eventTagLabels)}
-                  size="sm"
-                />
-              ))}
+              {event.tags!
+                .filter((tag) => !HIDDEN_TAG_KEYS.has(normalizeEventTagKey(tag.title)))
+                .slice(0, 3)
+                .map((tag) => (
+                  <EventTag
+                    key={tag.id}
+                    title={tag.title}
+                    label={localizedEventTagTitle(tag.title, eventTagLabels)}
+                    size="sm"
+                  />
+                ))}
             </div>
           )}
         </div>

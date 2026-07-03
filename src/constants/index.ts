@@ -7,6 +7,7 @@ export const FALLBACK_IMAGE = "/no_image_available.jpg";
 export const DEFAULT_AVATAR = "/cat.png";
 export const DEBOUNCE_MS = 400;
 export const RELATED_EVENTS_COUNT = 9;
+export const RELATED_EVENTS_MIN_COUNT = 5;
 export const EMPTY_DISPLAY = "—";
 
 export const FACEBOOK_URL =

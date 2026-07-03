@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { User } from "@supabase/supabase-js";
@@ -40,8 +41,10 @@ export function HeaderAuthButton({ user, username }: Props) {
   const tSaved = useTranslations("SavedEvents");
   const tProfile = useTranslations("Profile");
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
   async function handleLogout() {
+    setOpen(false);
     const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
     router.refresh();
@@ -59,7 +62,7 @@ export function HeaderAuthButton({ user, username }: Props) {
   const avatarUrl = user.user_metadata?.avatar_url as string | undefined;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -75,7 +78,11 @@ export function HeaderAuthButton({ user, username }: Props) {
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-auto max-w-100 px-4 py-2">
+      <DropdownMenuContent
+        align="end"
+        className="w-auto max-w-100 px-4 py-2"
+        onPointerDownCapture={() => setOpen(false)}
+      >
         {username && (
           <>
             <DropdownMenuItem asChild>

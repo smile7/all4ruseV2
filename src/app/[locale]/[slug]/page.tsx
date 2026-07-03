@@ -12,7 +12,6 @@ import {
   Users,
 } from "lucide-react";
 
-import { EventCard } from "~/components/EventCard";
 import { EventTag } from "~/components/EventTag";
 import {
   EventActionButtons,
@@ -24,6 +23,7 @@ import {
   EventYoutubeEmbed,
   Typography,
 } from "~/components/layout";
+import { RelatedEventsRow } from "~/components/layout/RelatedEventsRow";
 import { Card, CardContent } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { type Locale, LOCALES } from "~/constants";
@@ -168,12 +168,15 @@ export default async function EventDetailPage({ params }: Props) {
       : null;
 
   const isEventCreator = Boolean(user && event.createdBy === user.id);
+  const isAdmin = Boolean(user && adminUserId && user.id === adminUserId);
 
   // Show claim button when the event was imported by the admin (no real owner yet)
   // and the logged-in user is not the admin themselves.
+  const isAdminEvent = Boolean(adminUserId && event.createdBy === adminUserId);
+
   const showClaimButton =
     Boolean(user) &&
-    event.createdBy === adminUserId &&
+    isAdminEvent &&
     user?.id !== adminUserId;
 
   const existingClaim =
@@ -494,6 +497,7 @@ export default async function EventDetailPage({ params }: Props) {
                   gcalUrl={gcalUrl}
                   fbShareUrl={fbShareUrl}
                   isEventCreator={isEventCreator}
+                  isAdmin={isAdmin}
                   hostProfileUsername={hostProfile?.username}
                   showClaimButton={showClaimButton}
                   initialClaimStatus={initialClaimStatus}
@@ -501,15 +505,28 @@ export default async function EventDetailPage({ params }: Props) {
               </div>
 
               {/* Description */}
-              {event.description && (
+              {(event.description || isAdminEvent) && (
                 <Card>
                   <CardContent className="overflow-x-clip py-4">
-                    <div
-                      className={EVENT_DESCRIPTION_BODY_CLASSES}
-                      dangerouslySetInnerHTML={{
-                        __html: sanitizeEventDescription(event.description),
-                      }}
-                    />
+                    {event.description && (
+                      <div
+                        className={EVENT_DESCRIPTION_BODY_CLASSES}
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeEventDescription(event.description),
+                        }}
+                      />
+                    )}
+                    {isAdminEvent && (
+                      <p
+                        className={
+                          event.description
+                            ? "text-muted-foreground mt-4 border-t py-4 text-xs"
+                            : "text-muted-foreground text-sm"
+                        }
+                      >
+                        {t("adminEventSourceDisclaimer")}
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -553,6 +570,7 @@ export default async function EventDetailPage({ params }: Props) {
                 gcalUrl={gcalUrl}
                 fbShareUrl={fbShareUrl}
                 isEventCreator={isEventCreator}
+                isAdmin={isAdmin}
                 hostProfileUsername={hostProfile?.username}
                 showClaimButton={showClaimButton}
                 initialClaimStatus={initialClaimStatus}
@@ -570,25 +588,10 @@ export default async function EventDetailPage({ params }: Props) {
           </div>
 
           {/* ── Related events — horizontal scroll row ──────────────────── */}
-          {relatedEvents.length > 0 && (
-            <div className="mt-8 flex flex-col gap-4">
-              <h3 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                {t("moreEvents")}
-              </h3>
-              <div className="-mx-4 sm:-mx-6 lg:mx-0">
-                <div className="flex gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:px-6 lg:px-0 [&::-webkit-scrollbar]:hidden">
-                  {relatedEvents.map((relatedEvent) => (
-                    <div
-                      key={relatedEvent.id}
-                      className="w-64 shrink-0 sm:w-72"
-                    >
-                      <EventCard event={relatedEvent} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+          <RelatedEventsRow
+            events={relatedEvents}
+            heading={t("moreEvents")}
+          />
         </div>
       </div>
     </>

@@ -22,6 +22,7 @@ type Props = {
   gcalUrl: string;
   fbShareUrl: string;
   isEventCreator: boolean;
+  isAdmin?: boolean;
   hostProfileUsername: string | null | undefined;
   showClaimButton: boolean;
   initialClaimStatus: ClaimStatus | null;
@@ -35,6 +36,7 @@ export async function EventActionButtons({
   gcalUrl,
   fbShareUrl,
   isEventCreator,
+  isAdmin = false,
   hostProfileUsername,
   showClaimButton,
   initialClaimStatus,
@@ -43,7 +45,7 @@ export async function EventActionButtons({
 
   return (
     <>
-      {isEventCreator && (
+      {(isEventCreator || isAdmin) && (
         <Button
           variant="outline"
           asChild

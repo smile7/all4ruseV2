@@ -17,8 +17,8 @@ import {
 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
-import { Separator } from "~/components/ui/separator";
 import { Textarea } from "~/components/ui/textarea";
 import { compressImageForExtraction } from "~/lib/smart-fill/compress-image-client";
 import { cn } from "~/lib/utils";
@@ -270,18 +270,17 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
     <>
       {isLoading && <SmartFillImportOverlay onCancel={cancelImport} />}
 
-      <div className="border-border bg-muted/20 rounded-lg border">
-        {/* Header — always visible, no toggle */}
-        <div className="flex items-center gap-2 px-4 py-3">
-          <Sparkles className="text-primary size-4 shrink-0" />
-          <span className="text-sm font-medium">{t("toggleLabel")}</span>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Sparkles className="text-primary size-5" />
+            {t("toggleLabel")}
+          </CardTitle>
+        </CardHeader>
 
-        <div className="px-4 pb-4">
-          <Separator className="mb-4" />
-
+        <CardContent variant="section" className="space-y-6">
           {/* Tabs */}
-          <div className="mb-4 flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-4">
             <TabButton
               active={tab === "facebook"}
               onClick={() => handleTabChange("facebook")}
@@ -377,7 +376,7 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isLoading}
-                  className="border-input bg-muted/30 hover:bg-muted/50 flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed py-6 text-sm transition-colors"
+                  className="border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed py-6 text-sm transition-colors"
                 >
                   <FileImage className="text-muted-foreground size-5" />
                   <span className="text-muted-foreground">
@@ -414,7 +413,17 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
             />
           )}
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          {tab === "facebook" && (
+            <p className="text-sm">
+              {t("fbPublicRequiredHint")}
+            </p>
+          )}
+
+          <p className="text-sm">
+            {t("reviewRequiredHint")}
+          </p>
+
+          <div className="flex flex-wrap items-center gap-2">
             {tab === "facebook" && (
               <Button
                 type="button"
@@ -473,8 +482,8 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
               <span>{t("appliedImageOnly")}</span>
             </p>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </>
   );
 }

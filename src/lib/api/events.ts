@@ -5,6 +5,7 @@ import {
   EVENTS_PAGE_SIZE,
   PAST_EVENTS_WINDOW_DAYS,
   RELATED_EVENTS_COUNT,
+  RELATED_EVENTS_MIN_COUNT,
 } from "~/constants";
 import { buildEventSlugFromTitle } from "~/lib/event-slug";
 import {
@@ -344,7 +345,44 @@ async function getRelatedEvents(
     return true;
   });
 
-  return deduped.slice(0, limit);
+  const primary = deduped.slice(0, limit);
+
+  // If we ended up with fewer than the minimum, pad with upcoming events that
+  // aren't already in the primary list and aren't the current event.
+  if (primary.length >= RELATED_EVENTS_MIN_COUNT) return primary;
+
+  const excludeIds = new Set([eventId, ...primary.map((e) => e.id)]);
+
+  const fallbackQ = baseQuery(client)
+    .gte("endDate", today)
+    .order("startDate", { ascending: true })
+    .order("startTime", { ascending: true })
+    .limit(RELATED_EVENTS_MIN_COUNT * 4); // fetch extra to survive dedup + filters
+
+  const { data: fallbackData, error: fallbackError } =
+    await executeQuery(fallbackQ);
+  if (fallbackError) throw fallbackError;
+
+  const fallbackSeenTitles = new Set(
+    primary.map((e) => e.title.trim().toLocaleLowerCase()),
+  );
+  fallbackSeenTitles.add(normalizedTitle);
+
+  const fallbackEvents = (fallbackData ?? [])
+    .map(mapEvent)
+    .filter((e) => isVisibleOnHomeActiveList(e, today, now))
+    .filter((e) => !excludeIds.has(e.id))
+    .filter((e) => {
+      const key = e.title.trim().toLocaleLowerCase();
+      if (fallbackSeenTitles.has(key)) return false;
+      fallbackSeenTitles.add(key);
+      return true;
+    });
+
+  return [
+    ...primary,
+    ...fallbackEvents.slice(0, RELATED_EVENTS_MIN_COUNT - primary.length),
+  ];
 }
 
 // Returns all events created by a specific user (both active and inactive).

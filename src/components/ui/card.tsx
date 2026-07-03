@@ -17,9 +17,9 @@ function Card({ className, variant = "default", ...props }: CardProps) {
       data-variant={variant}
       className={cn(
         "bg-card text-card-foreground flex flex-col rounded-xl",
-        variant === "default" && "gap-6 border py-8 shadow-sm",
+        variant === "default" && "gap-6 border py-4 shadow-sm",
         variant === "section" &&
-          "gap-6 overflow-hidden border-none py-8 shadow-md",
+          "gap-6 overflow-hidden border-none py-4 shadow-md",
         className,
       )}
       {...props}

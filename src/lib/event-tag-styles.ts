@@ -4,77 +4,67 @@ type TagStyleSet = {
   hash: string;
 };
 
+const IDLE = "border-primary/20 bg-primary/10 text-foreground";
+
 const FALLBACK_PALETTE: TagStyleSet[] = [
   {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-rose-500 bg-rose-500 text-white dark:border-rose-600 dark:bg-rose-600",
+    idle: IDLE,
+    selected: "border-rose-500 bg-rose-500 text-white dark:border-rose-600 dark:bg-rose-600",
     hash: "text-rose-500 dark:text-rose-400",
   },
   {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-amber-500 bg-amber-500 text-white dark:border-amber-600 dark:bg-amber-600",
+    idle: IDLE,
+    selected: "border-amber-500 bg-amber-500 text-white dark:border-amber-600 dark:bg-amber-600",
     hash: "text-amber-500 dark:text-amber-400",
   },
   {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-emerald-500 bg-emerald-500 text-white dark:border-emerald-600 dark:bg-emerald-600",
+    idle: IDLE,
+    selected: "border-emerald-500 bg-emerald-500 text-white dark:border-emerald-600 dark:bg-emerald-600",
     hash: "text-emerald-500 dark:text-emerald-400",
   },
   {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-sky-500 bg-sky-500 text-white dark:border-sky-600 dark:bg-sky-600",
+    idle: IDLE,
+    selected: "border-sky-500 bg-sky-500 text-white dark:border-sky-600 dark:bg-sky-600",
     hash: "text-sky-500 dark:text-sky-400",
   },
   {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-violet-500 bg-violet-500 text-white dark:border-violet-600 dark:bg-violet-600",
+    idle: IDLE,
+    selected: "border-violet-500 bg-violet-500 text-white dark:border-violet-600 dark:bg-violet-600",
     hash: "text-violet-500 dark:text-violet-400",
   },
   {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-fuchsia-500 bg-fuchsia-500 text-white dark:border-fuchsia-600 dark:bg-fuchsia-600",
+    idle: IDLE,
+    selected: "border-fuchsia-500 bg-fuchsia-500 text-white dark:border-fuchsia-600 dark:bg-fuchsia-600",
     hash: "text-fuchsia-500 dark:text-fuchsia-400",
   },
   {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-orange-500 bg-orange-500 text-white dark:border-orange-600 dark:bg-orange-600",
+    idle: IDLE,
+    selected: "border-orange-500 bg-orange-500 text-white dark:border-orange-600 dark:bg-orange-600",
     hash: "text-orange-500 dark:text-orange-400",
   },
   {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-teal-500 bg-teal-500 text-white dark:border-teal-600 dark:bg-teal-600",
+    idle: IDLE,
+    selected: "border-teal-500 bg-teal-500 text-white dark:border-teal-600 dark:bg-teal-600",
     hash: "text-teal-500 dark:text-teal-400",
   },
   {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-indigo-500 bg-indigo-500 text-white dark:border-indigo-600 dark:bg-indigo-600",
+    idle: IDLE,
+    selected: "border-indigo-500 bg-indigo-500 text-white dark:border-indigo-600 dark:bg-indigo-600",
     hash: "text-indigo-500 dark:text-indigo-400",
   },
   {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-lime-600 bg-lime-600 text-white dark:border-lime-700 dark:bg-lime-700",
+    idle: IDLE,
+    selected: "border-lime-600 bg-lime-600 text-white dark:border-lime-700 dark:bg-lime-700",
     hash: "text-lime-600 dark:text-lime-500",
   },
   {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-cyan-600 bg-cyan-600 text-white dark:border-cyan-700 dark:bg-cyan-700",
+    idle: IDLE,
+    selected: "border-cyan-600 bg-cyan-600 text-white dark:border-cyan-700 dark:bg-cyan-700",
     hash: "text-cyan-600 dark:text-cyan-500",
   },
   {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-pink-500 bg-pink-500 text-white dark:border-pink-600 dark:bg-pink-600",
+    idle: IDLE,
+    selected: "border-pink-500 bg-pink-500 text-white dark:border-pink-600 dark:bg-pink-600",
     hash: "text-pink-500 dark:text-pink-400",
   },
 ];
@@ -99,16 +89,14 @@ const TAG_STYLES: Record<string, TagStyleSet> = {
   COMPETITION: FALLBACK_PALETTE[6]!,
   QUIZ: FALLBACK_PALETTE[10]!,
   CINEMA: {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-slate-600 bg-slate-600 text-white dark:border-slate-700 dark:bg-slate-700",
+    idle: IDLE,
+    selected: "border-slate-600 bg-slate-600 text-white dark:border-slate-700 dark:bg-slate-700",
     hash: "text-slate-500 dark:text-slate-400",
   },
   FEST: FALLBACK_PALETTE[1]!,
   WORKSHOP: {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-stone-600 bg-stone-600 text-white dark:border-stone-700 dark:bg-stone-700",
+    idle: IDLE,
+    selected: "border-stone-600 bg-stone-600 text-white dark:border-stone-700 dark:bg-stone-700",
     hash: "text-stone-500 dark:text-stone-400",
   },
   EXHIBITION: FALLBACK_PALETTE[5]!,
@@ -123,21 +111,32 @@ const TAG_STYLES: Record<string, TagStyleSet> = {
   MARCHMUSICALDAYS: FALLBACK_PALETTE[8]!,
   OPERA: FALLBACK_PALETTE[4]!,
   BOOKS: {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-amber-700 bg-amber-700 text-white dark:border-amber-800 dark:bg-amber-800",
+    idle: IDLE,
+    selected: "border-amber-700 bg-amber-700 text-white dark:border-amber-800 dark:bg-amber-800",
     hash: "text-amber-600 dark:text-amber-500",
   },
   PUPPETTHEATRE: FALLBACK_PALETTE[6]!,
   ROLEPLAYINGGAMES: FALLBACK_PALETTE[4]!,
   ANIME: FALLBACK_PALETTE[11]!,
   LITERATURE: {
-    idle: "border-transparent bg-secondary/60 text-secondary-foreground dark:bg-secondary/40",
-    selected:
-      "border-amber-600 bg-amber-600 text-white dark:border-amber-700 dark:bg-amber-700",
+    idle: IDLE,
+    selected: "border-amber-600 bg-amber-600 text-white dark:border-amber-700 dark:bg-amber-700",
     hash: "text-amber-600 dark:text-amber-500",
   },
 };
+
+/**
+ * Tags that exist in the database but should not appear anywhere in the UI.
+ * Add/remove keys here to control visibility without touching the DB.
+ */
+export const HIDDEN_TAG_KEYS = new Set([
+  "GASTRONOMY",
+  "FAIR",
+  "INFANTS",
+  "MARCHMUSICALDAYS",
+  "PUPPETTHEATRE",
+  "LITERATURE",
+]);
 
 function hashTagKey(key: string): number {
   let hash = 0;

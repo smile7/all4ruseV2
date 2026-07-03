@@ -17,6 +17,7 @@ import { useTags } from "~/hooks/query/tags";
 import { useDebounce } from "~/hooks/useDebounce";
 import { useFilters } from "~/hooks/useFilters";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
+import { HIDDEN_TAG_KEYS, normalizeEventTagKey } from "~/lib/event-tag-styles";
 import { cn } from "~/lib/utils";
 
 // ─── Date range helpers ────────────────────────────────────────────────────────
@@ -324,23 +325,25 @@ export function FilterContent() {
         </div>
       ) : tags.length > 0 ? (
         <div className="mt-4 flex flex-wrap gap-2">
-          {tags.map((tag) => {
-            const isActive = filters.tagIds.includes(tag.id);
-            const raw = tag.title?.trim() ?? "";
-            const resolved = localizedEventTagTitle(tag.title, eventTagLabels);
-            const label = resolved !== raw ? resolved : raw.replace(/_/g, " ");
-            return (
-              <EventTag
-                key={tag.id}
-                title={tag.title ?? ""}
-                label={label}
-                size="md"
-                interactive
-                selected={isActive}
-                onClick={() => toggleTag(tag.id)}
-              />
-            );
-          })}
+          {tags
+            .filter((tag) => !HIDDEN_TAG_KEYS.has(normalizeEventTagKey(tag.title)))
+            .map((tag) => {
+              const isActive = filters.tagIds.includes(tag.id);
+              const raw = tag.title?.trim() ?? "";
+              const resolved = localizedEventTagTitle(tag.title, eventTagLabels);
+              const label = resolved !== raw ? resolved : raw.replace(/_/g, " ");
+              return (
+                <EventTag
+                  key={tag.id}
+                  title={tag.title ?? ""}
+                  label={label}
+                  size="md"
+                  interactive
+                  selected={isActive}
+                  onClick={() => toggleTag(tag.id)}
+                />
+              );
+            })}
         </div>
       ) : null}
     </div>
