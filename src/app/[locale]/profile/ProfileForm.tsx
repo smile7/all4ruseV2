@@ -751,6 +751,7 @@ export function ProfileForm({
                         </p>
                       ) : null}
                       {usernameAvailability === "available" &&
+                      form.formState.dirtyFields.username &&
                       debouncedUsername.trim().length >= 3 ? (
                         <p className="text-xs text-green-600 dark:text-green-500">
                           {t("usernameAvailable")}

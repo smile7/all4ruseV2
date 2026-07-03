@@ -21,7 +21,6 @@ export type WeekData = {
 };
 
 const MS_PER_DAY = 86_400_000;
-const MAX_TRACKS = 10;
 
 function wholeDaysBetween(later: Date, earlier: Date): number {
   return Math.round((later.getTime() - earlier.getTime()) / MS_PER_DAY);
@@ -95,11 +94,9 @@ export function computeWeekSlots(week: Date[], events: Event[]): WeekData {
     return bDur - aDur;
   });
 
-  // trackCols[t] = set of column indices (0–6) already claimed in track t
-  const trackCols: Set<number>[] = Array.from(
-    { length: MAX_TRACKS },
-    () => new Set(),
-  );
+  // trackCols[t] = set of column indices (0–6) already claimed in track t.
+  // Grows dynamically so every event gets a track regardless of how many there are.
+  const trackCols: Set<number>[] = [];
   const slots: EventSlot[] = [];
 
   for (const event of relevant) {
@@ -115,14 +112,14 @@ export function computeWeekSlots(week: Date[], events: Event[]): WeekData {
     if (startCol > endCol) continue; // guard against bad data
 
     let track = -1;
-    outer: for (let t = 0; t < MAX_TRACKS; t++) {
+    outer: for (let t = 0; ; t++) {
+      if (t >= trackCols.length) trackCols.push(new Set());
       for (let c = startCol; c <= endCol; c++) {
         if (trackCols[t]!.has(c)) continue outer;
       }
       track = t;
       break;
     }
-    if (track === -1) continue; // all tracks full – skip
 
     for (let c = startCol; c <= endCol; c++) {
       trackCols[track]!.add(c);
