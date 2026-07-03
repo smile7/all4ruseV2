@@ -25,9 +25,9 @@ type InteractiveProps = BaseProps & {
 export type EventTagProps = DisplayProps | InteractiveProps;
 
 const sizeClasses: Record<EventTagSize, string> = {
-  xs: "rounded-full px-2 py-0.5 text-[11px]",
-  sm: "rounded-full px-2.5 py-1 text-xs",
-  md: "rounded-full px-3 py-1.5 text-sm",
+  xs: "rounded-full px-2 py-0.5 text-[10px]",
+  sm: "rounded-full px-2 py-0.5 text-[11px]",
+  md: "rounded-full px-2.5 py-1 text-xs",
 };
 
 export function EventTag({
@@ -44,18 +44,16 @@ export function EventTag({
   const appearance = interactive && selected ? styles.selected : styles.idle;
 
   const sharedClassName = cn(
-    "inline-flex max-w-full shrink-0 items-center gap-1 border font-medium transition-colors duration-200",
+    "inline-flex max-w-full shrink-0 items-center gap-0.5 border font-medium transition-colors duration-200",
     sizeClasses[size],
     appearance,
-    interactive &&
-      !selected &&
-      "cursor-pointer hover:bg-secondary/80 hover:text-foreground",
+    interactive && !selected && "cursor-pointer hover:brightness-95",
     className,
   );
 
   const hashClassName = cn(
-    "font-bold",
-    interactive && selected ? "text-white/80" : styles.hash,
+    "select-none",
+    interactive && selected ? "text-white/70" : styles.hash,
   );
 
   const content = (
