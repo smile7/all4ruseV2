@@ -9,7 +9,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useCalendarMonthEvents } from "~/hooks/query/events";
 import { Link } from "~/i18n/navigation";
-import { formatEventTitle, getEventImageUrl } from "~/lib/event-utils";
+import {
+  formatEventTitleWithDateRange,
+  getEventImageUrl,
+} from "~/lib/event-utils";
 import { cn } from "~/lib/utils";
 import type { Event } from "~/types";
 
@@ -34,6 +37,8 @@ const MOBILE_TRACK_HEIGHT_PX = 105;
 const BAR_INSET_PX = 3;
 /** Minimum cell height when a week has no events */
 const BASE_CELL_HEIGHT_PX = 90;
+/** Approximate height of the 2-row sticky header (weekday labels + date row) */
+const STICKY_HEADER_PX = 68;
 
 // ─── Locale helpers ────────────────────────────────────────────────────────────
 
@@ -70,6 +75,21 @@ function formatMonthYear(year: number, month: number, locale: string): string {
 /** Format a Date as YYYY-MM-DD for string comparison with event date fields. */
 function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Scrolls the calendar container so that `row` sits flush against the bottom
+ * edge of the sticky header — i.e. the active week becomes the first visible row.
+ */
+function scrollTodayIntoView(
+  container: HTMLDivElement | null,
+  row: HTMLDivElement | null | undefined,
+) {
+  if (!container || !row) return;
+  const rowTop = row.getBoundingClientRect().top;
+  const containerTop = container.getBoundingClientRect().top;
+  const target = container.scrollTop + (rowTop - containerTop) - STICKY_HEADER_PX;
+  container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
 }
 
 // ─── WeekRow ───────────────────────────────────────────────────────────────────
@@ -222,7 +242,11 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
         </div>
         <div className="flex min-w-0 flex-1 items-start overflow-hidden px-1 pt-1 md:flex-col md:justify-center md:px-2 md:py-1">
           <span className="line-clamp-3 w-full text-xs leading-tight font-semibold md:line-clamp-2 md:text-sm">
-            {formatEventTitle(event.title)}
+            {formatEventTitleWithDateRange(
+              event.title,
+              event.startDate,
+              event.endDate,
+            )}
           </span>
         </div>
       </>
@@ -240,7 +264,11 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
         </div>
         <div className="flex min-w-0 flex-col justify-center gap-0.5 px-2 py-1">
           <span className="line-clamp-2 text-xs leading-tight font-semibold md:text-sm">
-            {formatEventTitle(event.title)}
+            {formatEventTitleWithDateRange(
+              event.title,
+              event.startDate,
+              event.endDate,
+            )}
           </span>
         </div>
       </>
@@ -249,7 +277,11 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
     /* Continuation bar — no image, title repeated so multi-week events stay readable */
     <div className="flex min-w-0 items-center px-2 py-1">
       <span className="truncate text-xs leading-tight font-semibold md:text-sm">
-        {formatEventTitle(event.title)}
+        {formatEventTitleWithDateRange(
+          event.title,
+          event.startDate,
+          event.endDate,
+        )}
       </span>
     </div>
   );
@@ -298,6 +330,11 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
   const hasScrolledRef = useRef(false);
   // Set to true by goToToday so the effect below knows to scroll after month state settles.
   const pendingScrollToTodayRef = useRef(false);
+  // Tracks whether calendarHeight has been defined at least once since mount.
+  // When data is cached, isReadyToScroll is true immediately, but calendarHeight
+  // is still undefined while the parent measures the viewport. We must wait for
+  // the measured height before scrolling so the container is in its final layout.
+  const calendarHeightSettledRef = useRef(calendarHeight !== undefined);
   const [visibleWeekIndex, setVisibleWeekIndex] = useState(0);
 
   // Fetches all events (including past) for the displayed month.
@@ -324,17 +361,33 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
   // month where the query is disabled) ensures cell heights are settled before
   // we scroll, fixing the "first time doesn't scroll" bug.
   const isReadyToScroll = !isCurrentOrPast || monthEventsFetched;
+
+  // Mark calendarHeight as settled the moment it becomes defined.
+  // React runs effects in declaration order, so this effect always updates the
+  // ref before the scroll effect below reads it in the same flush.
   useEffect(() => {
-    if (!isReadyToScroll || hasScrolledRef.current) return;
+    if (calendarHeight !== undefined) {
+      calendarHeightSettledRef.current = true;
+    }
+  }, [calendarHeight]);
+
+  // calendarHeight is in deps so this re-runs when the parent finishes measuring.
+  // The calendarHeightSettledRef guard prevents a premature scroll when data is
+  // already cached (isReadyToScroll=true on mount) but the container is still
+  // in its temporary max-h layout — fixes the "only scrolls first time" bug.
+  useEffect(() => {
+    if (!isReadyToScroll) return;
+    if (!calendarHeightSettledRef.current) return;
+    if (hasScrolledRef.current) return;
     hasScrolledRef.current = true;
     const frame = requestAnimationFrame(() => {
-      weekRowRefs.current[todayWeekIndex]?.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-      });
+      scrollTodayIntoView(
+        scrollContainerRef.current,
+        weekRowRefs.current[todayWeekIndex],
+      );
     });
     return () => cancelAnimationFrame(frame);
-  }, [isReadyToScroll, todayWeekIndex]);
+  }, [isReadyToScroll, todayWeekIndex, calendarHeight]);
 
   // After goToToday() navigates back to the current month, scroll to today's week.
   // This runs whenever year/month settle so the week row refs are up to date.
@@ -343,10 +396,10 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
     if (!isReadyToScroll) return;
     pendingScrollToTodayRef.current = false;
     const frame = requestAnimationFrame(() => {
-      weekRowRefs.current[todayWeekIndex]?.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-      });
+      scrollTodayIntoView(
+        scrollContainerRef.current,
+        weekRowRefs.current[todayWeekIndex],
+      );
     });
     return () => cancelAnimationFrame(frame);
   }, [year, month, isReadyToScroll, todayWeekIndex]);
@@ -356,12 +409,9 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Approximate height of the 2-row sticky header (day names + dates).
-    const STICKY_HEIGHT = 68;
-
     function updateVisibleWeek() {
       const containerRect = container!.getBoundingClientRect();
-      const threshold = containerRect.top + STICKY_HEIGHT;
+      const threshold = containerRect.top + STICKY_HEADER_PX;
       let idx = 0;
       for (let i = 0; i < weekRowRefs.current.length; i++) {
         const row = weekRowRefs.current[i];

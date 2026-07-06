@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 import { HeaderAuthButton } from "./HeaderAuthButton";
 import { HeaderDesktopFiltersPanel } from "./HeaderDesktopFiltersPanel";
+import { HeaderInnerContainer } from "./HeaderInnerContainer";
 import { HeaderSearchButton } from "./HeaderSearchButton";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { Logo } from "./Logo";
@@ -41,7 +42,7 @@ export async function Header() {
       </div>
 
       {/* ── Desktop (md+) — 3-column grid: left | center | right ──────── */}
-      <div className="mx-auto hidden h-16 max-w-7xl grid-cols-3 items-center px-6 md:grid lg:px-8">
+      <HeaderInnerContainer>
         {/* Left — logo */}
         <div className="flex items-center justify-start">
           <Logo />
@@ -59,7 +60,7 @@ export async function Header() {
           <div className="bg-border mx-1 h-5 w-px" aria-hidden />
           <HeaderAuthButton user={user} username={username} />
         </div>
-      </div>
+      </HeaderInnerContainer>
     </header>
   );
 }

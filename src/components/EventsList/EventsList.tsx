@@ -140,6 +140,14 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
     initialData,
   });
 
+  // When the user applies any filter while in calendar view, switch to grid
+  // automatically — the calendar doesn't filter events visually.
+  useEffect(() => {
+    if (hasActiveFilters && view === "calendar") {
+      setView("grid");
+    }
+  }, [hasActiveFilters, view, setView]);
+
   // In calendar view: measure the calendar slot's viewport-top, fill the remaining
   // space down to the bottom chrome (mobile nav or desktop footer), then lock page
   // scroll so only the calendar grid scrolls internally.
@@ -151,6 +159,9 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
     }
 
     window.scrollTo({ top: 0 });
+
+    let frameId = -1;
+    let cancelled = false;
 
     function getBottomChromeHeight(): number {
       const isMobile = window.matchMedia("(max-width: 767px)").matches;
@@ -164,8 +175,18 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
       );
     }
 
-    function updateCalendarHeight() {
-      if (!calendarSlotRef.current) return;
+    function measure() {
+      if (cancelled || !calendarSlotRef.current) return;
+
+      // On mobile (especially iOS), momentum scrolling can prevent scrollTo from
+      // settling synchronously. Re-issue scroll and retry until the page is truly
+      // at the top so overflow:hidden doesn't freeze the title out of view.
+      if (window.scrollY !== 0) {
+        window.scrollTo({ top: 0 });
+        frameId = requestAnimationFrame(measure);
+        return;
+      }
+
       const slotTop = calendarSlotRef.current.getBoundingClientRect().top;
       const height = window.innerHeight - slotTop - getBottomChromeHeight();
       if (height > 100) {
@@ -174,13 +195,18 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
       }
     }
 
-    // Wait one frame so the calendar slot has rendered at its natural position.
-    const frame = requestAnimationFrame(updateCalendarHeight);
-    window.addEventListener("resize", updateCalendarHeight);
+    // Double-rAF: first frame lets the browser process the scrollTo; second
+    // frame measures with a fully-settled layout and scroll position.
+    frameId = requestAnimationFrame(() => {
+      frameId = requestAnimationFrame(measure);
+    });
+
+    window.addEventListener("resize", measure);
 
     return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("resize", updateCalendarHeight);
+      cancelled = true;
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("resize", measure);
       document.documentElement.style.overflow = "";
       setCalendarHeight(null);
     };

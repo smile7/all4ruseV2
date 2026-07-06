@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { useMessages, useTranslations } from "next-intl";
 
 import { addDays, format } from "date-fns";
@@ -163,17 +163,31 @@ export function FilterContent() {
   const [localHost, setLocalHost] = useState(filters.host);
   const [localPlace, setLocalPlace] = useState(filters.place);
 
-  // Sync local state when the URL changes externally (e.g. browser back).
-  // startTransition defers the update so it doesn't count as a synchronous
-  // setState-within-effect, avoiding the cascading-render warning.
+  // Tracks the last value *we* pushed to the URL, so the sync-back effects
+  // below can tell "URL changed because our own debounced write landed"
+  // (ignore, local state may have moved on already) apart from "URL changed
+  // externally" (e.g. browser back/forward — sync local state to match).
+  const pushedSearchRef = useRef(filters.search);
+  const pushedHostRef = useRef(filters.host);
+  const pushedPlaceRef = useRef(filters.place);
+
   useEffect(() => {
-    startTransition(() => setLocalSearch(filters.search));
+    if (filters.search !== pushedSearchRef.current) {
+      pushedSearchRef.current = filters.search;
+      startTransition(() => setLocalSearch(filters.search));
+    }
   }, [filters.search]);
   useEffect(() => {
-    startTransition(() => setLocalHost(filters.host));
+    if (filters.host !== pushedHostRef.current) {
+      pushedHostRef.current = filters.host;
+      startTransition(() => setLocalHost(filters.host));
+    }
   }, [filters.host]);
   useEffect(() => {
-    startTransition(() => setLocalPlace(filters.place));
+    if (filters.place !== pushedPlaceRef.current) {
+      pushedPlaceRef.current = filters.place;
+      startTransition(() => setLocalPlace(filters.place));
+    }
   }, [filters.place]);
 
   const debouncedSearch = useDebounce(localSearch, DEBOUNCE_MS);
@@ -181,19 +195,28 @@ export function FilterContent() {
   const debouncedPlace = useDebounce(localPlace, DEBOUNCE_MS);
 
   // Write to URL only when the debounced value actually differs from current URL.
-  // Guard prevents the effect from re-triggering after the URL update syncs back.
+  // Record what we're pushing *before* calling setFilters so the sync-back
+  // effect above recognizes the resulting URL change as our own echo.
    
   useEffect(() => {
-    if (debouncedSearch !== filters.search)
+    if (debouncedSearch !== filters.search) {
+      pushedSearchRef.current = debouncedSearch;
       setFilters({ search: debouncedSearch });
+    }
   }, [debouncedSearch]);
    
   useEffect(() => {
-    if (debouncedHost !== filters.host) setFilters({ host: debouncedHost });
+    if (debouncedHost !== filters.host) {
+      pushedHostRef.current = debouncedHost;
+      setFilters({ host: debouncedHost });
+    }
   }, [debouncedHost]);
    
   useEffect(() => {
-    if (debouncedPlace !== filters.place) setFilters({ place: debouncedPlace });
+    if (debouncedPlace !== filters.place) {
+      pushedPlaceRef.current = debouncedPlace;
+      setFilters({ place: debouncedPlace });
+    }
   }, [debouncedPlace]);
 
   const todayStr = todayIso();
@@ -213,6 +236,7 @@ export function FilterContent() {
             onChange={setLocalSearch}
             onClear={() => {
               setLocalSearch("");
+              pushedSearchRef.current = "";
               setFilters({ search: "" });
             }}
             icon={<Search className="size-4" />}
@@ -227,6 +251,7 @@ export function FilterContent() {
             onChange={setLocalHost}
             onClear={() => {
               setLocalHost("");
+              pushedHostRef.current = "";
               setFilters({ host: "" });
             }}
             icon={<Search className="size-4" />}
@@ -241,6 +266,7 @@ export function FilterContent() {
             onChange={setLocalPlace}
             onClear={() => {
               setLocalPlace("");
+              pushedPlaceRef.current = "";
               setFilters({ place: "" });
             }}
             icon={<Search className="size-4" />}
