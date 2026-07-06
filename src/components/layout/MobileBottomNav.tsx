@@ -56,6 +56,7 @@ function getAvatarFallback(user: User): string {
 
 export function MobileBottomNav() {
   const t = useTranslations("HomePage");
+  const tSaved = useTranslations("SavedEvents");
   const tProfile = useTranslations("Profile");
   const pathname = usePathname();
   const router = useRouter();
@@ -372,14 +373,17 @@ export function MobileBottomNav() {
                 <Separator className="my-3" />
 
                 {username && (
-                  <Link
-                    href={`/user/${username}`}
-                    className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    <ExternalLink className="text-muted-foreground size-4 shrink-0" />
-                    <span>{t("viewPublicProfile")}</span>
-                  </Link>
+                  <>
+                    <Link
+                      href={`/user/${username}`}
+                      className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      <ExternalLink className="text-muted-foreground size-4 shrink-0" />
+                      <span>{t("viewPublicProfile")}</span>
+                    </Link>
+                    <Separator className="my-3" />
+                  </>
                 )}
 
                 <Link
@@ -387,8 +391,17 @@ export function MobileBottomNav() {
                   className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
                   onClick={() => setProfileOpen(false)}
                 >
-                  <Plus className="size-4" />
-                  {t("createEvent")}
+                  <Plus className="text-muted-foreground size-4 shrink-0" />
+                  <span>{t("createEvent")}</span>
+                </Link>
+
+                <Link
+                  href="/my-events"
+                  onClick={() => setProfileOpen(false)}
+                  className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
+                >
+                  <CalendarDays className="text-muted-foreground size-4 shrink-0" />
+                  <span>{t("publishedEvents")}</span>
                 </Link>
 
                 <Separator className="my-3" />
@@ -403,12 +416,12 @@ export function MobileBottomNav() {
                 </Link>
 
                 <Link
-                  href="/my-events"
+                  href="/profile/saved-events"
                   onClick={() => setProfileOpen(false)}
                   className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
                 >
-                  <CalendarDays className="text-muted-foreground size-4 shrink-0" />
-                  <span>{t("publishedEvents")}</span>
+                  <Bookmark className="text-muted-foreground size-4 shrink-0" />
+                  <span>{tSaved("pageTitle")}</span>
                 </Link>
 
                 <Separator className="my-3" />

@@ -2,7 +2,7 @@
   "HomePage": {
     "createEvent": "Create an Event",
     "pageTitle": "Events in Ruse",
-    "pageDescription": "All cultural and non-cultural events in Ruse and the surrounding area",
+    "pageDescription": "Upcoming concerts, exhibitions, theatre, sports, workshops, and all public events in Ruse, Bulgaria — find your next experience in one place.",
     "createProfileMsg": "Create a profile to create your own event!",
     "filters": "Filters",
     "noEvents": "No events found.",
@@ -207,7 +207,7 @@
   "PastEvents": {
     "createEvent": "Create an Event",
     "pageTitle": "Past Events in Ruse",
-    "pageDescription": "All past cultural and non-cultural events in Ruse and the surrounding area"
+    "pageDescription": "Archive of past concerts, exhibitions, theatre performances, and public events in Ruse, Bulgaria — see what happened recently."
   },
   "SingleEvent": {
     "date": "Date",
@@ -268,7 +268,7 @@
   "CurrentEvents": {
     "createEvent": "Create an Event",
     "pageTitle": "Current Events in Ruse",
-    "pageDescription": "All current cultural and non-cultural events in Ruse and the surrounding area"
+    "pageDescription": "Live and ongoing concerts, exhibitions, and public events in Ruse, Bulgaria — happening right now, don't miss out."
   },
   "SavedEvents": {
     "pageTitle": "Saved events",
@@ -624,5 +624,11 @@
     "description": "The page you're looking for doesn't exist or has been moved.",
     "home": "Go to home page",
     "events": "Browse events"
+  },
+  "ErrorPage": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred. Please try again.",
+    "retry": "Try again",
+    "home": "Go to home page"
   }
 }

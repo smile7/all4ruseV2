@@ -1,0 +1,38 @@
+# All4Ruse
+
+> All4Ruse is a Bulgarian events platform for the city of Ruse. It lists concerts, exhibitions, theatre, sports, workshops, and all public events happening in Ruse, Bulgaria.
+
+## What it does
+
+All4Ruse aggregates and publishes upcoming, live, and past public events in the city of Ruse (Русе), Bulgaria. Anyone can browse events for free; registered users can save events, create new events, and manage their public host profile.
+
+## Key pages
+
+- Homepage (upcoming events): https://all4ruse.com/bg
+- Past events: https://all4ruse.com/bg/past
+- Current / live events: https://all4ruse.com/bg/current
+- Why All4Ruse: https://all4ruse.com/bg/why-all4ruse
+- Advertise: https://all4ruse.com/bg/advertise
+
+## Languages
+
+Content is available in four languages, each at its own locale prefix:
+
+- Bulgarian (bg): https://all4ruse.com/bg — primary language
+- English (en): https://all4ruse.com/en
+- Ukrainian (uk): https://all4ruse.com/ua
+- Romanian (ro): https://all4ruse.com/ro
+
+## Event pages
+
+Each event has a dedicated page at `https://all4ruse.com/bg/[slug]` with full details: title, date, time, location, price, description, and organisers. Events include structured JSON-LD (schema.org/Event) for machine readability.
+
+## Notes
+
+- Event data is real and updated regularly by the All4Ruse team and community.
+- The platform focuses exclusively on Ruse, Bulgaria — not a national or global aggregator.
+- Sitemap: https://all4ruse.com/sitemap.xml
+
+## Full event listing
+
+A full listing of all live event URLs is available at: https://all4ruse.com/sitemap.xml

@@ -216,8 +216,11 @@ export function EventCard({
 
           {(event.tags?.length ?? 0) > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {event.tags!
-                .filter((tag) => !HIDDEN_TAG_KEYS.has(normalizeEventTagKey(tag.title)))
+              {event
+                .tags!.filter(
+                  (tag) =>
+                    !HIDDEN_TAG_KEYS.has(normalizeEventTagKey(tag.title)),
+                )
                 .slice(0, 3)
                 .map((tag) => (
                   <EventTag

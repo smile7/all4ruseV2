@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 
 import {
@@ -12,7 +13,16 @@ import {
 
 import { EventCard } from "~/components/EventCard";
 import { EventsGridSkeleton } from "~/components/EventCard/EventCardSkeleton";
-import { EventsCalendarView } from "~/components/EventsCalendar/EventsCalendarView";
+
+// Loaded only when the user switches to the calendar tab (~615 lines + CSS).
+// Keeping it out of the initial bundle improves first-load JS size.
+const EventsCalendarView = dynamic(
+  () =>
+    import("~/components/EventsCalendar/EventsCalendarView").then(
+      (m) => m.EventsCalendarView,
+    ),
+  { ssr: false },
+);
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {

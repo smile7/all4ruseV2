@@ -414,14 +414,10 @@ export function SmartFillPanel({ onApply, isAdmin = false }: Props) {
           )}
 
           {tab === "facebook" && (
-            <p className="text-sm">
-              {t("fbPublicRequiredHint")}
-            </p>
+            <p className="text-sm">{t("fbPublicRequiredHint")}</p>
           )}
 
-          <p className="text-sm">
-            {t("reviewRequiredHint")}
-          </p>
+          <p className="text-sm">{t("reviewRequiredHint")}</p>
 
           <div className="flex flex-wrap items-center gap-2">
             {tab === "facebook" && (

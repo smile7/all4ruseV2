@@ -13,7 +13,27 @@ const withSerwist = withSerwistInit({
   disable: process.env.NODE_ENV === "development",
 });
 
+const securityHeaders = [
+  // Prevent the site from being embedded in foreign iframes (clickjacking).
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  // Stop browsers from MIME-sniffing the declared Content-Type.
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  // Send full origin on same-origin requests, only the origin on cross-origin.
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // Opt out of browser features that the site does not use.
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=()",
+  },
+  // NOTE: Content-Security-Policy is deferred — the app uses inline scripts
+  // (JSON-LD, next/script), YouTube/Google Maps iframes, and Supabase storage
+  // URLs that require careful allow-listing before a CSP can be tightened.
+];
+
 const nextConfig: NextConfig = {
+  async headers() {
+    return [{ source: "/(.*)", headers: securityHeaders }];
+  },
   experimental: {
     viewTransition: true,
   },

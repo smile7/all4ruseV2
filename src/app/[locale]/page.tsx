@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { Plus } from "lucide-react";
 
@@ -9,14 +9,19 @@ import { Typography } from "~/components/layout";
 import { Button } from "~/components/ui/button";
 import { Link } from "~/i18n/navigation";
 import { eventsApi } from "~/lib/api";
+import { buildAlternates } from "~/lib/seo";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import type { Event, GetEventsParams } from "~/types";
 
 export async function generateMetadata() {
-  const t = await getTranslations("HomePage");
+  const [t, locale] = await Promise.all([
+    getTranslations("HomePage"),
+    getLocale(),
+  ]);
   return {
     title: t("pageTitle"),
     description: t("pageDescription"),
+    alternates: buildAlternates(locale),
   };
 }
 
@@ -67,27 +72,23 @@ export default async function HomePage({
   const t = await getTranslations("HomePage");
   const params = parseSearchParams(await searchParams);
 
+  const client = await createSupabaseServerClient();
   let initialData: Event[] = [];
   let totalCount = 0;
-  try {
-    const client = await createSupabaseServerClient();
-    if (hasEventFilters(params)) {
-      const [filteredEvents, allEvents] = await Promise.all([
-        eventsApi.getActiveEvents(client, params),
-        eventsApi.getActiveEvents(client),
-      ]);
-      initialData = filteredEvents;
-      totalCount = allEvents.length;
-    } else {
-      initialData = await eventsApi.getActiveEvents(client, params);
-      totalCount = initialData.length;
-    }
-  } catch (err) {
-    console.error("[HomePage] Failed to fetch active events:", err);
+  if (hasEventFilters(params)) {
+    const [filteredEvents, allEvents] = await Promise.all([
+      eventsApi.getActiveEvents(client, params),
+      eventsApi.getActiveEvents(client),
+    ]);
+    initialData = filteredEvents;
+    totalCount = allEvents.length;
+  } else {
+    initialData = await eventsApi.getActiveEvents(client, params);
+    totalCount = initialData.length;
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-9xl flex-col gap-1 px-4 py-6 text-center sm:px-6 lg:px-8">
+    <div className="max-w-9xl mx-auto flex w-full flex-col gap-1 px-4 py-6 text-center sm:px-6 lg:px-8">
       <Typography.H1 className="text-center text-3xl">
         {t("pageTitle")}
       </Typography.H1>

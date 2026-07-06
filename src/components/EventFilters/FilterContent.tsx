@@ -197,21 +197,21 @@ export function FilterContent() {
   // Write to URL only when the debounced value actually differs from current URL.
   // Record what we're pushing *before* calling setFilters so the sync-back
   // effect above recognizes the resulting URL change as our own echo.
-   
+
   useEffect(() => {
     if (debouncedSearch !== filters.search) {
       pushedSearchRef.current = debouncedSearch;
       setFilters({ search: debouncedSearch });
     }
   }, [debouncedSearch]);
-   
+
   useEffect(() => {
     if (debouncedHost !== filters.host) {
       pushedHostRef.current = debouncedHost;
       setFilters({ host: debouncedHost });
     }
   }, [debouncedHost]);
-   
+
   useEffect(() => {
     if (debouncedPlace !== filters.place) {
       pushedPlaceRef.current = debouncedPlace;
@@ -352,12 +352,18 @@ export function FilterContent() {
       ) : tags.length > 0 ? (
         <div className="mt-4 flex flex-wrap gap-2">
           {tags
-            .filter((tag) => !HIDDEN_TAG_KEYS.has(normalizeEventTagKey(tag.title)))
+            .filter(
+              (tag) => !HIDDEN_TAG_KEYS.has(normalizeEventTagKey(tag.title)),
+            )
             .map((tag) => {
               const isActive = filters.tagIds.includes(tag.id);
               const raw = tag.title?.trim() ?? "";
-              const resolved = localizedEventTagTitle(tag.title, eventTagLabels);
-              const label = resolved !== raw ? resolved : raw.replace(/_/g, " ");
+              const resolved = localizedEventTagTitle(
+                tag.title,
+                eventTagLabels,
+              );
+              const label =
+                resolved !== raw ? resolved : raw.replace(/_/g, " ");
               return (
                 <EventTag
                   key={tag.id}

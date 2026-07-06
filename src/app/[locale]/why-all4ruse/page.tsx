@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import {
   AlertCircle,
@@ -19,6 +19,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { FACEBOOK_URL, INSTAGRAM_URL } from "~/constants";
+import { buildAlternates } from "~/lib/seo";
 import { cn } from "~/lib/utils";
 
 const sectionCardClass = cn("border-primary/30 shadow-md", "why-fade-in");
@@ -75,10 +76,14 @@ const contactCardClass =
   "flex flex-col items-center rounded-xl border border-border/80 bg-linear-to-br from-primary/10 to-background p-6 text-center shadow-sm";
 
 export async function generateMetadata() {
-  const t = await getTranslations("WhyUs");
+  const [t, locale] = await Promise.all([
+    getTranslations("WhyUs"),
+    getLocale(),
+  ]);
   return {
     title: t("pageTitle"),
     description: t("pageDescription"),
+    alternates: buildAlternates(locale, "/why-all4ruse"),
   };
 }
 
