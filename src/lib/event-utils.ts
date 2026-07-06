@@ -98,6 +98,15 @@ function getIntlLocale(locale: string): string {
   return localeMap[locale] ?? "bg-BG";
 }
 
+/** Bulgarian detail-page dates: lowercase labels and "2026г." without a space. */
+function normalizeFullDateDisplay(formatted: string, locale: string): string {
+  if (locale !== "bg") return formatted;
+
+  return formatted
+    .replace(/(\d+)\s+г\./g, "$1г.")
+    .toLocaleLowerCase("bg-BG");
+}
+
 function startOfLocalDay(date: Date): Date {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
@@ -181,23 +190,42 @@ export function formatDateBadge(
 
 /**
  * Returns a full localised date string for the event detail page.
- * e.g. "събота, 25 февруари 2026" (bg) / "Saturday, 25 February 2026" (en)
+ * e.g. "събота, 25 февруари 2026г." (bg) / "Saturday, 25 February 2026" (en)
+ * Near-term dates keep relative labels (today/tomorrow) but always include the calendar date.
  */
 export function formatFullDate(
   dateStr: string,
   locale: string,
   labels?: RelativeDateLabels,
 ): string {
-  const relativeLabel = formatRelativeDateLabel(dateStr, locale, labels);
-  if (relativeLabel) return relativeLabel;
-
   const date = parseLocalDate(dateStr);
-  return new Intl.DateTimeFormat(getIntlLocale(locale), {
+  const intlLocale = getIntlLocale(locale);
+  const fullDate = new Intl.DateTimeFormat(intlLocale, {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   }).format(date);
+
+  const relativeLabel = formatRelativeDateLabel(dateStr, locale, labels);
+  if (!relativeLabel) {
+    return normalizeFullDateDisplay(fullDate, locale);
+  }
+
+  const dayDiff = getCalendarDayDiff(date, new Date());
+  if (dayDiff === 0 || dayDiff === 1) {
+    const dateOnly = new Intl.DateTimeFormat(intlLocale, {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+    return normalizeFullDateDisplay(
+      `${relativeLabel}, ${dateOnly}`,
+      locale,
+    );
+  }
+
+  return normalizeFullDateDisplay(fullDate, locale);
 }
 
 export function formatEventMonthHeading(
@@ -219,6 +247,30 @@ export function formatEventMonthHeading(
 export function formatTime(timeStr: string | null | undefined): string | null {
   if (!timeStr) return null;
   return timeStr.slice(0, 5);
+}
+
+/**
+ * Appends the date range to a multi-day event title for calendar display.
+ * Single-day events are returned unchanged.
+ * Format: "Събитие: 14.07-20.07."
+ */
+export function formatEventTitleWithDateRange(
+  title: string,
+  startDate: string,
+  endDate: string,
+): string {
+  const formatted = formatEventTitle(title);
+  if (startDate === endDate) return formatted;
+
+  const start = parseLocalDate(startDate);
+  const end = parseLocalDate(endDate);
+
+  const startDay = String(start.getDate()).padStart(2, "0");
+  const startMonth = String(start.getMonth() + 1).padStart(2, "0");
+  const endDay = String(end.getDate()).padStart(2, "0");
+  const endMonth = String(end.getMonth() + 1).padStart(2, "0");
+
+  return `${formatted}: ${startDay}.${startMonth}-${endDay}.${endMonth}.`;
 }
 
 /** Normalizes imported event titles to title case for consistent display. */

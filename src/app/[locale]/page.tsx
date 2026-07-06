@@ -87,7 +87,7 @@ export default async function HomePage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-1 px-4 py-6 text-center sm:px-6 lg:px-8">
+    <div className="mx-auto flex w-full max-w-9xl flex-col gap-1 px-4 py-6 text-center sm:px-6 lg:px-8">
       <Typography.H1 className="text-center text-3xl">
         {t("pageTitle")}
       </Typography.H1>

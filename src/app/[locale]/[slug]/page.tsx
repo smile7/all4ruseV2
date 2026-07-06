@@ -42,6 +42,7 @@ import {
   getEventImageUrl,
   isLiveNow,
 } from "~/lib/event-utils";
+import { isUsernameInvalid } from "~/lib/profile-username";
 import {
   createSupabasePublicServerClient,
   createSupabaseServerClient,
@@ -166,6 +167,17 @@ export default async function EventDetailPage({ params }: Props) {
           .getProfile(publicClient, event.createdBy)
           .then((r) => r.data)
       : null;
+
+  // Legacy profiles may have an email stored as their username.
+  // When that happens, fall back to the user ID so the profile page can
+  // still resolve the correct row (UUID lookup instead of username lookup).
+  const hostProfileUsername = (() => {
+    const u = hostProfile?.username;
+    if (!u) return null;
+    if (u.includes("@")) return hostProfile?.id ?? null;
+    if (isUsernameInvalid(u)) return null;
+    return u;
+  })();
 
   const isEventCreator = Boolean(user && event.createdBy === user.id);
   const isAdmin = Boolean(user && adminUserId && user.id === adminUserId);
@@ -373,7 +385,7 @@ export default async function EventDetailPage({ params }: Props) {
                       icon={<Calendar className="size-4" />}
                       label={t("date")}
                     >
-                      <p className="text-sm font-semibold capitalize">
+                      <p className="text-sm font-semibold">
                         {fullDate}
                       </p>
                       {fullEndDate && (
@@ -405,7 +417,7 @@ export default async function EventDetailPage({ params }: Props) {
                         {event.place && (
                           <p className="text-sm font-semibold">{event.place}</p>
                         )}
-                        {event.address && (
+                        {event.address && event.address !== event.place && (
                           <p className="text-sm">{event.address}</p>
                         )}
                         {event.town && <p className="text-sm">{event.town}</p>}
@@ -498,7 +510,7 @@ export default async function EventDetailPage({ params }: Props) {
                   fbShareUrl={fbShareUrl}
                   isEventCreator={isEventCreator}
                   isAdmin={isAdmin}
-                  hostProfileUsername={hostProfile?.username}
+                  hostProfileUsername={hostProfileUsername}
                   showClaimButton={showClaimButton}
                   initialClaimStatus={initialClaimStatus}
                 />
@@ -571,7 +583,7 @@ export default async function EventDetailPage({ params }: Props) {
                 fbShareUrl={fbShareUrl}
                 isEventCreator={isEventCreator}
                 isAdmin={isAdmin}
-                hostProfileUsername={hostProfile?.username}
+                hostProfileUsername={hostProfileUsername}
                 showClaimButton={showClaimButton}
                 initialClaimStatus={initialClaimStatus}
               />

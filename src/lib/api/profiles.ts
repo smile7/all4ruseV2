@@ -52,13 +52,26 @@ export const profilesApi = {
     return client.from("profiles").select("*").eq("id", userId).single();
   },
 
-  /** Public — readable without auth. Returns null when username is not found. */
+  /** Public — readable without auth. Returns null when username is not found.
+   *  Accepts either a username slug or a raw UUID (used as a fallback when
+   *  the profile's stored username is email-shaped and has no clean slug yet). */
   async getPublicProfile(client: Client, username: string) {
+    const UUID_RE =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (UUID_RE.test(username)) {
+      return client
+        .from("profiles")
+        .select("*")
+        .eq("id", username)
+        .maybeSingle();
+    }
+
     return client
       .from("profiles")
       .select("*")
       .eq("username", username.toLowerCase())
-      .single();
+      .maybeSingle();
   },
 
   /** Returns true when no other profile owns this username. */

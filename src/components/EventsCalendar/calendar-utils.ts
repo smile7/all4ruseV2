@@ -22,8 +22,26 @@ export type WeekData = {
 
 const MS_PER_DAY = 86_400_000;
 
+/** Events spanning more than this many calendar days are capped in the calendar view. */
+const MAX_CALENDAR_DAYS = 3;
+
 function wholeDaysBetween(later: Date, earlier: Date): number {
   return Math.round((later.getTime() - earlier.getTime()) / MS_PER_DAY);
+}
+
+/**
+ * Returns the effective end date for calendar rendering.
+ * Events longer than MAX_CALENDAR_DAYS are capped so only the first 3 days
+ * appear in the calendar; the rest are shown only in the current-events list.
+ */
+function getEffectiveCalendarEndDate(event: Event): Date {
+  const evStart = parseLocalDate(event.startDate);
+  const evEnd = parseLocalDate(event.endDate);
+  const durationDays = wholeDaysBetween(evEnd, evStart) + 1;
+  if (durationDays <= MAX_CALENDAR_DAYS) return evEnd;
+  const cappedEnd = new Date(evStart);
+  cappedEnd.setDate(cappedEnd.getDate() + MAX_CALENDAR_DAYS - 1);
+  return cappedEnd;
 }
 
 export function isSameDay(a: Date, b: Date): boolean {
@@ -79,18 +97,18 @@ export function computeWeekSlots(week: Date[], events: Event[]): WeekData {
 
   const relevant = events.filter((event) => {
     const evStartMs = parseLocalDate(event.startDate).getTime();
-    const evEndMs = parseLocalDate(event.endDate).getTime();
-    // Standard interval overlap: event overlaps week iff evEnd >= weekStart AND evStart <= weekEnd
-    return evEndMs >= wStartMs && evStartMs <= wEndMs;
+    // Use the capped end so events beyond 3 days don't bleed past their allowed range.
+    const evEffectiveEndMs = getEffectiveCalendarEndDate(event).getTime();
+    return evEffectiveEndMs >= wStartMs && evStartMs <= wEndMs;
   });
 
-  // Earlier start first; for ties, longer duration first so multi-day events claim higher tracks
+  // Earlier start first; for ties, longer (effective) duration first so multi-day events claim higher tracks.
   relevant.sort((a, b) => {
     const aMs = parseLocalDate(a.startDate).getTime();
     const bMs = parseLocalDate(b.startDate).getTime();
     if (aMs !== bMs) return aMs - bMs;
-    const aDur = parseLocalDate(a.endDate).getTime() - aMs;
-    const bDur = parseLocalDate(b.endDate).getTime() - bMs;
+    const aDur = getEffectiveCalendarEndDate(a).getTime() - aMs;
+    const bDur = getEffectiveCalendarEndDate(b).getTime() - bMs;
     return bDur - aDur;
   });
 
@@ -101,13 +119,16 @@ export function computeWeekSlots(week: Date[], events: Event[]): WeekData {
 
   for (const event of relevant) {
     const evStart = parseLocalDate(event.startDate);
-    const evEnd = parseLocalDate(event.endDate);
+    const evEffectiveEnd = getEffectiveCalendarEndDate(event);
 
     const startCol = Math.max(
       0,
       Math.min(6, wholeDaysBetween(evStart, weekStart)),
     );
-    const endCol = Math.max(0, Math.min(6, wholeDaysBetween(evEnd, weekStart)));
+    const endCol = Math.max(
+      0,
+      Math.min(6, wholeDaysBetween(evEffectiveEnd, weekStart)),
+    );
 
     if (startCol > endCol) continue; // guard against bad data
 
@@ -131,7 +152,7 @@ export function computeWeekSlots(week: Date[], events: Event[]): WeekData {
       startCol,
       endCol,
       isStart: evStart.getTime() >= wStartMs,
-      isEnd: evEnd.getTime() <= wEndMs,
+      isEnd: evEffectiveEnd.getTime() <= wEndMs,
     });
   }
 
