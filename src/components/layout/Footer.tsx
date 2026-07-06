@@ -24,9 +24,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { Separator } from "~/components/ui/separator";
 import {
   FACEBOOK_BRAND_COLOR,
   FACEBOOK_URL,
@@ -50,6 +52,53 @@ export function Footer() {
             <span>{t("more")}</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" side="top" className="min-w-44">
+            <DropdownMenuLabel className="text-center text-sm font-semibold">
+              {t("more")}
+            </DropdownMenuLabel>
+
+            <div className="mb-1 flex items-center justify-center gap-5 py-2">
+              <a
+                href={FACEBOOK_URL}
+                target="_blank"
+                rel="noopener"
+                aria-label="Facebook"
+                className="flex flex-col items-center gap-1 transition-opacity hover:opacity-80"
+                style={{ color: FACEBOOK_BRAND_COLOR }}
+              >
+                <span className="bg-muted flex size-8 items-center justify-center rounded-full">
+                  <FacebookIcon size={14} />
+                </span>
+                <span className="text-muted-foreground text-[10px]">Facebook</span>
+              </a>
+              <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noopener"
+                aria-label="Instagram"
+                className="flex flex-col items-center gap-1 transition-opacity hover:opacity-80"
+                style={{ color: INSTAGRAM_BRAND_COLOR }}
+              >
+                <span className="bg-muted flex size-8 items-center justify-center rounded-full">
+                  <InstagramIcon size={14} />
+                </span>
+                <span className="text-muted-foreground text-[10px]">Instagram</span>
+              </a>
+              <a
+                href={TIKTOK_URL}
+                target="_blank"
+                rel="noopener"
+                aria-label="TikTok"
+                className="flex flex-col items-center gap-1 text-black transition-opacity hover:opacity-80 dark:text-white"
+              >
+                <span className="bg-muted flex size-8 items-center justify-center rounded-full">
+                  <TikTokIcon size={14} />
+                </span>
+                <span className="text-muted-foreground text-[10px]">TikTok</span>
+              </a>
+            </div>
+
+            <Separator className="mb-1" />
+
             <DropdownMenuItem asChild>
               <Link
                 href="/"
@@ -97,6 +146,9 @@ export function Footer() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+              {t("legal")}
+            </DropdownMenuLabel>
             <DropdownMenuItem asChild>
               <Link
                 href="/legal/terms"
