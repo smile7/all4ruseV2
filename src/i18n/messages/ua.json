@@ -76,7 +76,9 @@
     "gridView": "Сітка",
     "calendarView": "Календар",
     "prevMonth": "Попередній місяць",
-    "nextMonth": "Наступний місяць"
+    "nextMonth": "Наступний місяць",
+    "fullscreen": "Переглянути на весь екран",
+    "closeFullscreen": "Закрити повний екран"
   },
   "CreateEvent": {
     "createEventTitle": "Створити нову подію",

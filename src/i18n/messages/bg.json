@@ -76,7 +76,9 @@
     "gridView": "Списък",
     "calendarView": "Календар",
     "prevMonth": "Предишен месец",
-    "nextMonth": "Следващ месец"
+    "nextMonth": "Следващ месец",
+    "fullscreen": "Виж на цял екран",
+    "closeFullscreen": "Затвори цял екран"
   },
   "CreateEvent": {
     "createEventTitle": "Създай Ново Събитие",

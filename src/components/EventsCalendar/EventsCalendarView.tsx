@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { useCalendarMonthEvents } from "~/hooks/query/events";
@@ -297,6 +297,8 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
   const [year, setYear] = useState(() => now.getFullYear());
   const [month, setMonth] = useState(() => now.getMonth());
 
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const weekRowRefs = useRef<(HTMLDivElement | null)[]>([]);
   // Guard so we only auto-scroll once per mount, not on every data refresh.
@@ -455,19 +457,28 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
 
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
 
+  const isHeightConstrained = !!calendarHeight || isFullscreen;
+
   return (
-    // calendarHeight: fills measured remaining viewport space; flex column so
+    // calendarHeight / isFullscreen: fills remaining viewport space; flex column so
     // month nav takes natural height and grid fills the rest.
     // No calendarHeight: brief fallback before measurement (grid view path).
     <div
-      className={cn("w-full", calendarHeight ? "flex flex-col" : "mt-4")}
-      style={calendarHeight ? { height: calendarHeight } : undefined}
+      className={cn(
+        "w-full",
+        isFullscreen
+          ? "fixed inset-0 z-50 flex flex-col bg-background p-3 sm:p-4"
+          : isHeightConstrained
+            ? "flex flex-col"
+            : "mt-4",
+      )}
+      style={!isFullscreen && calendarHeight ? { height: calendarHeight } : undefined}
     >
       {/* Month navigation */}
       <div
         className={cn(
           "flex shrink-0 items-center justify-between",
-          calendarHeight ? "py-2" : "mb-3",
+          isHeightConstrained ? "py-2" : "mb-3",
         )}
       >
         <Button
@@ -496,24 +507,48 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
           )}
         </div>
 
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={nextMonth}
-          aria-label={t("nextMonth")}
-          className="size-8 shrink-0"
-        >
-          <ChevronRight className="size-4" aria-hidden />
-        </Button>
+        <div className="flex items-center gap-1.5">
+          {isFullscreen ? (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsFullscreen(false)}
+              aria-label={t("closeFullscreen")}
+              className="size-8 shrink-0"
+            >
+              <X className="size-4" aria-hidden />
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsFullscreen(true)}
+              aria-label={t("fullscreen")}
+              className="flex h-8 items-center gap-1.5 px-2.5 text-xs md:hidden"
+            >
+              <Maximize2 className="size-3.5" aria-hidden />
+              {t("fullscreen")}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={nextMonth}
+            aria-label={t("nextMonth")}
+            className="size-8 shrink-0"
+          >
+            <ChevronRight className="size-4" aria-hidden />
+          </Button>
+        </div>
       </div>
 
-      {/* Calendar grid — flex-1 + min-h-0 when height is measured; otherwise a
+      {/* Calendar grid — flex-1 + min-h-0 when height is constrained; otherwise a
           conservative cap until EventsList finishes layout measurement.         */}
       <div
         ref={scrollContainerRef}
         className={cn(
           "overflow-auto rounded-xl border",
-          calendarHeight ? "min-h-0 flex-1" : "max-h-[60svh]",
+          isHeightConstrained ? "min-h-0 flex-1" : "max-h-[60svh]",
         )}
       >
         <div className="min-w-[650px] md:min-w-0">
