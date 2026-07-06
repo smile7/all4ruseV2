@@ -76,7 +76,9 @@
     "gridView": "Grilă",
     "calendarView": "Calendar",
     "prevMonth": "Luna anterioară",
-    "nextMonth": "Luna următoare"
+    "nextMonth": "Luna următoare",
+    "fullscreen": "Vezi pe tot ecranul",
+    "closeFullscreen": "Închide ecranul complet"
   },
   "CreateEvent": {
     "createEventTitle": "Creează un eveniment nou",

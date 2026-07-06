@@ -76,7 +76,9 @@
     "gridView": "Grid",
     "calendarView": "Calendar",
     "prevMonth": "Previous month",
-    "nextMonth": "Next month"
+    "nextMonth": "Next month",
+    "fullscreen": "View fullscreen",
+    "closeFullscreen": "Close fullscreen"
   },
   "CreateEvent": {
     "createEventTitle": "Create New Event",
