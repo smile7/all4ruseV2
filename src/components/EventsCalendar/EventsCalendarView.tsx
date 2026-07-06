@@ -32,7 +32,7 @@ const DAY_HEADER_PX = 36;
 /** Height per event track slot (card + gap) — desktop */
 const TRACK_HEIGHT_PX = 62;
 /** Height per event track slot — mobile (taller to fit 3-line titles) */
-const MOBILE_TRACK_HEIGHT_PX = 105;
+const MOBILE_TRACK_HEIGHT_PX = 163;
 /** Horizontal inset so cards don't bleed into cell borders */
 const BAR_INSET_PX = 3;
 /** Minimum cell height when a week has no events */
@@ -188,10 +188,6 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
   const { event, track, startCol, endCol, isStart, isEnd } = slot;
 
   const isPast = event.endDate < todayStr;
-  // Single-column events use a stacked layout on mobile (image on top, title below).
-  // Multi-column events always use the side-by-side layout.
-  const isSingleCol = isStart && startCol === endCol;
-
   const detailHref =
     event.isEventActive && typeof event.slug === "string" && event.slug.trim()
       ? `/${event.slug.trim()}`
@@ -211,10 +207,10 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
     "overflow-hidden transition-opacity hover:opacity-85",
     // Responsive top position via CSS vars (mobile uses taller tracks).
     "top-(--top-m) md:top-(--top-d)",
-    // Responsive height: 88px on mobile, 58px on desktop.
-    "h-[98px] md:h-[58px]",
-    // Single-col: column on mobile, row on md+. Multi-col: always row.
-    isSingleCol ? "flex flex-col md:flex-row" : "flex",
+    // Responsive height: 118px on mobile, 58px on desktop.
+    "h-[156px] md:h-[58px]",
+    // All start cards: stacked (column) on mobile, side-by-side (row) on md+.
+    "flex flex-col md:flex-row",
     isPast
       ? "bg-muted text-muted-foreground/50"
       : "bg-muted text-muted-foreground border border-primary/60",
@@ -228,52 +224,28 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
   );
 
   const content = isStart ? (
-    isSingleCol ? (
-      // Stacked on mobile: full-width image strip, then 3-row title below.
-      // On md+ reverts to side-by-side via flex-row above.
-      <>
-        <div className="relative h-[50px] w-full shrink-0 md:h-full md:w-14">
-          <Image
-            src={imageUrl}
-            alt=""
-            fill
-            sizes="80px"
-            className={cn("object-cover", isPast && "opacity-50 grayscale")}
-          />
-        </div>
-        <div className="flex min-w-0 flex-1 items-start overflow-hidden px-1 pt-1 md:flex-col md:justify-center md:px-2 md:py-1">
-          <span className="line-clamp-3 w-full text-xs leading-tight font-semibold md:line-clamp-2 md:text-sm">
-            {formatEventTitleWithDateRange(
-              event.title,
-              event.startDate,
-              event.endDate,
-            )}
-          </span>
-        </div>
-      </>
-    ) : (
-      // Side-by-side: fixed-width image on the left, title on the right.
-      <>
-        <div className="relative h-[88px] w-[56px] shrink-0 md:h-[58px]">
-          <Image
-            src={imageUrl}
-            alt=""
-            fill
-            sizes="120px"
-            className={cn("object-cover", isPast && "opacity-50 grayscale")}
-          />
-        </div>
-        <div className="flex min-w-0 flex-col justify-center gap-0.5 px-2 py-1">
-          <span className="line-clamp-2 text-xs leading-tight font-semibold md:text-sm">
-            {formatEventTitleWithDateRange(
-              event.title,
-              event.startDate,
-              event.endDate,
-            )}
-          </span>
-        </div>
-      </>
-    )
+    // Stacked on mobile: full-width image strip on top, title below.
+    // On md+ reverts to side-by-side via flex-row on the bar.
+    <>
+      <div className="relative h-[70px] w-full shrink-0 md:h-full md:w-14">
+        <Image
+          src={imageUrl}
+          alt=""
+          fill
+          sizes="(min-width: 768px) 56px, 200px"
+          className={cn("object-cover", isPast && "opacity-50 grayscale")}
+        />
+      </div>
+      <div className="flex min-w-0 flex-1 items-start overflow-hidden px-1 pt-1 md:flex-col md:justify-center md:px-2 md:py-1">
+        <span className="line-clamp-4 w-full text-sm leading-tight font-semibold md:line-clamp-2 md:text-sm">
+          {formatEventTitleWithDateRange(
+            event.title,
+            event.startDate,
+            event.endDate,
+          )}
+        </span>
+      </div>
+    </>
   ) : (
     /* Continuation bar — no image, title repeated so multi-week events stay readable */
     <div className="flex min-w-0 items-center px-2 py-1">
@@ -544,7 +516,7 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
           calendarHeight ? "min-h-0 flex-1" : "max-h-[60svh]",
         )}
       >
-        <div className="min-w-[560px] md:min-w-0">
+        <div className="min-w-[650px] md:min-w-0">
           {/* Sticky 2-row header: day names + dates of the current visible week */}
           <div className="sticky top-0 z-10 border-b">
             {/* Row 1 — weekday labels */}
