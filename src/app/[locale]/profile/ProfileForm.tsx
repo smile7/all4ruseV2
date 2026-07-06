@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -902,12 +903,19 @@ export function ProfileForm({
                   </div>
 
                   {displayHeaderSrc ? (
-                    <div className="relative w-full overflow-hidden rounded-xl border">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                    <div className="relative aspect-3/1 w-full overflow-hidden rounded-xl border">
+                      {/*
+                       * unoptimized: src may be a blob: URL (local file preview)
+                       * that next/image cannot run through its optimisation pipeline.
+                       * Using fill + unoptimized keeps the same visual output while
+                       * satisfying the @next/next/no-img-element lint rule.
+                       */}
+                      <Image
                         src={displayHeaderSrc}
                         alt={tPub("headerPhotoLabel")}
-                        className="aspect-3/1 w-full object-cover"
+                        fill
+                        unoptimized
+                        className="object-cover"
                       />
                       <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity hover:opacity-100">
                         <Button
@@ -971,11 +979,13 @@ export function ProfileForm({
                           key={`${url}-${index}`}
                           className="bg-muted relative h-28 w-40 shrink-0 overflow-hidden rounded-xl border"
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                          {/* unoptimized: url may be a blob: URL for a pending upload */}
+                          <Image
                             src={url}
                             alt={tPub("galleryLabel")}
-                            className="size-full object-cover"
+                            fill
+                            unoptimized
+                            className="object-cover"
                           />
                           <Button
                             type="button"

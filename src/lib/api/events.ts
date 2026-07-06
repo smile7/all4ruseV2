@@ -14,14 +14,18 @@ import {
   isVisibleOnHomeActiveList,
 } from "~/lib/event-utils";
 import type { Event, GetEventsParams, Tag } from "~/types";
-import type { Database } from "~/types/database";
+import type { Database, Tables } from "~/types/database";
 
 type Client = SupabaseClient<Database>;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// Supabase join adds event_tags to the row at runtime — typed as unknown
+// since the generated types only reflect the base table columns.
+type EventRow = Tables<"events"> & { event_tags: unknown };
+
 type QueryResult = {
-  data: Event[] | null;
+  data: EventRow[] | null;
   error: { code?: string; message?: string } | null;
 };
 
@@ -51,8 +55,7 @@ function mapTags(eventTags: unknown): Tag[] {
     .filter((t): t is Tag => t !== null && typeof t.title === "string");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapEvent(row: any): Event {
+function mapEvent(row: EventRow): Event {
   const { event_tags, ...rest } = row;
   return { ...rest, tags: mapTags(event_tags) };
 }
@@ -437,6 +440,8 @@ async function getEventsByMonthRange(
 }
 
 // Returns all active event slugs — used by generateStaticParams on the detail page.
+// Returns [] on error (rather than throwing) so a DB hiccup at build time does not
+// prevent the app from deploying; ISR handles any slugs that weren't pre-rendered.
 async function getAllSlugs(client: Client): Promise<string[]> {
   const { data, error } = await client
     .from("events")
@@ -444,10 +449,38 @@ async function getAllSlugs(client: Client): Promise<string[]> {
     .eq("isEventActive", true)
     .not("slug", "is", null);
 
-  if (error) return [];
+  if (error) {
+    console.error("[getAllSlugs]", error);
+    return [];
+  }
   return (data ?? [])
     .map((r) => r.slug)
     .filter((s): s is string => typeof s === "string");
+}
+
+// Returns slugs with their creation timestamps — used by the sitemap.
+// Events has no updated_at column; created_at is the best available proxy.
+// Throws on DB error so the sitemap build fails visibly rather than silently
+// omitting all event URLs (which would harm SEO).
+async function getAllSlugsWithDates(
+  client: Client,
+): Promise<{ slug: string; createdAt: string }[]> {
+  const { data, error } = await client
+    .from("events")
+    .select("slug, created_at")
+    .eq("isEventActive", true)
+    .not("slug", "is", null);
+
+  if (error) {
+    console.error("[getAllSlugsWithDates]", error);
+    throw error;
+  }
+  return (data ?? [])
+    .filter(
+      (r): r is { slug: string; created_at: string } =>
+        typeof r.slug === "string",
+    )
+    .map((r) => ({ slug: r.slug, createdAt: r.created_at }));
 }
 
 // ─── Write types ──────────────────────────────────────────────────────────────
@@ -700,6 +733,7 @@ export const eventsApi = {
   getEventById,
   getRelatedEvents,
   getAllSlugs,
+  getAllSlugsWithDates,
   getMyEvents,
   getEventsByIds,
   createEvent,

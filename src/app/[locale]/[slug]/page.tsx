@@ -93,10 +93,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const formattedTitle = formatEventTitle(event.title);
 
+    const rawDescription = plainTextFromHtml(
+      sanitizeEventDescription(event.description ?? ""),
+    );
     const description =
-      plainTextFromHtml(
-        sanitizeEventDescription(event.description ?? ""),
-      ).slice(0, 160) || formattedTitle;
+      (rawDescription.length > 160
+        ? rawDescription.slice(0, 160).replace(/\s+\S*$/, "")
+        : rawDescription) || formattedTitle;
     const imageUrl = getEventImageUrl(event.image);
     const eventPath = buildEventPath(locale, slug);
     const eventUrl = buildEventUrl(locale, slug);
@@ -187,9 +190,7 @@ export default async function EventDetailPage({ params }: Props) {
   const isAdminEvent = Boolean(adminUserId && event.createdBy === adminUserId);
 
   const showClaimButton =
-    Boolean(user) &&
-    isAdminEvent &&
-    user?.id !== adminUserId;
+    Boolean(user) && isAdminEvent && user?.id !== adminUserId;
 
   const existingClaim =
     showClaimButton && user
@@ -285,18 +286,23 @@ export default async function EventDetailPage({ params }: Props) {
             },
           }
         : undefined,
-    organizer:
-      hosts.length > 0
-        ? hosts
-            .filter((host): host is Required<Pick<Host, "name">> & Host =>
-              Boolean(host.name),
-            )
-            .map((host) => ({
-              "@type": "Organization",
-              name: host.name,
-              url: host.link || undefined,
-            }))
-        : undefined,
+    organizer: (() => {
+      const namedHosts = hosts
+        .filter((host): host is Required<Pick<Host, "name">> & Host =>
+          Boolean(host.name),
+        )
+        .map((host) => ({
+          "@type": "Organization" as const,
+          name: host.name,
+          url: host.link || undefined,
+        }));
+      if (namedHosts.length > 0) return namedHosts;
+      return {
+        "@type": "Organization" as const,
+        name: "All4Ruse",
+        url: "https://all4ruse.com",
+      };
+    })(),
     offers:
       event.price !== null && event.price !== undefined && event.price !== ""
         ? {
@@ -309,7 +315,12 @@ export default async function EventDetailPage({ params }: Props) {
               ? "https://schema.org/SoldOut"
               : "https://schema.org/InStock",
           }
-        : undefined,
+        : {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "BGN",
+            availability: "https://schema.org/InStock",
+          },
   };
 
   const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -385,13 +396,19 @@ export default async function EventDetailPage({ params }: Props) {
                       icon={<Calendar className="size-4" />}
                       label={t("date")}
                     >
-                      <p className="text-sm font-semibold">
+                      <time
+                        dateTime={event.startDate}
+                        className="text-sm font-semibold"
+                      >
                         {fullDate}
-                      </p>
+                      </time>
                       {fullEndDate && (
-                        <p className="text-muted-foreground text-sm">
+                        <time
+                          dateTime={event.endDate}
+                          className="text-muted-foreground text-sm"
+                        >
                           → {fullEndDate}
-                        </p>
+                        </time>
                       )}
                     </EventDetailRow>
 
@@ -401,10 +418,16 @@ export default async function EventDetailPage({ params }: Props) {
                         icon={<Clock className="size-4" />}
                         label={t("time")}
                       >
-                        <p className="text-sm font-semibold">
+                        <time
+                          dateTime={buildIsoDateTime(
+                            event.startDate,
+                            event.startTime,
+                          )}
+                          className="text-sm font-semibold"
+                        >
                           {startTime}
                           {endTime ? ` – ${endTime}` : ""}
-                        </p>
+                        </time>
                       </EventDetailRow>
                     )}
 
@@ -521,7 +544,7 @@ export default async function EventDetailPage({ params }: Props) {
                 <Card>
                   <CardContent className="overflow-x-clip py-4">
                     {event.description && (
-                      <div
+                      <article
                         className={EVENT_DESCRIPTION_BODY_CLASSES}
                         dangerouslySetInnerHTML={{
                           __html: sanitizeEventDescription(event.description),
@@ -600,10 +623,7 @@ export default async function EventDetailPage({ params }: Props) {
           </div>
 
           {/* ── Related events — horizontal scroll row ──────────────────── */}
-          <RelatedEventsRow
-            events={relatedEvents}
-            heading={t("moreEvents")}
-          />
+          <RelatedEventsRow events={relatedEvents} heading={t("moreEvents")} />
         </div>
       </div>
     </>

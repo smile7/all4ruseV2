@@ -2,7 +2,7 @@
   "HomePage": {
     "createEvent": "Creează un eveniment",
     "pageTitle": "Evenimente în Ruse",
-    "pageDescription": "Toate evenimentele culturale și non-culturale din Ruse și împrejurimi",
+    "pageDescription": "Concerte, expoziții, spectacole de teatru, sport, ateliere și toate evenimentele publice viitoare din Ruse, Bulgaria — găsește-ți următoarea experiență.",
     "createProfileMsg": "Creează-ți un profil ca să poți crea propriile evenimente!",
     "filters": "Filtre",
     "noEvents": "Niciun eveniment găsit.",
@@ -207,7 +207,7 @@
   "PastEvents": {
     "createEvent": "Creează un eveniment",
     "pageTitle": "Evenimente trecute în Ruse",
-    "pageDescription": "Toate evenimentele culturale și non-culturale trecute din Ruse și împrejurimi"
+    "pageDescription": "Arhiva concertelor, expozițiilor, spectacolelor de teatru și evenimentelor publice trecute din Ruse, Bulgaria — vezi ce s-a întâmplat recent."
   },
   "SingleEvent": {
     "date": "Dată",
@@ -268,7 +268,7 @@
   "CurrentEvents": {
     "createEvent": "Creează un eveniment",
     "pageTitle": "Evenimente în desfășurare în Ruse",
-    "pageDescription": "Toate evenimentele culturale și non-culturale aflate în desfășurare în Ruse și împrejurimi"
+    "pageDescription": "Concerte, expoziții și evenimente publice în desfășurare în Ruse, Bulgaria, chiar acum — nu rata nimic din viața orașului."
   },
   "SavedEvents": {
     "pageTitle": "Evenimente salvate",
@@ -624,5 +624,11 @@
     "description": "Pagina pe care o cauți nu există sau a fost mutată.",
     "home": "Mergi la pagina principală",
     "events": "Vezi evenimentele"
+  },
+  "ErrorPage": {
+    "title": "Ceva a mers prost",
+    "description": "A apărut o eroare neașteptată. Te rugăm să încerci din nou.",
+    "retry": "Încearcă din nou",
+    "home": "Mergi la pagina principală"
   }
 }

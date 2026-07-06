@@ -88,7 +88,8 @@ function scrollTodayIntoView(
   if (!container || !row) return;
   const rowTop = row.getBoundingClientRect().top;
   const containerTop = container.getBoundingClientRect().top;
-  const target = container.scrollTop + (rowTop - containerTop) - STICKY_HEADER_PX;
+  const target =
+    container.scrollTop + (rowTop - containerTop) - STICKY_HEADER_PX;
   container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
 }
 

@@ -68,9 +68,6 @@ export const metadata: Metadata = {
     template: "%s | All4Ruse",
   },
   description: "Всички събития в Русе на едно място.",
-  alternates: {
-    canonical: "/",
-  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

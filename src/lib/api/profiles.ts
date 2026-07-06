@@ -8,7 +8,7 @@ import {
   isUsernameInvalid,
 } from "~/lib/profile-username";
 import type { Event, Profile, Tag, UpdateProfileInput } from "~/types";
-import type { Database } from "~/types/database";
+import type { Database, Tables, TablesUpdate } from "~/types/database";
 
 type Client = SupabaseClient<Database>;
 
@@ -35,8 +35,11 @@ function mapTags(eventTags: unknown): Tag[] {
     .filter((t): t is Tag => t !== null && typeof t.title === "string");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapEvent(row: any): Event {
+// Supabase join adds event_tags to the row at runtime — typed as unknown
+// since the generated types only reflect the base table columns.
+type EventRow = Tables<"events"> & { event_tags: unknown };
+
+function mapEvent(row: EventRow): Event {
   const { event_tags, ...rest } = row;
   return { ...rest, tags: mapTags(event_tags) };
 }
@@ -225,7 +228,7 @@ export const profilesApi = {
     return (data ?? [])
       .map((row: unknown) => {
         if (row && typeof row === "object" && "events" in row) {
-          return mapEvent((row as { events: unknown }).events);
+          return mapEvent((row as { events: EventRow }).events);
         }
         return null;
       })
@@ -242,17 +245,33 @@ export const profilesApi = {
         ? undefined
         : values.username.trim().toLowerCase();
 
-    const payload = {
+    const payload: TablesUpdate<"profiles"> = {
       ...values,
       ...(normalizedUsername !== undefined && { username: normalizedUsername }),
       updated_at: new Date().toISOString(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- header_url may not be in generated types yet
-    } as any;
+    };
     return client
       .from("profiles")
       .update(payload)
       .eq("id", userId)
       .select()
       .single<Profile>();
+  },
+
+  /** Returns all non-null usernames — used by the sitemap to list public profile URLs. */
+  async getAllPublicUsernames(client: Client): Promise<string[]> {
+    const { data, error } = await client
+      .from("profiles")
+      .select("username")
+      .not("username", "is", null)
+      .neq("username", "");
+
+    if (error) {
+      console.error("[getAllPublicUsernames]", error);
+      return [];
+    }
+    return (data ?? [])
+      .map((r) => r.username)
+      .filter((u): u is string => typeof u === "string" && u.length > 0);
   },
 };

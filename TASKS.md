@@ -179,11 +179,31 @@ Smart-fill helpers that pre-populate `EventForm` from a Facebook URL, freeform t
 ## Phase 10 — Quality
 
 - [x] SEO metadata on main public pages — home, current, past, event detail, public profile, saved events, why-all4ruse, advertise (`generateMetadata`)
-- [ ] SEO metadata on remaining pages — auth, profile, my-events, create-event; legal pages still use hardcoded Bulgarian `metadata`
+- [ ] SEO metadata on remaining pages:
+  - [ ] Auth pages (login, signup, forgot-password, update-password) — currently `"use client"` with no metadata; split into a thin server wrapper + client form component so each auth page can export `generateMetadata` with page-specific title and `robots: noindex, nofollow`
+  - [ ] Profile page (`src/app/[locale]/profile/page.tsx`) — add `generateMetadata` with translated title and `robots: noindex`
+  - [ ] My events page (`src/app/[locale]/my-events/page.tsx`) — add `generateMetadata` with translated title and `robots: noindex`
+  - [ ] Create event page (`src/app/[locale]/create-event/page.tsx`) — add `generateMetadata` with translated title and `robots: noindex`
+  - [ ] Legal pages — replace static hardcoded Bulgarian `metadata` export with `generateMetadata` using i18n keys; remove `lang="bg"` attribute hardcoded regardless of `[locale]`
 - [x] JSON-LD structured data on event detail (`[slug]` page — `Event` schema)
-- [ ] `loading.tsx` and `error.tsx` for key routes
+- [ ] JSON-LD Event schema completeness — currently missing:
+  - [ ] `offers` block for free events (currently omitted when `price` is null — add `{ price: 0, priceCurrency: "BGN" }` for free events)
+  - [ ] `organizer` block when no hosts in `event.organizers` array (fall back to site organizer entity)
+- [ ] `loading.tsx` and `error.tsx` for key routes:
+  - [ ] `src/app/[locale]/loading.tsx` — skeleton for the home events grid (reuse `EventsGridSkeleton`)
+  - [ ] `src/app/[locale]/error.tsx` — friendly error with retry button (must be `"use client"`)
+  - [ ] `src/app/[locale]/[slug]/loading.tsx` — skeleton for event detail hero + content
+  - [ ] `src/app/[locale]/past/loading.tsx` — same skeleton as home loading
+  - [ ] `src/app/[locale]/profile/saved-events/loading.tsx` — skeleton for saved list
+  - [ ] Global `src/app/not-found.tsx` (in addition to locale-aware `src/app/[locale]/not-found.tsx` which already exists)
+- [ ] Suspense boundary on past/current `EventsList` — `src/app/[locale]/past/page.tsx` and `src/app/[locale]/current/page.tsx` render `<EventsList>` without `<Suspense>`; `EventsList` uses `useSearchParams()` which can cause a CSR bailout; wrap with `<Suspense fallback={<EventsGridSkeleton />}>`
 - [ ] Mobile responsiveness review
-- [ ] Accessibility review (keyboard nav, contrast, ARIA)
+- [ ] Accessibility review (keyboard nav, contrast, ARIA):
+  - [ ] `FilterContent.tsx` — search, host, and place inputs have placeholder text but no `<label>` or `aria-label`; add `aria-label` to each; add `role="search"` or `aria-label` on the filter container
+  - [ ] `EventCard` card `<Link>` — no `aria-label`; screen readers announce the title from the inner `<h3>` but the link itself has no accessible name; add `aria-label={event.title}` (or `aria-labelledby` pointing to the heading)
+  - [ ] `Header.tsx` — no `<nav>` landmark wrapping navigation links; add `<nav aria-label="Main navigation">`
+  - [ ] Full keyboard nav pass: filters, modals, drawers, date pickers, tag chips
+  - [ ] WCAG AA contrast check on light + dark themes
 - [ ] i18n audit — all UI strings through `t()`, all 4 languages complete (legal page body copy still BG-only)
 - [x] PWA service worker + offline fallback — Serwist (`@serwist/next`), minimal SW (static assets + images only, no navigation cache to protect Supabase SSR auth), offline page at `/[locale]/offline`, all icons in `public/`
 
@@ -354,6 +374,77 @@ Small targeted fixes and visual consistency improvements.
 
 - [ ] Filter by place: multi-select with popular Ruse venues (Доходно, Блок 14, РИУ Сити Сентър, etc.) as preset chips + free text fallback; apply as `place ILIKE %value%`
 - [ ] Filter by premium events: confirm `premium` column exists, add "Premium" toggle chip to filters panel
+
+## Phase 19 — Pre-Launch SEO & Code Quality Hardening
+
+These items were discovered during a pre-launch audit. They are not blockers but are important for SEO correctness, security, and code reliability before going live.
+
+### SEO — crawling & indexing
+
+- [x] **`robots.ts` — add locale-prefixed disallow rules** — current `Disallow: /auth/` does not block `/bg/auth/login` (locale-prefixed routes); change to `Disallow: /*/auth/`, `/*/profile`, `/*/my-events`, `/*/create-event` (or add individual patterns per locale). Also disallow `/api/` (already present) and `/*/saved-events`.
+- [x] **Hreflang alternates on home and other public pages** — `src/app/[locale]/page.tsx` `generateMetadata` has no `alternates.languages`; add all 4 locales. Same for `past/page.tsx`, `current/page.tsx`, `why-all4ruse/page.tsx`, `advertise/page.tsx`. Event detail already has this — `buildAlternates(locale, path)` helper created in `src/lib/seo.ts`.
+- [x] **Fix root-layout canonical URL conflict** — `src/app/layout.tsx` sets `alternates.canonical: "/"` globally, which resolves to `https://all4ruse.com/` for every page; this tells Google all pages have the same canonical. Remove the root-level canonical and instead set it per-page only where needed (event detail already does it correctly).
+- [x] **Add user public profile URLs to sitemap** — `src/app/sitemap.ts` does not include `/user/[username]` entries; fetch all distinct non-null usernames from `profiles` (public SELECT — no auth needed) and add `/[locale]/user/[username]` entries for all 4 locales. `profilesApi.getAllPublicUsernames` added.
+- [x] **Sitemap `lastModified` — use real dates** — event entries now use `events.created_at` (no `updated_at` column exists); static/editorial pages use hardcoded last-edited dates; dynamic listing pages (home/past/current) still use `new Date()` since content changes daily. `eventsApi.getAllSlugsWithDates` replaces `getAllSlugs` for sitemap use.
+
+### SEO — structured data
+
+- [x] **JSON-LD `offers` for free events** — when `event.price` is null/empty, the `offers` block is omitted entirely; Google prefers explicit `{ "@type": "Offer", "price": "0", "priceCurrency": "BGN", "availability": "InStock" }` for free events.
+- [x] **JSON-LD `organizer` fallback** — when `event.organizers` is empty or null, the `organizer` field is absent; add a site-level fallback `{ "@type": "Organization", "name": "All4Ruse", "url": "https://all4ruse.com" }`.
+
+### Security headers
+
+- [x] **Add HTTP security headers in `next.config.ts`** — the app currently sets no security headers at all; at minimum add:
+  - `X-Frame-Options: SAMEORIGIN` (clickjacking protection)
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+  - A basic `Content-Security-Policy` (or at least `X-Frame-Options` while full CSP is refined)
+
+### Image optimization
+
+- [x] **Replace raw `<img>` tags with `next/image`** — `src/app/[locale]/profile/ProfileForm.tsx` (avatar/header preview, lines ~907 and ~975) and `src/components/EventForm/EventImageUpload.tsx` (upload preview, line ~120) still use plain `<img>`; switch to `next/image` with `unoptimized` prop for blob URLs if needed, or keep `<img>` only for local blob object URLs (which `next/image` cannot optimize) and add a comment explaining the exception.
+
+### Performance
+
+- [x] **Dynamic import `EventsCalendarView`** — `EventsList.tsx` statically imports `EventsCalendarView` (~615 lines of calendar logic + CSS); only loaded when user switches to calendar view; use `dynamic(() => import("../EventsCalendar/EventsCalendarView"), { ssr: false })` to keep it out of the initial bundle.
+
+### AI / LLM SEO (GEO — Generative Engine Optimization)
+
+AI assistants (ChatGPT, Perplexity, Claude, Gemini) are increasingly used to answer "what's happening in Ruse this weekend?" — being cited by them is real traffic. These tasks make the site legible to LLMs.
+
+- [x] **`public/llms.txt`** — create a plain-text/markdown file at the site root following the [llms.txt spec](https://llmstxt.org/). This is the emerging standard (like `robots.txt` but for LLMs). Include: site name + one-line description, what it does, supported locales, key page URLs, and a note that event data is real and updated regularly. LLM crawlers that respect it will include this context when answering queries about Ruse events.
+
+```
+# All4Ruse
+
+> All4Ruse is a Bulgarian events platform for the city of Ruse. It lists concerts, exhibitions, theatre, sports, workshops, and all public events happening in Ruse.
+
+## Key pages
+- Homepage (upcoming events): https://all4ruse.com/bg
+- Past events: https://all4ruse.com/bg/past
+- Why All4Ruse: https://all4ruse.com/bg/why-all4ruse
+
+## Notes
+- Content is available in Bulgarian (bg), English (en), Ukrainian (uk), and Romanian (ro).
+- Each event has a dedicated page at https://all4ruse.com/bg/[slug] with full details.
+- Events include structured JSON-LD (schema.org/Event) for machine readability.
+```
+
+- [ ] **`public/llms-full.txt`** — optional extended version; auto-generate at build time from the sitemap (list all live event URLs with titles and dates); linked from `llms.txt` as `## Full event listing: /llms-full.txt`. Build script task, deferred post-launch.
+
+- [x] **AI crawler rules in `robots.ts`** — added explicit allow rules for GPTBot, ClaudeBot, anthropic-ai, PerplexityBot, Google-Extended, Applebot-Extended, OAI-SearchBot, cohere-ai; blocked CCBot, Bytespider, PetalBot.
+
+- [x] **`<meta name="description">` quality audit for AI** — expanded home/past/current page descriptions to 120–160 chars, natural language, city name mentioned, in all 4 locales; fixed event detail description trim to respect word boundaries (no mid-word cuts).
+
+- [x] **Semantic HTML pass for AI readability** — verified `<h1>` for event title; added `<time dateTime>` for start date, end date, and start time on event detail page; wrapped event description in `<article>` instead of `<div>`.
+
+### Code reliability
+
+- [x] **`getAllSlugs` error handling** — `src/lib/api/events.ts` `getAllSlugs` silently returns `[]` on DB error; this causes the sitemap to be generated with no event URLs, harming SEO; log the error (at minimum `console.error`) and consider re-throwing so the sitemap build fails visibly. `getAllSlugsWithDates` (sitemap) now re-throws; `getAllSlugs` (generateStaticParams) keeps returning `[]` with a comment explaining the exception.
+- [x] **Remove `mapEvent(row: any)` typed as `any`** — `src/lib/api/events.ts` and `src/lib/api/profiles.ts` now use `EventRow = Tables<"events"> & { event_tags: unknown }` and `QueryResult` uses `EventRow[]`; ESLint disable comments removed.
+- [x] **`updateProfile` `as any` cast** — `src/lib/api/profiles.ts` payload now typed as `TablesUpdate<"profiles">`; comment about `header_url` removed (it exists in generated types).
+- [x] **Reduce `console.error` in page components** — `src/app/[locale]/page.tsx`, `src/app/[locale]/past/page.tsx`, and `src/app/[locale]/current/page.tsx` no longer swallow errors; they re-throw to the `src/app/[locale]/error.tsx` boundary (created with retry button + home link, all 4 locales).
 
 ## Future scope (deferred)
 

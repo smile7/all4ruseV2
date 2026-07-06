@@ -116,6 +116,11 @@ export function EventImageUpload({ images, onChange }: Props) {
               key={img.id}
               className="bg-muted relative aspect-square overflow-hidden rounded-md"
             >
+              {/*
+               * img.previewUrl is always a blob: URL created with
+               * URL.createObjectURL(file). next/image cannot optimise blob URLs,
+               * so we use a plain <img> here intentionally.
+               */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={img.previewUrl}

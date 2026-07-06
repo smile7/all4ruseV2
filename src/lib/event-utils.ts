@@ -102,9 +102,7 @@ function getIntlLocale(locale: string): string {
 function normalizeFullDateDisplay(formatted: string, locale: string): string {
   if (locale !== "bg") return formatted;
 
-  return formatted
-    .replace(/(\d+)\s+г\./g, "$1г.")
-    .toLocaleLowerCase("bg-BG");
+  return formatted.replace(/(\d+)\s+г\./g, "$1г.").toLocaleLowerCase("bg-BG");
 }
 
 function startOfLocalDay(date: Date): Date {
@@ -219,10 +217,7 @@ export function formatFullDate(
       month: "long",
       year: "numeric",
     }).format(date);
-    return normalizeFullDateDisplay(
-      `${relativeLabel}, ${dateOnly}`,
-      locale,
-    );
+    return normalizeFullDateDisplay(`${relativeLabel}, ${dateOnly}`, locale);
   }
 
   return normalizeFullDateDisplay(fullDate, locale);
