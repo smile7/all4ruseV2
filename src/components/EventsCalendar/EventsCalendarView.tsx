@@ -474,6 +474,27 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
       )}
       style={!isFullscreen && calendarHeight ? { height: calendarHeight } : undefined}
     >
+      {/* Full-screen toggle — full-width button above the month nav, mobile only */}
+      {isFullscreen ? (
+        <Button
+          variant="outline"
+          onClick={() => setIsFullscreen(false)}
+          className="mb-2 flex w-full shrink-0 items-center justify-center gap-2"
+        >
+          <X className="size-4" aria-hidden />
+          {t("closeFullscreen")}
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          onClick={() => setIsFullscreen(true)}
+          className="mb-3 flex w-full shrink-0 items-center justify-center gap-2 md:hidden"
+        >
+          <Maximize2 className="size-4" aria-hidden />
+          {t("fullscreen")}
+        </Button>
+      )}
+
       {/* Month navigation */}
       <div
         className={cn(
@@ -507,39 +528,15 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {isFullscreen ? (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsFullscreen(false)}
-              aria-label={t("closeFullscreen")}
-              className="size-8 shrink-0"
-            >
-              <X className="size-4" aria-hidden />
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsFullscreen(true)}
-              aria-label={t("fullscreen")}
-              className="flex h-8 items-center gap-1.5 px-2.5 text-xs md:hidden"
-            >
-              <Maximize2 className="size-3.5" aria-hidden />
-              {t("fullscreen")}
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={nextMonth}
-            aria-label={t("nextMonth")}
-            className="size-8 shrink-0"
-          >
-            <ChevronRight className="size-4" aria-hidden />
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={nextMonth}
+          aria-label={t("nextMonth")}
+          className="size-8 shrink-0"
+        >
+          <ChevronRight className="size-4" aria-hidden />
+        </Button>
       </div>
 
       {/* Calendar grid — flex-1 + min-h-0 when height is constrained; otherwise a
