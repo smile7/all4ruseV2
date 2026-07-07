@@ -4,10 +4,11 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 
-import { ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, Maximize2, TableProperties, X } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { useCalendarMonthEvents } from "~/hooks/query/events";
+import { useLocalStorage } from "~/hooks/useLocalStorage";
 import { Link } from "~/i18n/navigation";
 import {
   formatEventTitleWithDateRange,
@@ -17,15 +18,17 @@ import { cn } from "~/lib/utils";
 import type { Event } from "~/types";
 
 import {
+  computeColumnarSlots,
   computeWeekSlots,
   type EventSlot,
+  getMonthDays,
   getMonthWeeks,
   isSameDay,
   isSameMonth,
   type WeekData,
 } from "./calendar-utils";
 
-// ─── Layout constants ──────────────────────────────────────────────────────────
+// ─── Grid-view layout constants ────────────────────────────────────────────────
 
 /** Vertical space reserved at the top of each cell for the day number */
 const DAY_HEADER_PX = 36;
@@ -39,6 +42,21 @@ const BAR_INSET_PX = 3;
 const BASE_CELL_HEIGHT_PX = 90;
 /** Approximate height of the 2-row sticky header (weekday labels + date row) */
 const STICKY_HEADER_PX = 68;
+
+// ─── Horizontal-timeline layout constants ─────────────────────────────────────
+
+/** Fixed pixel width for each day column in the timeline */
+const H_COL_WIDTH_PX = 96;
+/** Height of the sticky day header */
+const H_HEADER_PX = 58;
+/** Height of each event track row — matches grid MOBILE_TRACK_HEIGHT_PX */
+const H_TRACK_HEIGHT_PX = 163;
+/** Height of each event bar — matches grid mobile bar h-[156px] */
+const H_BAR_HEIGHT_PX = 156;
+/** Inner horizontal inset so bars don't touch column borders */
+const H_BAR_INSET_PX = 3;
+/** Minimum height of the events area when there are no events */
+const H_MIN_EVENTS_HEIGHT_PX = 180;
 
 // ─── Locale helpers ────────────────────────────────────────────────────────────
 
@@ -133,7 +151,7 @@ const WeekRow = forwardRef<HTMLDivElement, WeekRowProps>(function WeekRow(
       }
     >
       {/* Day cells — borders, backgrounds, and (when not the topmost visible week) date numbers */}
-      <div className="absolute inset-0 grid grid-cols-7">
+      <div className="absolute inset-0 grid grid-cols-7 divide-x-2 divide-border">
         {days.map((day, i) => {
           const isToday = isSameDay(day, today);
           const inMonth = isSameMonth(day, year, month);
@@ -142,7 +160,7 @@ const WeekRow = forwardRef<HTMLDivElement, WeekRowProps>(function WeekRow(
             <div
               key={i}
               className={cn(
-                "relative border-r px-1.5 pt-1.5 last:border-r-0",
+                "relative px-2 pt-2",
                 !inMonth && "bg-muted/30 dark:bg-muted/10",
               )}
             >
@@ -279,7 +297,98 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
   );
 }
 
+// ─── HorizontalEventBar ───────────────────────────────────────────────────────
+
+function HorizontalEventBar({
+  slot,
+  todayStr,
+  totalDays,
+}: {
+  slot: EventSlot;
+  todayStr: string;
+  totalDays: number;
+}) {
+  const { event, track, startCol, endCol, isStart, isEnd } = slot;
+  const isPast = event.endDate < todayStr;
+  const detailHref =
+    event.isEventActive && typeof event.slug === "string" && event.slug.trim()
+      ? `/${event.slug.trim()}`
+      : null;
+
+  const style: React.CSSProperties = {
+    position: "absolute",
+    left: `calc(${(startCol / totalDays) * 100}% + ${H_BAR_INSET_PX}px)`,
+    width: `calc(${((endCol - startCol + 1) / totalDays) * 100}% - ${H_BAR_INSET_PX * 2}px)`,
+    top: track * H_TRACK_HEIGHT_PX + (H_TRACK_HEIGHT_PX - H_BAR_HEIGHT_PX) / 2,
+    height: H_BAR_HEIGHT_PX,
+  };
+
+  const barClass = cn(
+    "flex flex-col overflow-hidden transition-opacity hover:opacity-85",
+    isPast
+      ? "bg-muted text-muted-foreground/50"
+      : "bg-muted text-muted-foreground border border-primary/60",
+    isStart && isEnd
+      ? "rounded-lg"
+      : isStart
+        ? "rounded-l-lg rounded-r-[3px]"
+        : isEnd
+          ? "rounded-r-lg rounded-l-[3px]"
+          : "rounded-[3px]",
+  );
+
+  const imageUrl = getEventImageUrl(event.image);
+
+  const content = isStart ? (
+    /* All start bars: image on top, text below */
+    <>
+      <div className="relative h-[70px] w-full shrink-0">
+        <Image
+          src={imageUrl}
+          alt=""
+          fill
+          sizes="96px"
+          className={cn("object-cover", isPast && "opacity-50 grayscale")}
+        />
+      </div>
+      <div className="flex min-w-0 flex-1 items-start overflow-hidden px-1.5 pt-1">
+        <span className="line-clamp-4 w-full text-sm font-semibold leading-tight">
+          {formatEventTitleWithDateRange(event.title, event.startDate, event.endDate)}
+        </span>
+      </div>
+    </>
+  ) : (
+    /* Continuation bar — no image, title only */
+    <div className="flex min-w-0 flex-1 items-center px-2 py-1">
+      <span className="line-clamp-4 w-full text-sm font-semibold leading-tight">
+        {event.title}
+      </span>
+    </div>
+  );
+
+  if (detailHref) {
+    return (
+      <Link
+        href={detailHref}
+        className={cn(barClass, "pointer-events-auto")}
+        style={style}
+        title={event.title}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className={barClass} style={style} title={event.title}>
+      {content}
+    </div>
+  );
+}
+
 // ─── Main component ────────────────────────────────────────────────────────────
+
+type ViewMode = "grid" | "timeline";
 
 type Props = {
   events: Event[];
@@ -297,7 +406,14 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
   const [year, setYear] = useState(() => now.getFullYear());
   const [month, setMonth] = useState(() => now.getMonth());
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [viewMode, setViewMode] = useLocalStorage<ViewMode>(
+    "calendar-view-mode",
+    "grid",
+  );
+  // Auto-enter fullscreen on mobile (< 768 px, i.e. below the md breakpoint).
+  const [isFullscreen, setIsFullscreen] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 768,
+  );
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const weekRowRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -421,10 +537,39 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
     [weeks, displayEvents],
   );
 
+  const monthDays = useMemo(() => getMonthDays(year, month), [year, month]);
+
+  const monthSlotData = useMemo(
+    () => computeColumnarSlots(monthDays, displayEvents),
+    [monthDays, displayEvents],
+  );
+
+  // Scroll today's column into the center of the viewport when entering timeline mode.
+  useEffect(() => {
+    if (viewMode !== "timeline") return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const todayIdx = monthDays.findIndex((d) => isSameDay(d, now));
+    if (todayIdx < 0) return;
+    const frame = requestAnimationFrame(() => {
+      const containerWidth = container.clientWidth;
+      const scrollLeft =
+        todayIdx * H_COL_WIDTH_PX -
+        containerWidth / 2 +
+        H_COL_WIDTH_PX / 2;
+      container.scrollTo({
+        left: Math.max(0, scrollLeft),
+        behavior: "smooth",
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [viewMode, monthDays, now]);
+
   function resetScroll() {
     setVisibleWeekIndex(0);
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0;
+      scrollContainerRef.current.scrollLeft = 0;
     }
   }
 
@@ -474,31 +619,10 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
       )}
       style={!isFullscreen && calendarHeight ? { height: calendarHeight } : undefined}
     >
-      {/* Full-screen toggle — full-width button above the month nav, mobile only */}
-      {isFullscreen ? (
-        <Button
-          variant="outline"
-          onClick={() => setIsFullscreen(false)}
-          className="mb-2 flex w-full shrink-0 items-center justify-center gap-2"
-        >
-          <X className="size-4" aria-hidden />
-          {t("closeFullscreen")}
-        </Button>
-      ) : (
-        <Button
-          variant="outline"
-          onClick={() => setIsFullscreen(true)}
-          className="mb-3 flex w-full shrink-0 items-center justify-center gap-2 md:hidden"
-        >
-          <Maximize2 className="size-4" aria-hidden />
-          {t("fullscreen")}
-        </Button>
-      )}
-
       {/* Month navigation */}
       <div
         className={cn(
-          "flex shrink-0 items-center justify-between",
+          "flex shrink-0 items-center justify-between gap-2",
           isHeightConstrained ? "py-2" : "mb-3",
         )}
       >
@@ -512,8 +636,8 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
           <ChevronLeft className="size-4" aria-hidden />
         </Button>
 
-        <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold tracking-tight sm:text-lg">
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+          <h2 className="truncate text-base font-semibold tracking-tight sm:text-lg">
             {formatMonthYear(year, month, locale)}
           </h2>
           {!isCurrentMonth && (
@@ -521,11 +645,39 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
               variant="outline"
               size="sm"
               onClick={goToToday}
-              className="h-7 px-2.5 text-xs"
+              className="h-7 shrink-0 px-2.5 text-xs"
             >
               {t("today")}
             </Button>
           )}
+        </div>
+
+        {/* View mode toggle — desktop only */}
+        <div className="hidden shrink-0 items-center rounded-md border p-0.5 md:flex">
+          <button
+            onClick={() => setViewMode("grid")}
+            aria-label="Grid view"
+            className={cn(
+              "flex h-6 w-6 items-center justify-center rounded transition-colors",
+              viewMode === "grid"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <LayoutGrid className="size-3.5" aria-hidden />
+          </button>
+          <button
+            onClick={() => setViewMode("timeline")}
+            aria-label="Timeline view"
+            className={cn(
+              "flex h-6 w-6 items-center justify-center rounded transition-colors",
+              viewMode === "timeline"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <TableProperties className="size-3.5" aria-hidden />
+          </button>
         </div>
 
         <Button
@@ -539,54 +691,134 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
         </Button>
       </div>
 
-      {/* Calendar grid — flex-1 + min-h-0 when height is constrained; otherwise a
-          conservative cap until EventsList finishes layout measurement.         */}
-      <div
-        ref={scrollContainerRef}
-        className={cn(
-          "overflow-auto rounded-xl border",
-          isHeightConstrained ? "min-h-0 flex-1" : "max-h-[60svh]",
-        )}
-      >
-        <div className="min-w-[650px] md:min-w-0">
-          {/* Sticky 2-row header: day names + dates of the current visible week */}
-          <div className="sticky top-0 z-10 border-b">
-            {/* Row 1 — weekday labels */}
-            <div className="bg-muted/90 dark:bg-muted/70 grid grid-cols-7 border-b backdrop-blur-sm">
-              {weekdayLabels.map((label, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "text-muted-foreground py-2 text-center text-[11px] font-semibold tracking-wider uppercase",
-                    i < 6 && "border-r",
-                  )}
-                >
-                  {label}
-                </div>
-              ))}
+      {/* ── Grid view ───────────────────────────────────────────────────────── */}
+      {viewMode === "grid" && (
+        <div
+          ref={scrollContainerRef}
+          className={cn(
+            "overflow-auto rounded-xl border",
+            isHeightConstrained ? "min-h-0 flex-1" : "max-h-[60svh]",
+          )}
+        >
+          <div className="min-w-[650px] md:min-w-0">
+            {/* Sticky 2-row header: day names + dates of the current visible week */}
+            <div className="sticky top-0 z-10 border-b">
+              {/* Row 1 — weekday labels */}
+              <div className="bg-muted/90 dark:bg-muted/70 grid grid-cols-7 divide-x-2 divide-border border-b backdrop-blur-sm">
+                {weekdayLabels.map((label, i) => (
+                  <div
+                    key={i}
+                    className="text-muted-foreground py-2 text-center text-[11px] font-semibold tracking-wider uppercase"
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
+              {/* Row 2 — dates for the topmost visible week */}
+              <div className="bg-background/95 dark:bg-background/90 grid grid-cols-7 divide-x-2 divide-border backdrop-blur-sm">
+                {(weeks[visibleWeekIndex] ?? weeks[0])?.map((day, i) => {
+                  const isDayToday = isSameDay(day, now);
+                  const dayInMonth = isSameMonth(day, year, month);
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        "flex items-center justify-center py-1",
+                        !dayInMonth && "bg-muted/20 dark:bg-muted/10",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium select-none",
+                          isDayToday
+                            ? "bg-primary text-primary-foreground font-semibold"
+                            : dayInMonth
+                              ? "text-foreground"
+                              : "text-muted-foreground/40",
+                        )}
+                      >
+                        {day.getDate()}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            {/* Row 2 — dates for the topmost visible week */}
-            <div className="bg-background/95 dark:bg-background/90 grid grid-cols-7 backdrop-blur-sm">
-              {(weeks[visibleWeekIndex] ?? weeks[0])?.map((day, i) => {
-                const isDayToday = isSameDay(day, now);
-                const dayInMonth = isSameMonth(day, year, month);
+
+            {/* Week rows */}
+            {weekDatas.map((weekData, i) => (
+              <WeekRow
+                key={i}
+                ref={(el) => {
+                  weekRowRefs.current[i] = el;
+                }}
+                weekData={weekData}
+                year={year}
+                month={month}
+                today={now}
+                todayStr={todayStr}
+                showDates={i !== visibleWeekIndex}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Timeline view ────────────────────────────────────────────────────── */}
+      {viewMode === "timeline" && (
+        <div
+          ref={scrollContainerRef}
+          className={cn(
+            "overflow-auto rounded-xl border",
+            isHeightConstrained ? "min-h-0 flex-1" : "max-h-[60svh]",
+          )}
+        >
+          <div style={{ minWidth: monthDays.length * H_COL_WIDTH_PX }}>
+            {/* Sticky header — one column per day */}
+            <div
+              className="bg-muted/90 dark:bg-muted/70 sticky top-0 z-10 grid border-b backdrop-blur-sm"
+              style={{
+                gridTemplateColumns: `repeat(${monthDays.length}, ${H_COL_WIDTH_PX}px)`,
+                height: H_HEADER_PX,
+              }}
+            >
+              {monthDays.map((day, i) => {
+                const isToday = isSameDay(day, now);
+                const dow = day.getDay();
+                const isWeekend = dow === 0 || dow === 6;
+                const isFirstOfWeek = dow === 1 || i === 0;
+                const label = new Intl.DateTimeFormat(toIntlLocale(locale), {
+                  weekday: "short",
+                }).format(day);
                 return (
                   <div
                     key={i}
                     className={cn(
-                      "flex items-center justify-center py-1",
-                      i < 6 && "border-r",
-                      !dayInMonth && "bg-muted/20 dark:bg-muted/10",
+                      "flex flex-col items-center justify-center border-r-2 border-border/80 pb-2 pt-3 last:border-r-0",
+                      isToday
+                        ? "bg-primary/10 dark:bg-primary/15"
+                        : isWeekend
+                          ? "bg-muted/60 dark:bg-muted/40"
+                          : undefined,
+                      isFirstOfWeek && i > 0 && "border-l-[3px] border-l-border",
                     )}
                   >
                     <span
                       className={cn(
-                        "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium select-none",
-                        isDayToday
+                        "text-[9px] font-semibold tracking-wider uppercase",
+                        isToday
+                          ? "text-primary"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      {label}
+                    </span>
+                    <span
+                      className={cn(
+                        "mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium select-none",
+                        isToday
                           ? "bg-primary text-primary-foreground font-semibold"
-                          : dayInMonth
-                            ? "text-foreground"
-                            : "text-muted-foreground/40",
+                          : "text-foreground",
                       )}
                     >
                       {day.getDate()}
@@ -595,23 +827,114 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
                 );
               })}
             </div>
-          </div>
 
-          {/* Week rows */}
-          {weekDatas.map((weekData, i) => (
-            <WeekRow
-              key={i}
-              ref={(el) => {
-                weekRowRefs.current[i] = el;
+            {/* Events area */}
+            <div
+              className="pointer-events-none relative"
+              style={{
+                height: Math.max(
+                  H_MIN_EVENTS_HEIGHT_PX,
+                  (monthSlotData.maxTrack + 1) * H_TRACK_HEIGHT_PX +
+                    H_TRACK_HEIGHT_PX,
+                ),
               }}
-              weekData={weekData}
-              year={year}
-              month={month}
-              today={now}
-              todayStr={todayStr}
-              showDates={i !== visibleWeekIndex}
-            />
-          ))}
+            >
+              {/* Column backgrounds — today highlight + weekend shading + week separators */}
+              <div
+                className="absolute inset-0 grid"
+                style={{
+                  gridTemplateColumns: `repeat(${monthDays.length}, ${H_COL_WIDTH_PX}px)`,
+                }}
+              >
+                {monthDays.map((day, i) => {
+                  const isToday = isSameDay(day, now);
+                  const dow = day.getDay();
+                  const isWeekend = dow === 0 || dow === 6;
+                  const isFirstOfWeek = dow === 1 || i === 0;
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        "border-r-2 border-border/80 last:border-r-0",
+                        isToday
+                          ? "bg-primary/5 dark:bg-primary/10"
+                          : isWeekend
+                            ? "bg-muted/20 dark:bg-muted/10"
+                            : undefined,
+                        isFirstOfWeek && i > 0 && "border-l-[3px] border-l-border",
+                      )}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Event bars */}
+              {monthSlotData.slots.map((slot) => (
+                <HorizontalEventBar
+                  key={`${slot.event.id}-${slot.startCol}`}
+                  slot={slot}
+                  todayStr={todayStr}
+                  totalDays={monthDays.length}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-screen toggle + view mode toggle — bottom bar, mobile only */}
+      <div
+        className={cn(
+          "flex shrink-0 items-center gap-2 md:hidden",
+          isHeightConstrained ? "pt-2" : "mt-3",
+        )}
+      >
+        {isFullscreen ? (
+          <Button
+            variant="outline"
+            onClick={() => setIsFullscreen(false)}
+            className="flex flex-1 items-center justify-center gap-2"
+          >
+            <X className="size-4" aria-hidden />
+            {t("closeFullscreen")}
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            onClick={() => setIsFullscreen(true)}
+            className="flex flex-1 items-center justify-center gap-2"
+          >
+            <Maximize2 className="size-4" aria-hidden />
+            {t("fullscreen")}
+          </Button>
+        )}
+
+        {/* View mode toggle */}
+        <div className="flex shrink-0 items-center rounded-md border p-0.5">
+          <button
+            onClick={() => setViewMode("grid")}
+            aria-label="Grid view"
+            className={cn(
+              "flex h-6 w-6 items-center justify-center rounded transition-colors",
+              viewMode === "grid"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <LayoutGrid className="size-3.5" aria-hidden />
+          </button>
+          <button
+            onClick={() => setViewMode("timeline")}
+            aria-label="Timeline view"
+            className={cn(
+              "flex h-6 w-6 items-center justify-center rounded transition-colors",
+              viewMode === "timeline"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <TableProperties className="size-3.5" aria-hidden />
+          </button>
         </div>
       </div>
     </div>
