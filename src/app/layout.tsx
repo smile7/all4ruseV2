@@ -57,6 +57,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
 export const viewport: Viewport = {
   viewportFit: "cover",
+  themeColor: "#e06830",
 };
 
 export const metadata: Metadata = {
@@ -73,9 +74,6 @@ export const metadata: Metadata = {
     capable: true,
     title: "All4Ruse",
     statusBarStyle: "default",
-  },
-  other: {
-    "theme-color": "#e06830",
   },
   robots: {
     index: true,
