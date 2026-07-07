@@ -12,7 +12,7 @@ import { flushSync } from "react-dom";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 
-import { ChevronLeft, ChevronRight, LayoutGrid, Maximize2, TableProperties, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, Loader2, Maximize2, TableProperties, X } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { useCalendarMonthEvents } from "~/hooks/query/events";
@@ -221,12 +221,15 @@ function shouldShowNavigationPending(event: MouseEvent<HTMLAnchorElement>) {
   );
 }
 
-function EventLoadingOverlay() {
+function EventLoadingOverlay({ iconClassName }: { iconClassName: string }) {
   return (
-    <div
-      className="bg-background/45 pointer-events-none absolute inset-0 z-10 backdrop-blur-[1px]"
-      aria-hidden
-    />
+    <div className="bg-background/45 pointer-events-none absolute inset-0 z-10 flex items-center justify-center backdrop-blur-[1px]">
+      <span className="bg-background/80 flex items-center justify-center rounded-full border p-1.5 shadow-sm">
+        <Loader2
+          className={cn(iconClassName, "text-primary shrink-0 animate-spin")}
+        />
+      </span>
+    </div>
   );
 }
 
@@ -326,7 +329,7 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
         onClick={handleClick}
       >
         {content}
-        {isPending && <EventLoadingOverlay />}
+        {isPending && <EventLoadingOverlay iconClassName="size-4" />}
       </Link>
     );
   }
@@ -428,7 +431,7 @@ function HorizontalEventBar({
         onClick={handleClick}
       >
         {content}
-        {isPending && <EventLoadingOverlay />}
+        {isPending && <EventLoadingOverlay iconClassName="size-5" />}
       </Link>
     );
   }

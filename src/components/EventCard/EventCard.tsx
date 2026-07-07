@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import Image from "next/image";
 import { useLocale, useMessages, useTranslations } from "next-intl";
 
-import { CopyPlus, Pencil, User } from "lucide-react";
+import { CopyPlus, Loader2, Pencil, User } from "lucide-react";
 
 import { EventTag } from "~/components/EventTag";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
@@ -253,10 +253,11 @@ export function EventCard({
         </div>
       </div>
       {isPending && (
-        <div
-          className="bg-background/45 pointer-events-none absolute inset-0 z-40 backdrop-blur-[1px]"
-          aria-hidden
-        />
+        <div className="bg-background/45 pointer-events-none absolute inset-0 z-40 flex items-center justify-center backdrop-blur-[1px]">
+          <span className="bg-background/80 flex items-center justify-center rounded-full border p-2 shadow-sm">
+            <Loader2 className="text-primary size-5 animate-spin" />
+          </span>
+        </div>
       )}
     </article>
   );
