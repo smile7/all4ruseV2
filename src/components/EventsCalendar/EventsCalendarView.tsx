@@ -1,6 +1,14 @@
 "use client";
 
-import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  type MouseEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { flushSync } from "react-dom";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -202,8 +210,29 @@ const WeekRow = forwardRef<HTMLDivElement, WeekRowProps>(function WeekRow(
 
 // ─── EventBar ─────────────────────────────────────────────────────────────────
 
+function shouldShowNavigationPending(event: MouseEvent<HTMLAnchorElement>) {
+  return (
+    !event.defaultPrevented &&
+    event.button === 0 &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey
+  );
+}
+
+function EventLoadingOverlay() {
+  return (
+    <div
+      className="bg-background/45 pointer-events-none absolute inset-0 z-10 backdrop-blur-[1px]"
+      aria-hidden
+    />
+  );
+}
+
 function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
   const { event, track, startCol, endCol, isStart, isEnd } = slot;
+  const [isPending, setIsPending] = useState(false);
 
   const isPast = event.endDate < todayStr;
   const detailHref =
@@ -277,15 +306,27 @@ function EventBar({ slot, todayStr }: { slot: EventSlot; todayStr: string }) {
     </div>
   );
 
+  const handleClick = (clickEvent: MouseEvent<HTMLAnchorElement>) => {
+    if (!shouldShowNavigationPending(clickEvent)) return;
+    flushSync(() => setIsPending(true));
+  };
+
   if (detailHref) {
     return (
       <Link
         href={detailHref}
-        className={cn(barClass, "pointer-events-auto")}
+        className={cn(
+          barClass,
+          "pointer-events-auto relative",
+          isPending && "cursor-progress",
+        )}
         style={style}
         title={event.title}
+        aria-busy={isPending}
+        onClick={handleClick}
       >
         {content}
+        {isPending && <EventLoadingOverlay />}
       </Link>
     );
   }
@@ -309,6 +350,7 @@ function HorizontalEventBar({
   totalDays: number;
 }) {
   const { event, track, startCol, endCol, isStart, isEnd } = slot;
+  const [isPending, setIsPending] = useState(false);
   const isPast = event.endDate < todayStr;
   const detailHref =
     event.isEventActive && typeof event.slug === "string" && event.slug.trim()
@@ -366,15 +408,27 @@ function HorizontalEventBar({
     </div>
   );
 
+  const handleClick = (clickEvent: MouseEvent<HTMLAnchorElement>) => {
+    if (!shouldShowNavigationPending(clickEvent)) return;
+    flushSync(() => setIsPending(true));
+  };
+
   if (detailHref) {
     return (
       <Link
         href={detailHref}
-        className={cn(barClass, "pointer-events-auto")}
+        className={cn(
+          barClass,
+          "pointer-events-auto relative",
+          isPending && "cursor-progress",
+        )}
         style={style}
         title={event.title}
+        aria-busy={isPending}
+        onClick={handleClick}
       >
         {content}
+        {isPending && <EventLoadingOverlay />}
       </Link>
     );
   }
