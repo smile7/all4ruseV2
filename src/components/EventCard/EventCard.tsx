@@ -1,6 +1,7 @@
 "use client";
 
-import { ViewTransition } from "react";
+import { type MouseEvent, useState, ViewTransition } from "react";
+import { flushSync } from "react-dom";
 import Image from "next/image";
 import { useLocale, useMessages, useTranslations } from "next-intl";
 
@@ -25,6 +26,17 @@ import { EventSaveButton } from "./EventSaveButton";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+function shouldShowNavigationPending(event: MouseEvent<HTMLAnchorElement>) {
+  return (
+    !event.defaultPrevented &&
+    event.button === 0 &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey
+  );
+}
+
 type Props = {
   event: Event;
   /** When true, shows organizer actions (edit / duplicate) and approval status. */
@@ -45,6 +57,7 @@ export function EventCard({
   const tHome = useTranslations("HomePage");
   const locale = useLocale();
   const router = useRouter();
+  const [isPending, setIsPending] = useState(false);
 
   const dateBadge = formatDateBadge(event.startDate, locale, {
     today: tHome("today"),
@@ -79,8 +92,13 @@ export function EventCard({
     router.push(`/create-event?duplicateId=${event.id}`);
   }
 
+  function handleClick(e: MouseEvent<HTMLAnchorElement>) {
+    if (!shouldShowNavigationPending(e)) return;
+    flushSync(() => setIsPending(true));
+  }
+
   const article = (
-    <article className="bg-card text-card-foreground group-focus-visible:ring-ring flex h-full flex-col overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg group-focus-visible:ring-2">
+    <article className="bg-card text-card-foreground group-focus-visible:ring-ring relative flex h-full flex-col overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg group-focus-visible:ring-2">
       {/* ── Image ──────────────────────────────────────────────────────── */}
       <ViewTransition name={`event-image-${event.id}`}>
         <div className="relative aspect-video overflow-hidden">
@@ -234,6 +252,12 @@ export function EventCard({
           )}
         </div>
       </div>
+      {isPending && (
+        <div
+          className="bg-background/45 pointer-events-none absolute inset-0 z-40 backdrop-blur-[1px]"
+          aria-hidden
+        />
+      )}
     </article>
   );
 
@@ -244,7 +268,12 @@ export function EventCard({
     <Link
       href={href}
       scroll
-      className="group block h-full focus-visible:outline-none"
+      className={cn(
+        "group block h-full focus-visible:outline-none",
+        isPending && "cursor-progress",
+      )}
+      aria-busy={isPending}
+      onClick={handleClick}
     >
       {article}
     </Link>
