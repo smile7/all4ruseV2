@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -18,7 +19,8 @@ import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { DEFAULT_PROFILE_COLOR } from "~/constants";
 import { profilesApi } from "~/lib/api";
 import { parseProfileGallery } from "~/lib/profile-gallery";
-import { createSupabaseServerClient } from "~/lib/supabase/server";
+import { buildAlternates } from "~/lib/seo";
+import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 import type { Profile } from "~/types";
 
 import { ProfileGallery } from "./ProfileGallery";
@@ -27,6 +29,17 @@ import { ProfilePastEvents } from "./ProfilePastEvents";
 import { ProfileSectionHeader } from "./ProfileSectionHeader";
 import { ProfileSocialLinks } from "./ProfileSocialLinks";
 import { RevealOnScroll } from "./RevealOnScroll";
+
+export const revalidate = 300;
+
+/**
+ * Fetch the public profile once per request and share the result between
+ * generateMetadata and the page component via React's per-request cache.
+ * Uses the public client — no cookies() call, enabling ISR.
+ */
+const getPublicProfileCached = cache((username: string) =>
+  profilesApi.getPublicProfile(createSupabasePublicServerClient(), username),
+);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -54,12 +67,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ username: string; locale: string }>;
 }): Promise<Metadata> {
-  const { username } = await params;
-  const supabase = await createSupabaseServerClient();
-  const { data: rawProfile } = await profilesApi.getPublicProfile(
-    supabase,
-    username,
-  );
+  const { username, locale } = await params;
+  const { data: rawProfile } = await getPublicProfileCached(username);
   const profile = rawProfile as Profile | null;
 
   if (!profile) return {};
@@ -72,6 +81,7 @@ export async function generateMetadata({
   return {
     title: `${name} | All4Ruse`,
     description,
+    alternates: buildAlternates(locale, `/user/${username}`),
     openGraph: {
       title: `${name} | All4Ruse`,
       description,
@@ -97,11 +107,7 @@ export default async function PublicProfilePage({
   const { username } = await params;
   const t = await getTranslations("PublicProfile");
 
-  const supabase = await createSupabaseServerClient();
-  const { data: rawProfile } = await profilesApi.getPublicProfile(
-    supabase,
-    username,
-  );
+  const { data: rawProfile } = await getPublicProfileCached(username);
   // Cast to include header_url (added via Profile type extension until DB column is migrated)
   const profile = rawProfile as Profile | null;
 
@@ -111,11 +117,14 @@ export default async function PublicProfilePage({
     (profile as Profile & { show_saved_events?: boolean | null })
       .show_saved_events ?? false;
 
+  const supabase = createSupabasePublicServerClient();
   const [{ upcoming, total }, savedEvents] = await Promise.all([
     profilesApi.getPublicProfileUpcomingEvents(supabase, profile.id),
     showSavedEvents
-      ? profilesApi.getPublicProfileSavedEvents(supabase, profile.id)
-      : Promise.resolve([]),
+      ? profilesApi
+          .getPublicProfileSavedEvents(supabase, profile.id)
+          .catch(() => [] as import("~/types").Event[])
+      : Promise.resolve([] as import("~/types").Event[]),
   ]);
 
   const isHost = total > 0;

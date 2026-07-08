@@ -1,56 +1,10 @@
+import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
 
-import { ThemeProvider } from "~/components/ThemeProvider";
-
-import "./globals.css";
-
-const comfortaa = localFont({
-  variable: "--font-comfortaa",
-  display: "swap",
-  src: [
-    {
-      path: "../../public/fonts/Comfortaa-Light.ttf",
-      weight: "300",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/Comfortaa-Regular.ttf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/Comfortaa-Medium.ttf",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/Comfortaa-SemiBold.ttf",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/Comfortaa-Bold.ttf",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-});
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html className={comfortaa.variable} suppressHydrationWarning>
-      <body className="min-h-screen antialiased" suppressHydrationWarning>
-        <ThemeProvider defaultTheme="system" enableSystem>
-          {children}
-        </ThemeProvider>
-      </body>
-    </html>
-  );
+// Required root layout — passes through to [locale]/layout.tsx which
+// renders <html lang={locale}> so the lang attribute is always set correctly.
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return children;
 }
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
