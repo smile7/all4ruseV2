@@ -163,10 +163,14 @@ export function EventCard({
             </p>
           </div>
 
-          {/* Live now badge — top right (only when not live, for manage actions approval state) */}
+          {/* Top-right badges — approval state (manage mode) or premium label */}
           {!live && showManageActions && !event.isEventActive ? (
             <div className="bg-background/92 text-muted-foreground absolute top-2.5 right-2.5 z-20 rounded-full px-3 py-1.5 text-xs font-semibold shadow backdrop-blur-sm">
               {tHome("waitingForApproval")}
+            </div>
+          ) : event.isEventPremium && !showManageActions ? (
+            <div className="absolute top-2.5 right-2.5 z-20 rounded-full bg-amber-500 px-3 py-1.5 text-xs font-bold tracking-wide text-white shadow">
+              {t("premium")}
             </div>
           ) : null}
 
