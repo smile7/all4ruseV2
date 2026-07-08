@@ -197,6 +197,7 @@ async function getActiveEvents(
   // endDate >= today catches both multi-day events still running and future events.
   const q = baseQuery(client)
     .gte("endDate", today)
+    .order("isEventPremium", { ascending: false, nullsFirst: false })
     .order("startDate", { ascending: true })
     .order("startTime", { ascending: true });
 
@@ -220,6 +221,7 @@ async function getCurrentEvents(
   const today = todayStr();
   const q = baseQuery(client)
     .gte("endDate", today)
+    .order("isEventPremium", { ascending: false, nullsFirst: false })
     .order("startDate", { ascending: true })
     .order("startTime", { ascending: true });
 
@@ -247,6 +249,7 @@ async function getPastEvents(
   const q = baseQuery(client)
     .lte("endDate", today)
     .gte("endDate", windowStart)
+    .order("isEventPremium", { ascending: false, nullsFirst: false })
     .order("endDate", { ascending: false })
     .order("startDate", { ascending: false });
 
