@@ -4,6 +4,8 @@ import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 
 export const SMART_FILL_DAILY_LIMIT = 7;
 
+export type SmartFillFeature = "facebook" | "text" | "image";
+
 export function isSmartFillAdmin(userId: string): boolean {
   const adminUserId = process.env.ADMIN_USER_ID;
   return Boolean(adminUserId && userId === adminUserId);
@@ -41,15 +43,18 @@ export function smartFillDailyLimitResponse(err: SmartFillDailyLimitError) {
 
 /**
  * Atomically checks and increments today's smart-fill import count for a user.
+ * Pass `feature` to also increment the per-feature counter for analytics.
  * Throws SmartFillDailyLimitError when the daily cap is reached.
  */
 export async function consumeSmartFillImport(
   userId: string,
+  feature: SmartFillFeature,
 ): Promise<ConsumeRow> {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.rpc("consume_smart_fill_import", {
     p_user_id: userId,
     p_daily_limit: SMART_FILL_DAILY_LIMIT,
+    p_feature: feature,
   });
 
   if (error) {

@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     text.length > MAX_TEXT_LENGTH ? text.slice(0, MAX_TEXT_LENGTH) : text;
 
   try {
-    await consumeSmartFillImport(user.id);
+    await consumeSmartFillImport(user.id, "text");
   } catch (err) {
     if (err instanceof SmartFillDailyLimitError) {
       return smartFillDailyLimitResponse(err);
