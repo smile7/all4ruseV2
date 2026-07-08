@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getMessages, getTranslations } from "next-intl/server";
@@ -26,7 +27,7 @@ import {
 import { RelatedEventsRow } from "~/components/layout/RelatedEventsRow";
 import { Card, CardContent } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
-import { type Locale, LOCALES } from "~/constants";
+import type { Locale } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { claimsApi, eventsApi, profilesApi, reportsApi } from "~/lib/api";
 import {
@@ -43,13 +44,20 @@ import {
   isLiveNow,
 } from "~/lib/event-utils";
 import { isUsernameInvalid } from "~/lib/profile-username";
+import { buildEventAlternates } from "~/lib/seo";
 import {
   createSupabasePublicServerClient,
   createSupabaseServerClient,
 } from "~/lib/supabase/server";
 import type { Host } from "~/types";
 
-export const dynamic = "force-dynamic";
+/**
+ * Fetch the event once per request and share the result between
+ * generateMetadata and the page component via React's per-request cache.
+ */
+const getEventBySlugCached = cache((slug: string) =>
+  eventsApi.getEventBySlug(createSupabasePublicServerClient(), slug),
+);
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
@@ -87,8 +95,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const safeLocale = locale as Locale;
   const t = await getTranslations({ locale, namespace: "CreateEvent" });
   try {
-    const client = createSupabasePublicServerClient();
-    const event = await eventsApi.getEventBySlug(client, slug);
+    const event = await getEventBySlugCached(slug);
     if (!event) return { title: t("eventNotFound") };
 
     const formattedTitle = formatEventTitle(event.title);
@@ -101,35 +108,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? rawDescription.slice(0, 160).replace(/\s+\S*$/, "")
         : rawDescription) || formattedTitle;
     const imageUrl = getEventImageUrl(event.image);
-    const eventPath = buildEventPath(locale, slug);
+    const absoluteImageUrl = imageUrl.startsWith("/")
+      ? `${siteUrl}${imageUrl}`
+      : imageUrl;
     const eventUrl = buildEventUrl(locale, slug);
 
     return {
       title: formattedTitle,
       description,
-      alternates: {
-        canonical: eventPath,
-        languages: Object.fromEntries(
-          LOCALES.map((language) => [language, buildEventPath(language, slug)]),
-        ),
-      },
+      alternates: buildEventAlternates(locale, slug),
       openGraph: {
         title: formattedTitle,
         description,
         url: eventUrl,
         siteName: "All4Ruse",
-        images: imageUrl ? [{ url: imageUrl }] : [],
+        images: absoluteImageUrl
+          ? [{ url: absoluteImageUrl, width: 1200, height: 630, alt: formattedTitle }]
+          : [],
         type: "article",
         locale: openGraphLocaleByRouteLocale[safeLocale],
-        alternateLocale: LOCALES.filter(
-          (language) => language !== safeLocale,
-        ).map((language) => openGraphLocaleByRouteLocale[language]),
+        alternateLocale: Object.values(openGraphLocaleByRouteLocale).filter(
+          (ogLocale) => ogLocale !== openGraphLocaleByRouteLocale[safeLocale],
+        ),
       },
       twitter: {
         card: "summary_large_image",
         title: formattedTitle,
         description,
-        images: imageUrl ? [imageUrl] : [],
+        images: absoluteImageUrl ? [absoluteImageUrl] : [],
       },
     };
   } catch {
@@ -148,28 +154,56 @@ export default async function EventDetailPage({ params }: Props) {
   const eventTagLabels = (messages as { EventTags?: Record<string, string> })
     .EventTags;
 
-  const [authClient, publicClient] = await Promise.all([
-    createSupabaseServerClient(),
-    Promise.resolve(createSupabasePublicServerClient()),
-  ]);
-  const [
-    event,
-    {
-      data: { user },
-    },
-  ] = await Promise.all([
-    eventsApi.getEventBySlug(publicClient, slug),
+  const publicClient = createSupabasePublicServerClient();
+  const authClient = await createSupabaseServerClient();
+
+  const [event, { data: { user } }] = await Promise.all([
+    getEventBySlugCached(slug),
     authClient.auth.getUser(),
   ]);
   if (!event) notFound();
 
   const adminUserId = process.env.NEXT_PUBLIC_ADMIN_USER_ID ?? "";
-  const hostProfile =
-    event.createdBy && event.createdBy !== adminUserId
-      ? await profilesApi
-          .getProfile(publicClient, event.createdBy)
-          .then((r) => r.data)
-      : null;
+  const isEventCreator = Boolean(user && event.createdBy === user.id);
+  const isAdmin = Boolean(user && adminUserId && user.id === adminUserId);
+
+  // Show claim button when the event was imported by the admin (no real owner yet)
+  // and the logged-in user is not the admin themselves.
+  const isAdminEvent = Boolean(adminUserId && event.createdBy === adminUserId);
+  const showClaimButton =
+    Boolean(user) && isAdminEvent && user?.id !== adminUserId;
+
+  // Show report button for authenticated users who are not the event creator.
+  const showReportButton =
+    Boolean(user) && !isEventCreator && user?.id !== adminUserId;
+
+  // Run all remaining independent fetches in parallel.
+  const [hostProfileResult, relatedEvents, existingClaim, existingReport] =
+    await Promise.all([
+      event.createdBy && event.createdBy !== adminUserId
+        ? profilesApi
+            .getProfile(publicClient, event.createdBy)
+            .then((r) => r.data)
+        : Promise.resolve(null),
+      eventsApi.getRelatedEvents(
+        publicClient,
+        event.id,
+        (event.tags ?? []).map((tag) => tag.id),
+        event.title,
+      ),
+      showClaimButton && user
+        ? claimsApi
+            .getMyClaimForEvent(authClient, event.id, user.id)
+            .catch(() => null)
+        : Promise.resolve(null),
+      showReportButton && user
+        ? reportsApi
+            .getMyReportForEvent(authClient, event.id, user.id)
+            .catch(() => null)
+        : Promise.resolve(null),
+    ]);
+
+  const hostProfile = hostProfileResult;
 
   // Legacy profiles may have an email stored as their username.
   // When that happens, fall back to the user ID so the profile page can
@@ -182,37 +216,9 @@ export default async function EventDetailPage({ params }: Props) {
     return u;
   })();
 
-  const isEventCreator = Boolean(user && event.createdBy === user.id);
-  const isAdmin = Boolean(user && adminUserId && user.id === adminUserId);
-
-  // Show claim button when the event was imported by the admin (no real owner yet)
-  // and the logged-in user is not the admin themselves.
-  const isAdminEvent = Boolean(adminUserId && event.createdBy === adminUserId);
-
-  const showClaimButton =
-    Boolean(user) && isAdminEvent && user?.id !== adminUserId;
-
-  const existingClaim =
-    showClaimButton && user
-      ? await claimsApi
-          .getMyClaimForEvent(authClient, event.id, user.id)
-          .catch(() => null)
-      : null;
-
   const initialClaimStatus = existingClaim
     ? (existingClaim.status as import("~/lib/api").ClaimStatus)
     : null;
-
-  // Show report button for authenticated users who are not the event creator.
-  const showReportButton =
-    Boolean(user) && !isEventCreator && user?.id !== adminUserId;
-
-  const existingReport =
-    showReportButton && user
-      ? await reportsApi
-          .getMyReportForEvent(authClient, event.id, user.id)
-          .catch(() => null)
-      : null;
 
   const alreadyReported = Boolean(existingReport);
 
@@ -244,12 +250,6 @@ export default async function EventDetailPage({ params }: Props) {
         .filter((img): img is string => typeof img === "string")
         .map(getEventImageUrl)
     : [];
-  const relatedEvents = await eventsApi.getRelatedEvents(
-    publicClient,
-    event.id,
-    (event.tags ?? []).map((tag) => tag.id),
-    event.title,
-  );
 
   const eventUrl = buildEventUrl(locale, slug);
   const gcalUrl = buildGCalUrl(event);
