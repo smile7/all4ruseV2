@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
   if (!isSmartFillAdmin(user.id)) {
     try {
-      await consumeSmartFillImport(user.id);
+      await consumeSmartFillImport(user.id, "facebook");
     } catch (err) {
       if (err instanceof SmartFillDailyLimitError) {
         return smartFillDailyLimitResponse(err);

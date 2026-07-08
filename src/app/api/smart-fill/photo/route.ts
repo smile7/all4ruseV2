@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       : undefined;
 
   try {
-    await consumeSmartFillImport(user.id);
+    await consumeSmartFillImport(user.id, "image");
   } catch (err) {
     if (err instanceof SmartFillDailyLimitError) {
       return smartFillDailyLimitResponse(err);
