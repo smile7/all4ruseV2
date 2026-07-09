@@ -58,6 +58,24 @@ function getCurrentMonthKey(): string {
   return `${now.getFullYear()}-${now.getMonth()}`;
 }
 
+function compareUpcomingEvents(left: Event, right: Event): number {
+  const premiumDiff =
+    Number(right.isEventPremium === true) -
+    Number(left.isEventPremium === true);
+
+  if (premiumDiff !== 0) return premiumDiff;
+
+  const startDateDiff = left.startDate.localeCompare(right.startDate);
+  if (startDateDiff !== 0) return startDateDiff;
+
+  const startTimeDiff = (left.startTime ?? "").localeCompare(
+    right.startTime ?? "",
+  );
+  if (startTimeDiff !== 0) return startTimeDiff;
+
+  return left.id - right.id;
+}
+
 function groupEventsByMonth(
   events: Event[],
   locale: string,
@@ -107,7 +125,9 @@ function groupEventsByMonth(
       monthKey,
       label: group.label,
       showHeading: group.showHeading,
-      events: [...group.premiumEvents, ...group.regularEvents],
+      events: [...group.premiumEvents, ...group.regularEvents].sort(
+        compareUpcomingEvents,
+      ),
     }));
 }
 
@@ -304,8 +324,13 @@ function CurrentEventsList({ initialData }: Omit<Props, "variant">) {
     {},
     { initialData },
   );
+  const sortedEvents = useMemo(
+    () => [...events].sort(compareUpcomingEvents),
+    [events],
+  );
+
   if (isLoading && !events.length) return <EventsGridSkeleton />;
-  return <EventsGrid events={events} />;
+  return <EventsGrid events={sortedEvents} />;
 }
 
 function PastEventsList({ initialData }: Omit<Props, "variant">) {
