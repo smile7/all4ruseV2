@@ -64,25 +64,51 @@ function groupEventsByMonth(
 ): EventMonthGroup[] {
   const currentMonthKey = getCurrentMonthKey();
 
-  return events.reduce<EventMonthGroup[]>((groups, event) => {
-    const date = parseLocalDate(event.startDate);
-    const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
-    const existingGroup = groups.at(-1);
+  const groupsByMonth = new Map<
+    string,
+    {
+      monthOrder: number;
+      label: string;
+      showHeading: boolean;
+      premiumEvents: Event[];
+      regularEvents: Event[];
+    }
+  >();
 
-    if (existingGroup?.monthKey === monthKey) {
-      existingGroup.events.push(event);
-      return groups;
+  for (const event of events) {
+    const date = parseLocalDate(event.startDate);
+    const month = date.getMonth();
+    const year = date.getFullYear();
+    const monthKey = `${year}-${month}`;
+    const existingGroup = groupsByMonth.get(monthKey);
+
+    if (existingGroup) {
+      if (event.isEventPremium) {
+        existingGroup.premiumEvents.push(event);
+      } else {
+        existingGroup.regularEvents.push(event);
+      }
+      continue;
     }
 
-    groups.push({
-      key: `${monthKey}-${groups.length}`,
-      monthKey,
+    groupsByMonth.set(monthKey, {
+      monthOrder: year * 12 + month,
       label: formatEventMonthHeading(event.startDate, locale),
       showHeading: monthKey !== currentMonthKey,
-      events: [event],
+      premiumEvents: event.isEventPremium ? [event] : [],
+      regularEvents: event.isEventPremium ? [] : [event],
     });
-    return groups;
-  }, []);
+  }
+
+  return Array.from(groupsByMonth.entries())
+    .sort(([, left], [, right]) => left.monthOrder - right.monthOrder)
+    .map(([monthKey, group], index) => ({
+      key: `${monthKey}-${index}`,
+      monthKey,
+      label: group.label,
+      showHeading: group.showHeading,
+      events: [...group.premiumEvents, ...group.regularEvents],
+    }));
 }
 
 function EmptyState() {
