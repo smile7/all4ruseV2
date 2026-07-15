@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { PushNotificationCard } from "~/components/layout/PushNotificationCard";
 import { useRegisterUnsavedChanges } from "~/components/layout/UnsavedChangesGuard";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -627,6 +628,9 @@ export function ProfileForm({
       </TabsList>
 
       <TabsContent value="information" className="mt-0 space-y-6">
+        <PushNotificationCard
+          currentReminderTime={profile?.reminder_time ?? "09:00"}
+        />
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* ── Personal information ──────────────────────────────────── */}
@@ -919,7 +923,7 @@ export function ProfileForm({
                     <div className="relative aspect-3/1 w-full overflow-hidden rounded-xl border">
                       {/*
                        * unoptimized: src may be a blob: URL (local file preview)
-                       * that next/image cannot run through its optimisation pipeline.
+                       * that next/image cannot run through its optimization pipeline.
                        * Using fill + unoptimized keeps the same visual output while
                        * satisfying the @next/next/no-img-element lint rule.
                        */}

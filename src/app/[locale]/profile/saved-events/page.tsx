@@ -3,9 +3,10 @@ import { getTranslations } from "next-intl/server";
 import { Bookmark } from "lucide-react";
 
 import { Typography } from "~/components/layout";
+import { PushNotificationCard } from "~/components/layout/PushNotificationCard";
 import { Button } from "~/components/ui/button";
 import { Link } from "~/i18n/navigation";
-import { savedEventsApi } from "~/lib/api";
+import { profilesApi, savedEventsApi } from "~/lib/api";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 import { SavedEventsSections } from "./SavedEventsSections";
@@ -59,10 +60,13 @@ export default async function SavedEventsPage() {
     );
   }
 
-  const [savedCount, upcomingEvents] = await Promise.all([
+  const [savedCount, upcomingEvents, profileResult] = await Promise.all([
     savedEventsApi.getSavedEventsCount(supabase, user.id),
     savedEventsApi.getSavedEvents(supabase, user.id, "upcoming"),
+    profilesApi.getProfile(supabase, user.id),
   ]);
+
+  const reminderTime = profileResult.data?.reminder_time ?? "09:00";
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
@@ -72,6 +76,8 @@ export default async function SavedEventsPage() {
           {t("pageDescription")}
         </Typography.P>
       </div>
+
+      <PushNotificationCard currentReminderTime={reminderTime} />
 
       <SavedEventsSections
         userId={user.id}

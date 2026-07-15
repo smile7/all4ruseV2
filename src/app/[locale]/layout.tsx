@@ -1,6 +1,5 @@
 import localFont from "next/font/local";
 import { notFound } from "next/navigation";
-import Script from "next/script";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 
@@ -8,15 +7,20 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import {
+  AppSerwistProvider,
+  CookieConsentProvider,
   FiltersMobileDrawer,
   Footer,
   Header,
   MobileBottomNav,
+  TrackingScripts,
 } from "~/components/layout";
 import Providers from "~/components/Providers";
 import { ThemeProvider } from "~/components/ThemeProvider";
 import type { Locale } from "~/constants";
+import { AuthProvider } from "~/contexts/AuthContext";
 import { routing } from "~/i18n/routing";
+import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 import "../globals.css";
 
@@ -65,6 +69,10 @@ export default async function LocaleLayout({ children, params }: Props) {
   }
 
   const messages = await getMessages({ locale });
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <html
@@ -76,40 +84,31 @@ export default async function LocaleLayout({ children, params }: Props) {
         <ThemeProvider defaultTheme="system" enableSystem>
           <NextIntlClientProvider messages={messages}>
             <Providers>
-              <Header />
-              {/* Mobile filter drawer — portal-renders to body, trigger is in Header */}
-              <FiltersMobileDrawer />
-              {/*
-                main-layout — responsive bottom padding that clears the mobile nav
-                bar (including iOS home indicator safe area) on mobile, and the
-                fixed desktop footer on md+. Defined in globals.css.
-              */}
-              <main className="main-layout min-h-[calc(100svh-3.5rem)] overflow-x-clip xl:px-30">
-                {children}
-              </main>
-              <Footer />
-              <MobileBottomNav />
+              <AppSerwistProvider>
+                <AuthProvider userId={user?.id ?? null}>
+                  <CookieConsentProvider>
+                    <Header />
+                    {/* Mobile filter drawer — portal-renders to body, trigger is in Header */}
+                    <FiltersMobileDrawer />
+                    {/*
+                      main-layout — responsive bottom padding that clears the mobile nav
+                      bar (including iOS home indicator safe area) on mobile, and the
+                      fixed desktop footer on md+. Defined in globals.css.
+                    */}
+                    <main className="main-layout min-h-[calc(100svh-3.5rem)] overflow-x-clip xl:px-30">
+                      {children}
+                    </main>
+                    <Footer />
+                    <MobileBottomNav />
+                    <TrackingScripts />
+                  </CookieConsentProvider>
+                </AuthProvider>
+              </AppSerwistProvider>
             </Providers>
           </NextIntlClientProvider>
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />
-        {process.env.NEXT_PUBLIC_GA_ID && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
-              strategy="afterInteractive"
-            />
-            <Script id="ga-init" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
-              `}
-            </Script>
-          </>
-        )}
       </body>
     </html>
   );

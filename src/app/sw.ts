@@ -61,3 +61,49 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+// ── Push notifications ────────────────────────────────────────────────────────
+
+self.addEventListener("push", (event: PushEvent) => {
+  if (!event.data) return;
+
+  type PushPayload = {
+    title: string;
+    body: string;
+    url: string;
+    icon?: string;
+  };
+
+  let payload: PushPayload;
+  try {
+    payload = event.data.json() as PushPayload;
+  } catch {
+    return;
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: payload.icon ?? "/android-chrome-192x192.png",
+      badge: "/android-chrome-192x192.png",
+      data: { url: payload.url },
+      tag: payload.url, // deduplicate: same event won't stack
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event: NotificationEvent) => {
+  event.notification.close();
+
+  const url: string = (event.notification.data as { url?: string })?.url ?? "/";
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        const existing = clientList.find((c) => c.url === url && "focus" in c);
+        if (existing) return existing.focus();
+        return self.clients.openWindow(url);
+      }),
+  );
+});
