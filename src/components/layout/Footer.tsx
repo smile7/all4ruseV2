@@ -12,6 +12,7 @@ import {
   Megaphone,
   Scale,
   ScrollText,
+  Settings2,
   ShieldCheck,
 } from "lucide-react";
 
@@ -20,6 +21,7 @@ import {
   InstagramIcon,
   TikTokIcon,
 } from "~/components/icons/SocialIcons";
+import { useCookieSettings } from "~/components/layout/CookieConsent";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +42,8 @@ import { Link } from "~/i18n/navigation";
 
 export function Footer() {
   const t = useTranslations("HomePage");
+  const tGeneral = useTranslations("General");
+  const { openSettings, canManageCookies } = useCookieSettings();
   const year = new Date().getFullYear();
 
   return (
@@ -149,6 +153,15 @@ export function Footer() {
             <DropdownMenuLabel className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
               {t("legal")}
             </DropdownMenuLabel>
+            {canManageCookies && (
+              <DropdownMenuItem
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+                onSelect={openSettings}
+              >
+                <Settings2 className="text-muted-foreground size-4 shrink-0" />
+                {tGeneral("cookiePreferences")}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild>
               <Link
                 href="/legal/terms"
