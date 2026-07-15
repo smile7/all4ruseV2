@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { savedEventsApi } from "~/lib/api";
-import { getSupabaseBrowserClient } from "~/lib/supabase/client";
+import { useAuth } from "~/contexts/AuthContext";
 import type { Event } from "~/types";
 
 type SavedEventsTiming = "upcoming" | "past";
@@ -14,16 +13,8 @@ export const savedEventsKeys = {
 };
 
 export function useCurrentUserId() {
-  return useQuery({
-    queryKey: savedEventsKeys.user,
-    queryFn: async () => {
-      const {
-        data: { user },
-      } = await getSupabaseBrowserClient().auth.getUser();
-      return user?.id ?? null;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  const { userId } = useAuth();
+  return { data: userId };
 }
 
 export function useSavedEventIds(userId: string | null | undefined) {
@@ -31,8 +22,12 @@ export function useSavedEventIds(userId: string | null | undefined) {
     queryKey: userId
       ? savedEventsKeys.ids(userId)
       : ["saved-events", "ids", "guest"],
-    queryFn: () =>
-      savedEventsApi.getSavedEventIds(getSupabaseBrowserClient(), userId ?? ""),
+    queryFn: async () => {
+      const response = await fetch("/api/saved-events");
+      if (!response.ok) throw new Error("Failed to fetch saved events");
+      const data = (await response.json()) as { ids: number[] };
+      return data.ids;
+    },
     enabled: Boolean(userId),
     staleTime: 60_000,
   });
@@ -45,8 +40,14 @@ export function useSavedEvents(
 ) {
   return useQuery({
     queryKey: savedEventsKeys.list(userId, timing),
-    queryFn: () =>
-      savedEventsApi.getSavedEvents(getSupabaseBrowserClient(), userId, timing),
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/saved-events?type=events&timing=${timing}`,
+      );
+      if (!response.ok) throw new Error("Failed to fetch saved events");
+      const data = (await response.json()) as { events: Event[] };
+      return data.events;
+    },
     enabled: options.enabled ?? true,
     initialData: options.initialData,
     staleTime: 60_000,
@@ -64,11 +65,14 @@ export function useToggleSavedEvent(userId: string) {
       eventId: number;
       nextSaved: boolean;
     }) => {
-      const client = getSupabaseBrowserClient();
-      if (nextSaved) {
-        await savedEventsApi.saveEvent(client, userId, eventId);
-      } else {
-        await savedEventsApi.unsaveEvent(client, userId, eventId);
+      const response = await fetch("/api/saved-events", {
+        method: nextSaved ? "POST" : "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update saved event");
       }
     },
     onMutate: async ({ eventId, nextSaved }) => {

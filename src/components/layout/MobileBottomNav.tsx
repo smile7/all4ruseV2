@@ -19,6 +19,7 @@ import {
   Plus,
   Scale,
   ScrollText,
+  Settings2,
   ShieldCheck,
   User as UserIcon,
 } from "lucide-react";
@@ -28,6 +29,7 @@ import {
   InstagramIcon,
   TikTokIcon,
 } from "~/components/icons/SocialIcons";
+import { useCookieSettings } from "~/components/layout/CookieConsent";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -56,8 +58,10 @@ function getAvatarFallback(user: User): string {
 
 export function MobileBottomNav() {
   const t = useTranslations("HomePage");
+  const tGeneral = useTranslations("General");
   const tSaved = useTranslations("SavedEvents");
   const tProfile = useTranslations("Profile");
+  const { openSettings, canManageCookies } = useCookieSettings();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -290,6 +294,19 @@ export function MobileBottomNav() {
             <p className="text-muted-foreground mb-1.5 px-1 text-xs font-medium tracking-wider uppercase">
               {t("legal")}
             </p>
+            {canManageCookies && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false);
+                  openSettings();
+                }}
+                className="text-foreground/80 hover:text-foreground flex w-full items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
+              >
+                <Settings2 className="text-muted-foreground size-4 shrink-0" />
+                <span>{tGeneral("cookiePreferences")}</span>
+              </button>
+            )}
             <Link
               href="/legal/terms"
               onClick={() => setMoreOpen(false)}
