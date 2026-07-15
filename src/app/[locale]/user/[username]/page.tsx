@@ -108,14 +108,11 @@ export default async function PublicProfilePage({
   const t = await getTranslations("PublicProfile");
 
   const { data: rawProfile } = await getPublicProfileCached(username);
-  // Cast to include header_url (added via Profile type extension until DB column is migrated)
-  const profile = rawProfile as Profile | null;
+  const profile = rawProfile;
 
   if (!profile) notFound();
 
-  const showSavedEvents =
-    (profile as Profile & { show_saved_events?: boolean | null })
-      .show_saved_events ?? false;
+  const showSavedEvents = profile.show_saved_events ?? false;
 
   const supabase = createSupabasePublicServerClient();
   const [{ upcoming, total }, savedEvents] = await Promise.all([

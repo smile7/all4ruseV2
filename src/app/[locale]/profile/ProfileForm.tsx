@@ -96,31 +96,42 @@ type Props = {
   hasCreatedEvents: boolean;
 };
 
+function isUsernameConflictError(
+  error: {
+    code?: string;
+    message?: string;
+    details?: string;
+  } | null,
+) {
+  if (!error || error.code !== "23505") return false;
+
+  const text = `${error.message ?? ""} ${error.details ?? ""}`.toLowerCase();
+  return text.includes("username");
+}
+
 function toFormDefaults(
   profile: Profile | null,
   hasCreatedEvents: boolean,
 ): UpdateProfileInput {
-  // show_saved_events will be properly typed once the DB column is on profiles
-  // and db:types is re-run. Until then we use a cast.
-  const p = profile as
-    | (Profile & { show_saved_events?: boolean | null })
-    | null;
   return {
-    full_name: p?.full_name ?? "",
-    username: p?.username && !isUsernameInvalid(p.username) ? p.username : "",
-    bio: p?.bio ?? "",
-    name_to_show: p?.name_to_show ?? "",
-    phone: p?.phone ?? "",
-    place: p?.place ?? "",
-    address_physical: p?.address_physical ?? "",
-    email_to_show: p?.email_to_show ?? "",
-    website: p?.website ?? "",
-    fb: p?.fb ?? "",
-    instagram: p?.instagram ?? "",
-    tiktok: p?.tiktok ?? "",
-    color: p?.color ?? "",
+    full_name: profile?.full_name ?? "",
+    username:
+      profile?.username && !isUsernameInvalid(profile.username)
+        ? profile.username
+        : "",
+    bio: profile?.bio ?? "",
+    name_to_show: profile?.name_to_show ?? "",
+    phone: profile?.phone ?? "",
+    place: profile?.place ?? "",
+    address_physical: profile?.address_physical ?? "",
+    email_to_show: profile?.email_to_show ?? "",
+    website: profile?.website ?? "",
+    fb: profile?.fb ?? "",
+    instagram: profile?.instagram ?? "",
+    tiktok: profile?.tiktok ?? "",
+    color: profile?.color ?? "",
     // Default: checked when user has no created events
-    show_saved_events: p?.show_saved_events ?? !hasCreatedEvents,
+    show_saved_events: profile?.show_saved_events ?? !hasCreatedEvents,
   };
 }
 
@@ -473,6 +484,7 @@ export function ProfileForm({
         userId,
       );
       if (!available) {
+        setUsernameLookup({ username, status: "taken" });
         form.setError("username", { message: t("usernameTaken") });
         return;
       }
@@ -522,7 +534,8 @@ export function ProfileForm({
         payload,
       );
       if (error) {
-        if (error.code === "23505") {
+        if (isUsernameConflictError(error)) {
+          setUsernameLookup({ username, status: "taken" });
           form.setError("username", { message: t("usernameTaken") });
           return;
         }
