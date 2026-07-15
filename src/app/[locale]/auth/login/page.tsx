@@ -29,7 +29,6 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { PasswordInput } from "~/components/ui/password-input";
-import { executeRecaptcha } from "~/lib/recaptcha";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 import { setAuthRememberPreference } from "~/lib/supabase/session-persistence";
 
@@ -68,19 +67,6 @@ export default function LoginPage() {
 
   async function onSubmit(values: LoginValues) {
     setAuthError(null);
-
-    const token = await executeRecaptcha("login");
-    if (token) {
-      const res = await fetch("/api/auth/verify-captcha", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-      if (!res.ok) {
-        setAuthError(t("captchaError"));
-        return;
-      }
-    }
 
     setAuthRememberPreference(values.rememberMe);
     const supabase = getSupabaseBrowserClient();

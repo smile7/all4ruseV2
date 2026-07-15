@@ -108,7 +108,7 @@ export default function SignupPage() {
       const res = await fetch("/api/auth/verify-captcha", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token, action: "signup" }),
       });
       if (!res.ok) {
         setAuthError(t("captchaError"));
