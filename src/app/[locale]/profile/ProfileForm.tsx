@@ -97,6 +97,19 @@ type Props = {
   hasCreatedEvents: boolean;
 };
 
+function isUsernameConflictError(
+  error: {
+    code?: string;
+    message?: string;
+    details?: string;
+  } | null,
+) {
+  if (!error || error.code !== "23505") return false;
+
+  const text = `${error.message ?? ""} ${error.details ?? ""}`.toLowerCase();
+  return text.includes("username");
+}
+
 function toFormDefaults(
   profile: Profile | null,
   hasCreatedEvents: boolean,
@@ -118,6 +131,7 @@ function toFormDefaults(
     instagram: profile?.instagram ?? "",
     tiktok: profile?.tiktok ?? "",
     color: profile?.color ?? "",
+    // Default: checked when user has no created events
     show_saved_events: profile?.show_saved_events ?? !hasCreatedEvents,
   };
 }
@@ -471,6 +485,7 @@ export function ProfileForm({
         userId,
       );
       if (!available) {
+        setUsernameLookup({ username, status: "taken" });
         form.setError("username", { message: t("usernameTaken") });
         return;
       }
@@ -520,7 +535,8 @@ export function ProfileForm({
         payload,
       );
       if (error) {
-        if (error.code === "23505") {
+        if (isUsernameConflictError(error)) {
+          setUsernameLookup({ username, status: "taken" });
           form.setError("username", { message: t("usernameTaken") });
           return;
         }
@@ -907,7 +923,7 @@ export function ProfileForm({
                     <div className="relative aspect-3/1 w-full overflow-hidden rounded-xl border">
                       {/*
                        * unoptimized: src may be a blob: URL (local file preview)
-                       * that next/image cannot run through its optimisation pipeline.
+                       * that next/image cannot run through its optimization pipeline.
                        * Using fill + unoptimized keeps the same visual output while
                        * satisfying the @next/next/no-img-element lint rule.
                        */}

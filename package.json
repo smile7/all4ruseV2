@@ -9,7 +9,7 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "types": "tsc --noEmit",
+    "types": "node -e \"const fs=require('node:fs');fs.rmSync('.next/types',{recursive:true,force:true});fs.rmSync('.next/dev/types',{recursive:true,force:true});\" && next typegen && tsc --noEmit",
     "db:types": "export $(grep -v '^#' .env.local | xargs) && supabase gen types typescript --project-id $SUPABASE_PROJECT_REF --schema public > src/types/database.tmp.ts && mv src/types/database.tmp.ts src/types/database.ts"
   },
   "dependencies": {

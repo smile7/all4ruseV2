@@ -39,10 +39,17 @@ CREATE TABLE public.events (
 );
 CREATE TABLE public.profiles (
   id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone,
   username text UNIQUE CHECK (char_length(username) >= 3),
   full_name text,
   avatar_url text,
+  bio text,
+  header_url text,
+  profile_gallery jsonb,
+  show_saved_events boolean,
+  reminder_time text NOT NULL,
+  color text,
   website text,
   email text UNIQUE,
   is_confirmed boolean,

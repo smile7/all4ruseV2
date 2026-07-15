@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       event_claims: {
         Row: {
+          claimant_full_name: string | null
           claimant_id: string
           created_at: string
           event_id: number
@@ -25,6 +26,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          claimant_full_name?: string | null
           claimant_id: string
           created_at?: string
           event_id: number
@@ -34,6 +36,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          claimant_full_name?: string | null
           claimant_id?: string
           created_at?: string
           event_id?: number
@@ -58,6 +61,7 @@ export type Database = {
           event_id: number
           id: string
           message: string | null
+          reporter_full_name: string | null
           reporter_id: string
         }
         Insert: {
@@ -65,6 +69,7 @@ export type Database = {
           event_id: number
           id?: string
           message?: string | null
+          reporter_full_name?: string | null
           reporter_id: string
         }
         Update: {
@@ -72,6 +77,7 @@ export type Database = {
           event_id?: number
           id?: string
           message?: string | null
+          reporter_full_name?: string | null
           reporter_id?: string
         }
         Relationships: [
@@ -118,6 +124,7 @@ export type Database = {
         Row: {
           address: string
           created_at: string
+          created_by_full_name: string | null
           createdBy: string | null
           description: string
           email: string | null
@@ -147,6 +154,7 @@ export type Database = {
         Insert: {
           address: string
           created_at?: string
+          created_by_full_name?: string | null
           createdBy?: string | null
           description: string
           email?: string | null
@@ -176,6 +184,7 @@ export type Database = {
         Update: {
           address?: string
           created_at?: string
+          created_by_full_name?: string | null
           createdBy?: string | null
           description?: string
           email?: string | null
@@ -218,6 +227,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           color: string | null
+          created_at: string
           email: string | null
           email_to_show: string | null
           fb: string | null
@@ -242,6 +252,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           color?: string | null
+          created_at?: string
           email?: string | null
           email_to_show?: string | null
           fb?: string | null
@@ -266,6 +277,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           color?: string | null
+          created_at?: string
           email?: string | null
           email_to_show?: string | null
           fb?: string | null
@@ -326,37 +338,55 @@ export type Database = {
         Row: {
           created_at: string
           event_id: number
+          event_title: string | null
           id: string
+          user_full_name: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
           event_id: number
+          event_title?: string | null
           id?: string
+          user_full_name?: string | null
           user_id?: string
         }
         Update: {
           created_at?: string
           event_id?: number
+          event_title?: string | null
           id?: string
+          user_full_name?: string | null
           user_id?: string
         }
         Relationships: []
       }
       smart_fill_daily_usage: {
         Row: {
+          facebook_count: number
+          image_count: number
           import_count: number
+          text_count: number
           usage_date: string
+          user_full_name: string | null
           user_id: string
         }
         Insert: {
+          facebook_count?: number
+          image_count?: number
           import_count?: number
+          text_count?: number
           usage_date?: string
+          user_full_name?: string | null
           user_id: string
         }
         Update: {
+          facebook_count?: number
+          image_count?: number
           import_count?: number
+          text_count?: number
           usage_date?: string
+          user_full_name?: string | null
           user_id?: string
         }
         Relationships: []
@@ -384,14 +414,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      consume_smart_fill_import: {
-        Args: { p_daily_limit?: number; p_user_id: string }
-        Returns: {
-          allowed: boolean
-          remaining: number
-          used: number
-        }[]
-      }
+      consume_smart_fill_import:
+        | {
+            Args: { p_daily_limit?: number; p_user_id: string }
+            Returns: {
+              allowed: boolean
+              remaining: number
+              used: number
+            }[]
+          }
+        | {
+            Args: {
+              p_daily_limit?: number
+              p_feature?: string
+              p_user_id: string
+            }
+            Returns: {
+              allowed: boolean
+              remaining: number
+              used: number
+            }[]
+          }
+      is_valid_push_endpoint: { Args: { endpoint: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

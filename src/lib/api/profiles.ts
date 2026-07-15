@@ -48,6 +48,13 @@ function todayStr() {
   return format(new Date(), "yyyy-MM-dd");
 }
 
+function normalizeOptionalProfileString(value: string | null | undefined) {
+  if (value == null) return value;
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 // ─── API ─────────────────────────────────────────────────────────────────────
 
 export const profilesApi = {
@@ -247,6 +254,18 @@ export const profilesApi = {
 
     const payload: TablesUpdate<"profiles"> = {
       ...values,
+      full_name: normalizeOptionalProfileString(values.full_name),
+      bio: normalizeOptionalProfileString(values.bio),
+      phone: normalizeOptionalProfileString(values.phone),
+      place: normalizeOptionalProfileString(values.place),
+      address_physical: normalizeOptionalProfileString(values.address_physical),
+      email_to_show: normalizeOptionalProfileString(values.email_to_show),
+      name_to_show: normalizeOptionalProfileString(values.name_to_show),
+      website: normalizeOptionalProfileString(values.website),
+      fb: normalizeOptionalProfileString(values.fb),
+      instagram: normalizeOptionalProfileString(values.instagram),
+      tiktok: normalizeOptionalProfileString(values.tiktok),
+      color: normalizeOptionalProfileString(values.color),
       ...(normalizedUsername !== undefined && { username: normalizedUsername }),
       updated_at: new Date().toISOString(),
     };
