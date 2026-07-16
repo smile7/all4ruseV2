@@ -36,8 +36,7 @@ async function handleSendReminders(request: Request) {
     return NextResponse.json({ sent: 0, debug });
   }
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
   let sent = 0;
   const endpointsToDelete = new Set<string>();
@@ -63,10 +62,9 @@ async function handleSendReminders(request: Request) {
 
   // Best-effort cleanup of invalid or expired subscriptions.
   if (endpointsToDelete.size > 0) {
-    await supabase
-      .from("push_subscriptions")
-      .delete()
-      .in("endpoint", [...endpointsToDelete]);
+    await pushSubscriptionsApi.deletePushSubscriptionsByEndpoints(supabase, [
+      ...endpointsToDelete,
+    ]);
   }
 
   return NextResponse.json({

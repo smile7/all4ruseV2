@@ -25,6 +25,7 @@ import {
 import { usePushNotifications } from "~/hooks/usePushNotifications";
 
 const REMINDER_HOURS = [
+  "05",
   "06",
   "07",
   "08",
@@ -34,15 +35,25 @@ const REMINDER_HOURS = [
   "12",
   "13",
   "14",
-  "15",
-  "16",
-  "17",
-  "18",
-  "19",
-  "20",
-  "21",
-  "22",
 ] as const;
+
+function normalizeReminderHour(hour: string) {
+  const numericHour = Number.parseInt(hour, 10);
+
+  if (Number.isNaN(numericHour)) {
+    return "09";
+  }
+
+  if (numericHour < 5) {
+    return "05";
+  }
+
+  if (numericHour > 14) {
+    return "14";
+  }
+
+  return numericHour.toString().padStart(2, "0");
+}
 
 type Props = {
   /** The user's current reminder_time from their profile (e.g. "09:00") */
@@ -64,22 +75,32 @@ export function PushNotificationCard({ currentReminderTime }: Props) {
     refresh,
   } = usePushNotifications();
 
-  const [selectedHour, setSelectedHour] = useState<string>(
-    currentReminderTime.slice(0, 2) ?? "09",
-  );
+  const initialHour = normalizeReminderHour(currentReminderTime.slice(0, 2));
+  const [selectedHour, setSelectedHour] = useState<string>(initialHour);
+  const [savedHour, setSavedHour] = useState<string>(initialHour);
   const [isSavingTime, setIsSavingTime] = useState(false);
 
-  async function handleSaveTime() {
+  async function handleReminderTimeChange(nextHour: string) {
+    if (isSavingTime || nextHour === savedHour) {
+      setSelectedHour(nextHour);
+      return;
+    }
+
+    const previousHour = savedHour;
+    setSelectedHour(nextHour);
     setIsSavingTime(true);
+
     try {
       const res = await fetch("/api/push/reminder-time", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reminderTime: `${selectedHour}:00` }),
+        body: JSON.stringify({ reminderTime: `${nextHour}:00` }),
       });
       if (!res.ok) throw new Error();
+      setSavedHour(nextHour);
       toast.success(t("remindersTimeSaved"));
     } catch {
+      setSelectedHour(previousHour);
       toast.error(t("remindersError"));
     } finally {
       setIsSavingTime(false);
@@ -175,9 +196,18 @@ export function PushNotificationCard({ currentReminderTime }: Props) {
         {isSubscribed && (
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-1.5">
-              <Label className="text-sm">{t("remindersTimeLabel")}</Label>
-              <Select value={selectedHour} onValueChange={setSelectedHour}>
-                <SelectTrigger className="w-28">
+              <Label className="flex items-center gap-2 text-sm">
+                <span>{t("remindersTimeLabel")}</span>
+                {isSavingTime && (
+                  <Loader2 className="text-primary size-3.5 animate-spin" />
+                )}
+              </Label>
+              <Select
+                value={selectedHour}
+                onValueChange={handleReminderTimeChange}
+                disabled={isSavingTime}
+              >
+                <SelectTrigger className="w-28" aria-busy={isSavingTime}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -189,18 +219,6 @@ export function PushNotificationCard({ currentReminderTime }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveTime}
-              disabled={isSavingTime}
-            >
-              {isSavingTime ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                t("remindersSaveTime")
-              )}
-            </Button>
           </div>
         )}
 

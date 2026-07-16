@@ -7,7 +7,7 @@ import { createSupabaseServerClient } from "~/lib/supabase/server";
 const schema = z.object({
   reminderTime: z
     .string()
-    .regex(/^(0[6-9]|1[0-9]|2[0-2]):00$/, "Invalid reminder time"),
+    .regex(/^(0[5-9]|1[0-4]):00$/, "Invalid reminder time"),
 });
 
 export async function PATCH(request: Request) {

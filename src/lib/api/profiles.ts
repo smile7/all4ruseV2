@@ -90,6 +90,7 @@ export const profilesApi = {
         full_name: getAuthUserFullName(user),
         avatar_url: getAuthUserAvatarUrl(user),
         is_confirmed: user.email_confirmed_at ? true : null,
+        push_notifications_enabled: false,
         reminder_time: "09:00",
         show_saved_events: false,
       },

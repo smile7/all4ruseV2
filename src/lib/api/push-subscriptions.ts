@@ -10,6 +10,67 @@ type PushSubscriptionInput = {
   auth: string;
 };
 
+async function syncPushNotificationsEnabled(
+  client: Client,
+  userId: string,
+): Promise<boolean> {
+  const { count, error: countError } = await client
+    .from("push_subscriptions")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (countError) throw countError;
+
+  const enabled = (count ?? 0) > 0;
+  const { error: profileError } = await client
+    .from("profiles")
+    .update({ push_notifications_enabled: enabled })
+    .eq("id", userId);
+
+  if (profileError) throw profileError;
+
+  return enabled;
+}
+
+async function syncPushNotificationsEnabledForUsers(
+  client: Client,
+  userIds: string[],
+): Promise<void> {
+  const uniqueUserIds = [...new Set(userIds)];
+  if (uniqueUserIds.length === 0) return;
+
+  const { data: subs, error: subsError } = await client
+    .from("push_subscriptions")
+    .select("user_id")
+    .in("user_id", uniqueUserIds);
+
+  if (subsError) throw subsError;
+
+  const enabledUserIdSet = new Set((subs ?? []).map((sub) => sub.user_id));
+  const enabledUserIds = [...enabledUserIdSet];
+  const disabledUserIds = uniqueUserIds.filter(
+    (userId) => !enabledUserIdSet.has(userId),
+  );
+
+  if (enabledUserIds.length > 0) {
+    const { error } = await client
+      .from("profiles")
+      .update({ push_notifications_enabled: true })
+      .in("id", enabledUserIds);
+
+    if (error) throw error;
+  }
+
+  if (disabledUserIds.length > 0) {
+    const { error } = await client
+      .from("profiles")
+      .update({ push_notifications_enabled: false })
+      .in("id", disabledUserIds);
+
+    if (error) throw error;
+  }
+}
+
 async function savePushSubscription(
   client: Client,
   userId: string,
@@ -25,6 +86,8 @@ async function savePushSubscription(
     { onConflict: "user_id,endpoint" },
   );
   if (error) throw error;
+
+  await syncPushNotificationsEnabled(client, userId);
 }
 
 async function deletePushSubscription(
@@ -38,6 +101,35 @@ async function deletePushSubscription(
     .eq("user_id", userId)
     .eq("endpoint", endpoint);
   if (error) throw error;
+
+  await syncPushNotificationsEnabled(client, userId);
+}
+
+async function deletePushSubscriptionsByEndpoints(
+  client: Client,
+  endpoints: string[],
+): Promise<void> {
+  const uniqueEndpoints = [...new Set(endpoints)];
+  if (uniqueEndpoints.length === 0) return;
+
+  const { data: existingSubs, error: existingSubsError } = await client
+    .from("push_subscriptions")
+    .select("user_id")
+    .in("endpoint", uniqueEndpoints);
+
+  if (existingSubsError) throw existingSubsError;
+
+  const { error } = await client
+    .from("push_subscriptions")
+    .delete()
+    .in("endpoint", uniqueEndpoints);
+
+  if (error) throw error;
+
+  await syncPushNotificationsEnabledForUsers(
+    client,
+    (existingSubs ?? []).map((sub) => sub.user_id),
+  );
 }
 
 async function hasPushSubscription(
@@ -67,6 +159,7 @@ export type ReminderSubscription = {
  * Fetches all (push_subscription, event) pairs where:
  * - The event starts today (in Bulgaria time)
  * - The user's profile reminder_time matches the given hour (e.g. "09")
+ * - The user's profile has push_notifications_enabled = true
  * - The event is active and not cancelled
  *
  * Intended for use with an admin client from the cron endpoint only.
@@ -104,18 +197,21 @@ async function getSubscriptionsForTodayReminders(
 
   // Step 3: push subscriptions + profile reminder times (separate queries —
   // push_subscriptions.user_id FK points to auth.users, not profiles).
-  const [{ data: subs, error: subsError }, { data: profiles, error: profilesError }] =
-    await Promise.all([
-      client
-        .from("push_subscriptions")
-        .select("user_id, endpoint, p256dh, auth")
-        .in("user_id", userIds),
-      client
-        .from("profiles")
-        .select("id, reminder_time")
-        .in("id", userIds)
-        .eq("reminder_time", reminderTime),
-    ]);
+  const [
+    { data: subs, error: subsError },
+    { data: profiles, error: profilesError },
+  ] = await Promise.all([
+    client
+      .from("push_subscriptions")
+      .select("user_id, endpoint, p256dh, auth")
+      .in("user_id", userIds),
+    client
+      .from("profiles")
+      .select("id, reminder_time")
+      .in("id", userIds)
+      .eq("push_notifications_enabled", true)
+      .eq("reminder_time", reminderTime),
+  ]);
 
   if (subsError) throw subsError;
   if (profilesError) throw profilesError;
@@ -192,7 +288,7 @@ export type ReminderDebugCounts = {
   eventsToday: number;
   savedMatches: number;
   pushSubscriptions: number;
-  profilesAtReminderTime: number;
+  profilesAtReminderTimeAndEnabled: number;
   eligibleSubscriptions: number;
 };
 
@@ -228,11 +324,15 @@ async function getReminderDebugCounts(
 
   if (userIds.length > 0) {
     const [subsResult, profilesResult] = await Promise.all([
-      client.from("push_subscriptions").select("user_id").in("user_id", userIds),
+      client
+        .from("push_subscriptions")
+        .select("user_id")
+        .in("user_id", userIds),
       client
         .from("profiles")
         .select("id")
         .in("id", userIds)
+        .eq("push_notifications_enabled", true)
         .eq("reminder_time", reminderTime),
     ]);
     subs = subsResult.data ?? [];
@@ -250,7 +350,7 @@ async function getReminderDebugCounts(
     eventsToday: eventIds.length,
     savedMatches: savedRows?.length ?? 0,
     pushSubscriptions: subs.length,
-    profilesAtReminderTime: profiles.length,
+    profilesAtReminderTimeAndEnabled: profiles.length,
     eligibleSubscriptions,
   };
 }
@@ -258,6 +358,7 @@ async function getReminderDebugCounts(
 export const pushSubscriptionsApi = {
   savePushSubscription,
   deletePushSubscription,
+  deletePushSubscriptionsByEndpoints,
   hasPushSubscription,
   getSubscriptionsForTodayReminders,
   getReminderDebugCounts,
