@@ -8,6 +8,19 @@ import type { Database } from "~/types/database";
 type Client = SupabaseClient<Database>;
 type SavedEventsTiming = "upcoming" | "past";
 
+function isAlreadySavedPairConflict(error: {
+  code?: string;
+  message?: string;
+  details?: string | null;
+}) {
+  if (error.code !== "23505") return false;
+
+  return (
+    error.message?.includes("saved_events_user_id_event_id_key") === true ||
+    error.details?.includes("(user_id, event_id)") === true
+  );
+}
+
 function todayStr() {
   return format(new Date(), "yyyy-MM-dd");
 }
@@ -80,8 +93,7 @@ async function saveEvent(
     user_id: userId,
   });
 
-  // 23505 = unique_violation: row already saved — treat as success.
-  if (error && error.code !== "23505") throw error;
+  if (error && !isAlreadySavedPairConflict(error)) throw error;
 }
 
 async function unsaveEvent(

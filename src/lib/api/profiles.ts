@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { format } from "date-fns";
 
 import {
@@ -55,9 +55,53 @@ function normalizeOptionalProfileString(value: string | null | undefined) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function normalizeUserMetadataString(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function getAuthUserFullName(user: Pick<User, "user_metadata">): string | null {
+  return (
+    normalizeUserMetadataString(user.user_metadata?.full_name) ??
+    normalizeUserMetadataString(user.user_metadata?.name)
+  );
+}
+
+function getAuthUserAvatarUrl(
+  user: Pick<User, "user_metadata">,
+): string | null {
+  return normalizeUserMetadataString(user.user_metadata?.avatar_url);
+}
+
 // ─── API ─────────────────────────────────────────────────────────────────────
 
 export const profilesApi = {
+  async ensureProfile(
+    client: Client,
+    user: Pick<User, "id" | "email" | "email_confirmed_at" | "user_metadata">,
+  ) {
+    const { error } = await client.from("profiles").upsert(
+      {
+        id: user.id,
+        email:
+          normalizeOptionalProfileString(user.email?.toLowerCase()) ?? null,
+        full_name: getAuthUserFullName(user),
+        avatar_url: getAuthUserAvatarUrl(user),
+        is_confirmed: user.email_confirmed_at ? true : null,
+        reminder_time: "09:00",
+        show_saved_events: false,
+      },
+      {
+        onConflict: "id",
+        ignoreDuplicates: true,
+      },
+    );
+
+    if (error && error.code !== "23505") throw error;
+  },
+
   async getProfile(client: Client, userId: string) {
     return client.from("profiles").select("*").eq("id", userId).single();
   },

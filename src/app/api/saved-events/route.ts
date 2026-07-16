@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import { z } from "zod";
 
-import { savedEventsApi } from "~/lib/api";
+import { profilesApi, savedEventsApi } from "~/lib/api";
+import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 const eventIdSchema = z.object({
@@ -60,7 +61,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  await savedEventsApi.saveEvent(supabase, user.id, parsed.data.eventId);
+  const admin = createSupabaseAdminClient();
+
+  await profilesApi.ensureProfile(admin, user);
+  await savedEventsApi.saveEvent(admin, user.id, parsed.data.eventId);
   return NextResponse.json({ ok: true });
 }
 
@@ -80,6 +84,10 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  await savedEventsApi.unsaveEvent(supabase, user.id, parsed.data.eventId);
+  await savedEventsApi.unsaveEvent(
+    createSupabaseAdminClient(),
+    user.id,
+    parsed.data.eventId,
+  );
   return NextResponse.json({ ok: true });
 }

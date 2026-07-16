@@ -3,6 +3,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
 import { DEFAULT_LOCALE } from "~/constants";
+import { profilesApi } from "~/lib/api";
+import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import {
   AUTH_REMEMBER_COOKIE,
@@ -42,6 +44,18 @@ export async function GET(request: NextRequest) {
     });
 
     if (!error) {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          await profilesApi.ensureProfile(createSupabaseAdminClient(), user);
+        }
+      } catch {
+        // Non-fatal — profile bootstrap failure should not block the redirect.
+      }
+
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocal = process.env.NODE_ENV === "development";
       const base =
