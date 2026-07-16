@@ -306,16 +306,29 @@ export function getEventStartMs(event: EventSchedule): number {
 }
 
 /**
- * End instant in local time. Missing `endTime` means end of `endDate` (23:59:59.999).
+ * End instant in local time.
+ * - Explicit `endTime` → exact end instant on `endDate`.
+ * - Single-day events without `endTime` → 90 minutes after `startTime`.
+ * - Multi-day events without `endTime` → end of `endDate` (23:59:59.999).
  */
 export function getEventEndMs(event: EventSchedule): number {
   const t = event.endTime?.trim();
   try {
     if (t) return parseClockOnLocalDate(event.endDate, t).getTime();
+    if (event.startDate === event.endDate) {
+      return getEventStartMs(event) + LIVE_FALLBACK_DURATION_MS;
+    }
     const d = parseLocalDate(event.endDate);
     d.setHours(23, 59, 59, 999);
     return d.getTime();
   } catch {
+    if (event.startDate === event.endDate) {
+      try {
+        return getEventStartMs(event) + LIVE_FALLBACK_DURATION_MS;
+      } catch {
+        return parseLocalDate(event.endDate).getTime();
+      }
+    }
     const d = parseLocalDate(event.endDate);
     d.setHours(23, 59, 59, 999);
     return d.getTime();
@@ -333,7 +346,7 @@ export function isEventEnded(
   }
 }
 
-/** Maximum duration an event without an explicit end time is shown as live. */
+/** Maximum duration for a single-day event without an explicit end time. */
 const LIVE_FALLBACK_DURATION_MS = 90 * 60 * 1000; // 1.5 hours
 
 /**
