@@ -240,6 +240,7 @@ export type Database = {
           phone: string | null
           place: string | null
           profile_gallery: Json | null
+          push_notifications_enabled: boolean
           reminder_time: string
           show_saved_events: boolean | null
           tiktok: string | null
@@ -265,6 +266,7 @@ export type Database = {
           phone?: string | null
           place?: string | null
           profile_gallery?: Json | null
+          push_notifications_enabled?: boolean
           reminder_time?: string
           show_saved_events?: boolean | null
           tiktok?: string | null
@@ -290,6 +292,7 @@ export type Database = {
           phone?: string | null
           place?: string | null
           profile_gallery?: Json | null
+          push_notifications_enabled?: boolean
           reminder_time?: string
           show_saved_events?: boolean | null
           tiktok?: string | null
