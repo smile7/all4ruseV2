@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { DEFAULT_LOCALE } from "~/constants";
+import { profilesApi } from "~/lib/api";
+import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import {
   AUTH_REMEMBER_COOKIE,
@@ -30,22 +32,27 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Sync OAuth provider avatar into profiles.avatar_url on first login.
-      // Uses a single UPDATE with .is("avatar_url", null) so the DB checks
-      // atomically — no pre-query needed, no risk of overwriting a manual upload.
+      // Bootstrap the profile row for newly confirmed users, then sync the
+      // OAuth avatar only when the profile still has no custom avatar.
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        const providerAvatar = user?.user_metadata?.avatar_url as
-          | string
-          | undefined;
-        if (user && providerAvatar) {
-          await supabase
-            .from("profiles")
-            .update({ avatar_url: providerAvatar })
-            .eq("id", user.id)
-            .is("avatar_url", null);
+        if (user) {
+          const admin = createSupabaseAdminClient();
+          await profilesApi.ensureProfile(admin, user);
+
+          const providerAvatar = user.user_metadata?.avatar_url as
+            | string
+            | undefined;
+
+          if (providerAvatar) {
+            await admin
+              .from("profiles")
+              .update({ avatar_url: providerAvatar })
+              .eq("id", user.id)
+              .is("avatar_url", null);
+          }
         }
       } catch {
         // Non-fatal — avatar sync failure should not block the redirect
