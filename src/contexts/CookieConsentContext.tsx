@@ -72,7 +72,9 @@ function PreferenceRow({
 export function useCookieSettings() {
   const context = useContext(CookieConsentContext);
   if (!context) {
-    throw new Error("useCookieSettings must be used within CookieConsentProvider.");
+    throw new Error(
+      "useCookieSettings must be used within CookieConsentProvider.",
+    );
   }
   return context;
 }
@@ -98,6 +100,7 @@ export function CookieConsentProvider({
   const resetDraft = useCallback(() => setDraft(null), []);
 
   const hasChoice = consent !== null;
+  const isInitialPrompt = !hasChoice;
   const isOpen = canManageCookies && (!hasChoice || isSettingsOpen);
 
   const openSettings = useCallback(() => {
@@ -145,96 +148,128 @@ export function CookieConsentProvider({
         <DrawerDialog
           open={isOpen}
           setOpen={handleOpenChange}
-          title={t("cookieSettingsTitle")}
-          description={t("cookieSettingsDescription")}
+          title={isInitialPrompt ? t("cookies") : t("cookieSettingsTitle")}
+          description={
+            isInitialPrompt ? t("cookiesDescr") : t("cookieSettingsDescription")
+          }
           contentClassName="pb-6"
         >
           <div className="flex flex-col gap-5 pb-2">
+            {isInitialPrompt ? (
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={acceptNecessaryOnly}
+                >
+                  {t("onlyNecessary")}
+                </Button>
+                <Button type="button" onClick={acceptAll}>
+                  {t("acceptCookies")}
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  <PreferenceRow
+                    title={t("necessaryCookiesTitle")}
+                    description={t("necessaryCookiesDescription")}
+                    control={
+                      <span className="text-muted-foreground text-xs font-semibold uppercase">
+                        {t("alwaysActive")}
+                      </span>
+                    }
+                  />
 
-            <div className="space-y-3">
-              <PreferenceRow
-                title={t("necessaryCookiesTitle")}
-                description={t("necessaryCookiesDescription")}
-                control={
-                  <span className="text-muted-foreground text-xs font-semibold uppercase">
-                    {t("alwaysActive")}
-                  </span>
-                }
-              />
+                  {hasGoogleAnalytics && (
+                    <PreferenceRow
+                      title={t("analyticsCookiesTitle")}
+                      description={t("analyticsCookiesDescription")}
+                      control={
+                        <div className="flex items-center gap-2">
+                          <Label
+                            htmlFor="analytics-consent"
+                            className="sr-only"
+                          >
+                            {t("analyticsCookiesTitle")}
+                          </Label>
+                          <Switch
+                            id="analytics-consent"
+                            checked={analyticsEnabled}
+                            onCheckedChange={(analytics) =>
+                              setDraft({
+                                analytics,
+                                marketing:
+                                  draft?.marketing ??
+                                  savedPreferences.marketing,
+                              })
+                            }
+                            aria-label={t("analyticsCookiesTitle")}
+                          />
+                        </div>
+                      }
+                    />
+                  )}
 
-              {hasGoogleAnalytics && (
-                <PreferenceRow
-                  title={t("analyticsCookiesTitle")}
-                  description={t("analyticsCookiesDescription")}
-                  control={
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="analytics-consent" className="sr-only">
-                        {t("analyticsCookiesTitle")}
-                      </Label>
-                      <Switch
-                        id="analytics-consent"
-                        checked={analyticsEnabled}
-                        onCheckedChange={(analytics) =>
-                          setDraft({
-                            analytics,
-                            marketing:
-                              draft?.marketing ?? savedPreferences.marketing,
-                          })
-                        }
-                        aria-label={t("analyticsCookiesTitle")}
-                      />
-                    </div>
-                  }
-                />
-              )}
+                  {hasMetaPixel && (
+                    <PreferenceRow
+                      title={t("marketingCookiesTitle")}
+                      description={t("marketingCookiesDescription")}
+                      control={
+                        <div className="flex items-center gap-2">
+                          <Label
+                            htmlFor="marketing-consent"
+                            className="sr-only"
+                          >
+                            {t("marketingCookiesTitle")}
+                          </Label>
+                          <Switch
+                            id="marketing-consent"
+                            checked={marketingEnabled}
+                            onCheckedChange={(marketing) =>
+                              setDraft({
+                                analytics:
+                                  draft?.analytics ??
+                                  savedPreferences.analytics,
+                                marketing,
+                              })
+                            }
+                            aria-label={t("marketingCookiesTitle")}
+                          />
+                        </div>
+                      }
+                    />
+                  )}
+                </div>
 
-              {hasMetaPixel && (
-                <PreferenceRow
-                  title={t("marketingCookiesTitle")}
-                  description={t("marketingCookiesDescription")}
-                  control={
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="marketing-consent" className="sr-only">
-                        {t("marketingCookiesTitle")}
-                      </Label>
-                      <Switch
-                        id="marketing-consent"
-                        checked={marketingEnabled}
-                        onCheckedChange={(marketing) =>
-                          setDraft({
-                            analytics:
-                              draft?.analytics ?? savedPreferences.analytics,
-                            marketing,
-                          })
-                        }
-                        aria-label={t("marketingCookiesTitle")}
-                      />
-                    </div>
-                  }
-                />
-              )}
-            </div>
-
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-              <Button type="button" variant="outline" onClick={acceptNecessaryOnly}>
-                {t("onlyNecessary")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                  savePreferences({
-                    analytics: hasGoogleAnalytics ? analyticsEnabled : false,
-                    marketing: hasMetaPixel ? marketingEnabled : false,
-                  })
-                }
-              >
-                {t("saveCookiePreferences")}
-              </Button>
-              <Button type="button" onClick={acceptAll}>
-                {t("acceptCookies")}
-              </Button>
-            </div>
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={acceptNecessaryOnly}
+                  >
+                    {t("onlyNecessary")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      savePreferences({
+                        analytics: hasGoogleAnalytics
+                          ? analyticsEnabled
+                          : false,
+                        marketing: hasMetaPixel ? marketingEnabled : false,
+                      })
+                    }
+                  >
+                    {t("saveCookiePreferences")}
+                  </Button>
+                  <Button type="button" onClick={acceptAll}>
+                    {t("acceptCookies")}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </DrawerDialog>
       )}

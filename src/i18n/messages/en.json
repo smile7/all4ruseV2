@@ -417,7 +417,7 @@
     "eventDeletedSuccessfully": "Event deleted successfully.",
     "accountDeletedSuccessfully": "Account deleted successfully.",
     "cookies": "Cookies",
-    "cookiesDescr": "We use necessary cookies for login, language, and security. With your permission, we can also enable analytics and marketing tools for traffic measurement and ad reporting.",
+    "cookiesDescr": "We use cookies for login, language, theme colors, and security, as well as for analytics to make your experience better.",
     "onlyNecessary": "Only necessary",
     "acceptCookies": "Accept all",
     "cookiePreferences": "Manage cookies",
