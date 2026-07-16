@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { useTranslations } from "next-intl";
 
 import type { User } from "@supabase/supabase-js";
@@ -14,6 +15,7 @@ import {
   History,
   Info,
   LogOut,
+  Loader2,
   Megaphone,
   MoreHorizontal,
   Plus,
@@ -56,6 +58,17 @@ function getAvatarFallback(user: User): string {
   return name.charAt(0).toUpperCase();
 }
 
+function shouldShowNavigationPending(event: MouseEvent<HTMLAnchorElement>) {
+  return (
+    !event.defaultPrevented &&
+    event.button === 0 &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey
+  );
+}
+
 export function MobileBottomNav() {
   const t = useTranslations("HomePage");
   const tGeneral = useTranslations("General");
@@ -69,6 +82,7 @@ export function MobileBottomNav() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | undefined>(undefined);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -97,6 +111,10 @@ export function MobileBottomNav() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
+
   async function handleLogout() {
     const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
@@ -109,45 +127,143 @@ export function MobileBottomNav() {
     return pathname.startsWith(href);
   }
 
-  const tabClass = (active: boolean) =>
+  function handleRouteStart(
+    href: string,
+    options: { closeMore?: boolean; closeProfile?: boolean } = {},
+  ) {
+    return (event: MouseEvent<HTMLAnchorElement>) => {
+      if (!shouldShowNavigationPending(event)) return;
+      if (pendingHref) {
+        event.preventDefault();
+        return;
+      }
+
+      if (pathname === href) {
+        if (options.closeMore) setMoreOpen(false);
+        if (options.closeProfile) setProfileOpen(false);
+        return;
+      }
+
+      flushSync(() => {
+        if (options.closeMore) setMoreOpen(false);
+        if (options.closeProfile) setProfileOpen(false);
+        setPendingHref(href);
+      });
+    };
+  }
+
+  const tabClass = (active: boolean, pending = false) =>
     [
-      "flex flex-col items-center justify-center gap-1 py-3 text-[11px] font-medium transition-colors",
-      active ? "text-primary" : "text-muted-foreground",
+      "relative flex flex-col items-center justify-center gap-1 overflow-hidden py-3 text-[11px] font-medium transition-all duration-200",
+      active || pending ? "text-primary" : "text-muted-foreground",
+      pending ? "pointer-events-none cursor-progress" : "",
+    ].join(" ");
+
+  const tabHighlightClass = (active: boolean, pending = false) =>
+    [
+      "bg-primary/8 absolute inset-x-2 inset-y-1 rounded-2xl opacity-0 transition-opacity duration-200",
+      active || pending ? "opacity-100" : "",
+      pending ? "bg-primary/12 animate-pulse" : "",
+    ].join(" ");
+
+  const tabBarClass = (active: boolean, pending = false) =>
+    [
+      "bg-primary absolute top-1 left-1/2 h-0.5 w-0 -translate-x-1/2 rounded-full transition-all duration-200",
+      active || pending ? "w-8" : "",
+      pending ? "w-12 animate-pulse" : "",
     ].join(" ");
 
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
   const isProfileActive =
     (isActive("/profile") && !isActive("/profile/saved-events")) ||
     isActive("/auth");
+  const isRoutePending = pendingHref !== null;
+  const isEventsPending = pendingHref === "/";
+  const isSavedPending = pendingHref === "/profile/saved-events";
 
   return (
     <>
       <nav
         aria-label={t("navAriaLabel")}
         className="border-border/60 bg-muted fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t backdrop-blur-md md:hidden"
+        aria-busy={isRoutePending}
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
+        {isRoutePending && (
+          <span
+            aria-hidden="true"
+            className="bg-primary/30 absolute inset-x-0 top-0 h-px animate-pulse"
+          />
+        )}
+
         {/* Tab 1 — Events */}
         <Link
           href="/"
-          className={`${tabClass(isActive("/"))} border-border/60 border-r`}
+          className={`${tabClass(isActive("/"), isEventsPending)} border-border/60 border-r`}
           aria-current={isActive("/") ? "page" : undefined}
+          onClick={handleRouteStart("/")}
         >
-          <Calendar className="size-5" strokeWidth={isActive("/") ? 2.5 : 2} />
-          <span>{t("navEvents")}</span>
+          <span
+            aria-hidden="true"
+            className={tabHighlightClass(isActive("/"), isEventsPending)}
+          />
+          <span
+            aria-hidden="true"
+            className={tabBarClass(isActive("/"), isEventsPending)}
+          />
+          {isEventsPending ? (
+            <Loader2 className="relative z-10 size-5 animate-spin" />
+          ) : (
+            <Calendar
+              className="relative z-10 size-5"
+              strokeWidth={isActive("/") ? 2.5 : 2}
+            />
+          )}
+          <span
+            className={
+              isEventsPending ? "relative z-10 animate-pulse" : "relative z-10"
+            }
+          >
+            {t("navEvents")}
+          </span>
         </Link>
 
         {/* Tab 2 — Saved */}
         <Link
           href="/profile/saved-events"
-          className={`${tabClass(isActive("/profile/saved-events"))} border-border/60 border-r`}
+          className={`${tabClass(isActive("/profile/saved-events"), isSavedPending)} border-border/60 border-r`}
           aria-current={isActive("/profile/saved-events") ? "page" : undefined}
+          onClick={handleRouteStart("/profile/saved-events")}
         >
-          <Bookmark
-            className="size-5"
-            strokeWidth={isActive("/profile/saved-events") ? 2.5 : 2}
+          <span
+            aria-hidden="true"
+            className={tabHighlightClass(
+              isActive("/profile/saved-events"),
+              isSavedPending,
+            )}
           />
-          <span>{t("favorites")}</span>
+          <span
+            aria-hidden="true"
+            className={tabBarClass(
+              isActive("/profile/saved-events"),
+              isSavedPending,
+            )}
+          />
+          {isSavedPending ? (
+            <Loader2 className="relative z-10 size-5 animate-spin" />
+          ) : (
+            <Bookmark
+              className="relative z-10 size-5"
+              strokeWidth={isActive("/profile/saved-events") ? 2.5 : 2}
+            />
+          )}
+          <span
+            className={
+              isSavedPending ? "relative z-10 animate-pulse" : "relative z-10"
+            }
+          >
+            {t("favorites")}
+          </span>
         </Link>
 
         {/* Tab 3 — More */}
@@ -156,6 +272,7 @@ export function MobileBottomNav() {
           onClick={() => setMoreOpen(true)}
           className={`${tabClass(false)} border-border/60 border-r`}
           aria-label={t("more")}
+          disabled={isRoutePending}
         >
           <MoreHorizontal className="size-5" strokeWidth={2} />
           <span>{t("more")}</span>
@@ -167,6 +284,7 @@ export function MobileBottomNav() {
           onClick={() => setProfileOpen(true)}
           className={tabClass(isProfileActive)}
           aria-label={user ? t("account") : t("loginButton")}
+          disabled={isRoutePending}
         >
           {user ? (
             <Avatar className="size-5">
@@ -247,7 +365,7 @@ export function MobileBottomNav() {
 
             <Link
               href="/"
-              onClick={() => setMoreOpen(false)}
+              onClick={handleRouteStart("/", { closeMore: true })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <CalendarDays className="text-muted-foreground size-4 shrink-0" />
@@ -255,7 +373,7 @@ export function MobileBottomNav() {
             </Link>
             <Link
               href="/current"
-              onClick={() => setMoreOpen(false)}
+              onClick={handleRouteStart("/current", { closeMore: true })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <CalendarClock className="text-muted-foreground size-4 shrink-0" />
@@ -263,7 +381,7 @@ export function MobileBottomNav() {
             </Link>
             <Link
               href="/past"
-              onClick={() => setMoreOpen(false)}
+              onClick={handleRouteStart("/past", { closeMore: true })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <History className="text-muted-foreground size-4 shrink-0" />
@@ -274,7 +392,7 @@ export function MobileBottomNav() {
 
             <Link
               href="/why-all4ruse"
-              onClick={() => setMoreOpen(false)}
+              onClick={handleRouteStart("/why-all4ruse", { closeMore: true })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <Info className="text-muted-foreground size-4 shrink-0" />
@@ -282,7 +400,7 @@ export function MobileBottomNav() {
             </Link>
             <Link
               href="/advertise"
-              onClick={() => setMoreOpen(false)}
+              onClick={handleRouteStart("/advertise", { closeMore: true })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <Megaphone className="text-muted-foreground size-4 shrink-0" />
@@ -309,7 +427,7 @@ export function MobileBottomNav() {
             )}
             <Link
               href="/legal/terms"
-              onClick={() => setMoreOpen(false)}
+              onClick={handleRouteStart("/legal/terms", { closeMore: true })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <Scale className="text-muted-foreground size-4 shrink-0" />
@@ -317,7 +435,7 @@ export function MobileBottomNav() {
             </Link>
             <Link
               href="/legal/privacy"
-              onClick={() => setMoreOpen(false)}
+              onClick={handleRouteStart("/legal/privacy", { closeMore: true })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <ShieldCheck className="text-muted-foreground size-4 shrink-0" />
@@ -325,7 +443,7 @@ export function MobileBottomNav() {
             </Link>
             <Link
               href="/legal/cookies"
-              onClick={() => setMoreOpen(false)}
+              onClick={handleRouteStart("/legal/cookies", { closeMore: true })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <Cookie className="text-muted-foreground size-4 shrink-0" />
@@ -333,7 +451,7 @@ export function MobileBottomNav() {
             </Link>
             <Link
               href="/legal/gdpr"
-              onClick={() => setMoreOpen(false)}
+              onClick={handleRouteStart("/legal/gdpr", { closeMore: true })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <ScrollText className="text-muted-foreground size-4 shrink-0" />
@@ -394,7 +512,9 @@ export function MobileBottomNav() {
                     <Link
                       href={`/user/${username}`}
                       className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
-                      onClick={() => setProfileOpen(false)}
+                      onClick={handleRouteStart(`/user/${username}`, {
+                        closeProfile: true,
+                      })}
                     >
                       <ExternalLink className="text-muted-foreground size-4 shrink-0" />
                       <span>{t("viewPublicProfile")}</span>
@@ -406,7 +526,9 @@ export function MobileBottomNav() {
                 <Link
                   href="/create-event"
                   className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
-                  onClick={() => setProfileOpen(false)}
+                  onClick={handleRouteStart("/create-event", {
+                    closeProfile: true,
+                  })}
                 >
                   <Plus className="text-muted-foreground size-4 shrink-0" />
                   <span>{t("createEvent")}</span>
@@ -414,7 +536,9 @@ export function MobileBottomNav() {
 
                 <Link
                   href="/my-events"
-                  onClick={() => setProfileOpen(false)}
+                  onClick={handleRouteStart("/my-events", {
+                    closeProfile: true,
+                  })}
                   className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
                 >
                   <CalendarDays className="text-muted-foreground size-4 shrink-0" />
@@ -425,7 +549,9 @@ export function MobileBottomNav() {
 
                 <Link
                   href="/profile"
-                  onClick={() => setProfileOpen(false)}
+                  onClick={handleRouteStart("/profile", {
+                    closeProfile: true,
+                  })}
                   className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
                 >
                   <UserIcon className="text-muted-foreground size-4 shrink-0" />
@@ -434,7 +560,9 @@ export function MobileBottomNav() {
 
                 <Link
                   href="/profile/saved-events"
-                  onClick={() => setProfileOpen(false)}
+                  onClick={handleRouteStart("/profile/saved-events", {
+                    closeProfile: true,
+                  })}
                   className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
                 >
                   <Bookmark className="text-muted-foreground size-4 shrink-0" />
