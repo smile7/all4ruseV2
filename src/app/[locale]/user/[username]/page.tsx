@@ -15,7 +15,6 @@ import {
 
 import { EventCard } from "~/components/EventCard/EventCard";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { DEFAULT_PROFILE_COLOR } from "~/constants";
 import { profilesApi } from "~/lib/api";
 import { parseProfileGallery } from "~/lib/profile-gallery";
@@ -327,35 +326,16 @@ export default async function PublicProfilePage({
             <RevealOnScroll>
               <ProfileSectionHeader title={t("contactInfo")} color={color} />
             </RevealOnScroll>
-            <div className="grid w-full max-w-4xl gap-6 sm:grid-cols-2 sm:gap-8 md:grid-cols-3">
-              {profile.email_to_show && (
-                <RevealOnScroll delay={0} from="scale">
-                  <a
-                    href={`mailto:${profile.email_to_show}`}
-                    className="group/card bg-background/95 flex flex-col items-center gap-4 rounded-3xl border p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
-                  >
-                    <div
-                      className="flex size-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover/card:scale-110"
-                      style={{ backgroundColor: `rgba(${rgb},0.12)`, color }}
-                    >
-                      <Mail className="size-6" />
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
-                        {t("contactEmail")}
-                      </div>
-                      <div className="mt-1 text-lg font-medium break-all">
-                        <ObfuscatedEmail email={profile.email_to_show} />
-                      </div>
-                    </div>
-                  </a>
-                </RevealOnScroll>
-              )}
+            <div className="flex w-full max-w-4xl justify-center gap-6 sm:gap-8">
               {profile.phone && (
-                <RevealOnScroll delay={100} from="scale">
+                <RevealOnScroll
+                  delay={100}
+                  from="scale"
+                  className="min-w-0 basis-[calc((100%-3rem)/3)] sm:basis-[calc((100%-4rem)/3)]"
+                >
                   <a
                     href={`tel:${profile.phone}`}
-                    className="group/card bg-background/95 flex flex-col items-center gap-4 rounded-3xl border p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+                    className="group/card bg-background/95 flex h-full flex-col items-center gap-4 rounded-3xl border p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
                   >
                     <div
                       className="flex size-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover/card:scale-110"
@@ -367,8 +347,35 @@ export default async function PublicProfilePage({
                       <div className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
                         {t("contactPhone")}
                       </div>
-                      <div className="mt-1 text-lg font-medium">
+                      <div className="mt-1 text-sm font-medium sm:text-base">
                         {profile.phone}
+                      </div>
+                    </div>
+                  </a>
+                </RevealOnScroll>
+              )}
+              {profile.email_to_show && (
+                <RevealOnScroll
+                  delay={0}
+                  from="scale"
+                  className="min-w-0 basis-[calc((100%-3rem)/3)] sm:basis-[calc((100%-4rem)/3)]"
+                >
+                  <a
+                    href={`mailto:${profile.email_to_show}`}
+                    className="group/card bg-background/95 flex h-full min-w-0 flex-col items-center gap-4 rounded-3xl border p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+                  >
+                    <div
+                      className="flex size-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover/card:scale-110"
+                      style={{ backgroundColor: `rgba(${rgb},0.12)`, color }}
+                    >
+                      <Mail className="size-6" />
+                    </div>
+                    <div className="w-full min-w-0">
+                      <div className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+                        {t("contactEmail")}
+                      </div>
+                      <div className="mt-1 text-sm font-medium break-all sm:text-base">
+                        {profile.email_to_show}
                       </div>
                     </div>
                   </a>
@@ -378,9 +385,9 @@ export default async function PublicProfilePage({
                 <RevealOnScroll
                   delay={200}
                   from="scale"
-                  className="sm:col-span-2 md:col-span-1"
+                  className="min-w-0 basis-[calc((100%-3rem)/3)] sm:basis-[calc((100%-4rem)/3)]"
                 >
-                  <div className="group/card bg-background/95 flex flex-col items-center gap-4 rounded-3xl border p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+                  <div className="group/card bg-background/95 flex h-full flex-col items-center gap-4 rounded-3xl border p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
                     <div
                       className="flex size-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover/card:scale-110"
                       style={{ backgroundColor: `rgba(${rgb},0.12)`, color }}
@@ -391,7 +398,7 @@ export default async function PublicProfilePage({
                       <div className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
                         {t("contactLocation")}
                       </div>
-                      <div className="mt-1 text-lg font-medium">
+                      <div className="mt-1 text-sm font-medium sm:text-base">
                         {profile.address_physical}
                       </div>
                     </div>
