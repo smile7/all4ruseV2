@@ -3,20 +3,25 @@ type Props = {
   className?: string;
 };
 
+function toSpokenEmail(email: string): string {
+  return email.replaceAll("@", " at ").replaceAll(".", " dot ");
+}
+
 /**
- * Renders an email address reversed in the DOM with CSS RTL to visually
- * correct it. Defeats simple regex scrapers; screen readers use aria-label.
- * Copy-paste works correctly because browsers copy in visual order.
+ * Renders an email without a literal "@" in the DOM text, so simple scrapers
+ * that match `user@domain` patterns miss it. Screen readers get a spoken form
+ * via aria-label. Prefer clicking the surrounding mailto link over copy-paste.
  */
 export function ObfuscatedEmail({ email, className }: Props) {
-  const reversed = email.split("").reverse().join("");
+  const atIndex = email.lastIndexOf("@");
+  const display =
+    atIndex === -1
+      ? email
+      : `${email.slice(0, atIndex)} at ${email.slice(atIndex + 1)}`;
+
   return (
-    <span
-      aria-label={email}
-      style={{ unicodeBidi: "bidi-override", direction: "rtl" }}
-      className={className}
-    >
-      {reversed}
+    <span aria-label={toSpokenEmail(email)} className={className}>
+      {display}
     </span>
   );
 }
