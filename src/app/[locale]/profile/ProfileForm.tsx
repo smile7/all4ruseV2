@@ -1207,7 +1207,7 @@ export function ProfileForm({
               </CardContent>
             </Card>
 
-            <div className="bg-background/80 sticky bottom-4 z-10 mt-8 flex items-center justify-end gap-3 rounded-xl border p-4 shadow-lg backdrop-blur-md">
+            <div className="bg-background/80 sticky bottom-[calc(2.5rem+env(safe-area-inset-bottom))] z-10 mt-8 flex items-center justify-end gap-3 rounded-xl border p-4 shadow-lg backdrop-blur-md md:bottom-4">
               <Button
                 type="submit"
                 disabled={

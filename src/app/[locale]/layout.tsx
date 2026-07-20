@@ -20,6 +20,7 @@ import { ThemeProvider } from "~/components/ThemeProvider";
 import type { Locale } from "~/constants";
 import { AuthProvider } from "~/contexts/AuthContext";
 import { routing } from "~/i18n/routing";
+import { profilesApi } from "~/lib/api";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 import "../globals.css";
@@ -74,6 +75,11 @@ export default async function LocaleLayout({ children, params }: Props) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const initialUsername = user
+    ? ((await profilesApi.getProfile(supabase, user.id)).data?.username ??
+      undefined)
+    : undefined;
+
   return (
     <html
       lang={locale}
@@ -99,7 +105,7 @@ export default async function LocaleLayout({ children, params }: Props) {
                       {children}
                     </main>
                     <Footer />
-                    <MobileBottomNav />
+                    <MobileBottomNav initialUsername={initialUsername} />
                     <TrackingScripts />
                   </CookieConsentProvider>
                 </AuthProvider>

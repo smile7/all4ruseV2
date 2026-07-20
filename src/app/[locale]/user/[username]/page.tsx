@@ -303,7 +303,7 @@ export default async function PublicProfilePage({
                   style={{ backgroundColor: color }}
                   aria-hidden
                 />
-                <p className="text-muted-foreground text-lg leading-relaxed sm:text-xl">
+                <p className="text-muted-foreground text-lg leading-relaxed whitespace-pre-line sm:text-xl">
                   {profile.bio}
                 </p>
               </div>
@@ -326,12 +326,12 @@ export default async function PublicProfilePage({
             <RevealOnScroll>
               <ProfileSectionHeader title={t("contactInfo")} color={color} />
             </RevealOnScroll>
-            <div className="flex w-full max-w-4xl justify-center gap-6 sm:gap-8">
+            <div className="flex w-full max-w-4xl flex-col justify-center gap-6 sm:flex-row sm:gap-8">
               {profile.phone && (
                 <RevealOnScroll
                   delay={100}
                   from="scale"
-                  className="min-w-0 basis-[calc((100%-3rem)/3)] sm:basis-[calc((100%-4rem)/3)]"
+                  className="min-w-0 sm:flex-1"
                 >
                   <a
                     href={`tel:${profile.phone}`}
@@ -358,7 +358,7 @@ export default async function PublicProfilePage({
                 <RevealOnScroll
                   delay={0}
                   from="scale"
-                  className="min-w-0 basis-[calc((100%-3rem)/3)] sm:basis-[calc((100%-4rem)/3)]"
+                  className="min-w-0 sm:flex-1"
                 >
                   <a
                     href={`mailto:${profile.email_to_show}`}
@@ -385,7 +385,7 @@ export default async function PublicProfilePage({
                 <RevealOnScroll
                   delay={200}
                   from="scale"
-                  className="min-w-0 basis-[calc((100%-3rem)/3)] sm:basis-[calc((100%-4rem)/3)]"
+                  className="min-w-0 sm:flex-1"
                 >
                   <div className="group/card bg-background/95 flex h-full flex-col items-center gap-4 rounded-3xl border p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
                     <div
