@@ -69,7 +69,12 @@ function shouldShowNavigationPending(event: MouseEvent<HTMLAnchorElement>) {
   );
 }
 
-export function MobileBottomNav() {
+type Props = {
+  /** Server-hydrated username so the public-profile link shows immediately. */
+  initialUsername?: string;
+};
+
+export function MobileBottomNav({ initialUsername }: Props) {
   const t = useTranslations("HomePage");
   const tGeneral = useTranslations("General");
   const tSaved = useTranslations("SavedEvents");
@@ -81,23 +86,27 @@ export function MobileBottomNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [username, setUsername] = useState<string | undefined>(undefined);
+  const [username, setUsername] = useState<string | undefined>(initialUsername);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
 
+    async function loadUsername(userId: string) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", userId)
+        .single();
+      setUsername(profile?.username ?? undefined);
+    }
+
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
       if (data.user) {
-        supabase
-          .from("profiles")
-          .select("username")
-          .eq("id", data.user.id)
-          .single()
-          .then(({ data: profile }) => {
-            setUsername(profile?.username ?? undefined);
-          });
+        void loadUsername(data.user.id);
+      } else {
+        setUsername(undefined);
       }
     });
 
@@ -105,11 +114,19 @@ export function MobileBottomNav() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null);
-      if (!session?.user) setUsername(undefined);
+      if (session?.user) {
+        void loadUsername(session.user.id);
+      } else {
+        setUsername(undefined);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    setUsername(initialUsername);
+  }, [initialUsername]);
 
   useEffect(() => {
     setPendingHref(null);
