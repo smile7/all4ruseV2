@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { User } from "@supabase/supabase-js";
@@ -42,6 +42,64 @@ export function HeaderAuthButton({ user, username }: Props) {
   const tProfile = useTranslations("Profile");
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const refreshedFromBrowser = useRef(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(user);
+  const [currentUsername, setCurrentUsername] = useState<string | undefined>(
+    username,
+  );
+
+  useEffect(() => {
+    setCurrentUser(user);
+    setCurrentUsername(username);
+  }, [user, username]);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+
+    function refreshIfServerStateIsStale(browserUserId: string | null) {
+      if (refreshedFromBrowser.current) return;
+      if ((user?.id ?? null) === browserUserId) return;
+
+      refreshedFromBrowser.current = true;
+      router.refresh();
+    }
+
+    async function loadUsername(userId: string) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", userId)
+        .single();
+
+      setCurrentUsername(profile?.username ?? undefined);
+    }
+
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUser(data.user);
+      refreshIfServerStateIsStale(data.user?.id ?? null);
+
+      if (data.user) {
+        void loadUsername(data.user.id);
+      } else {
+        setCurrentUsername(undefined);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_, session) => {
+      setCurrentUser(session?.user ?? null);
+      refreshIfServerStateIsStale(session?.user?.id ?? null);
+
+      if (session?.user) {
+        void loadUsername(session.user.id);
+      } else {
+        setCurrentUsername(undefined);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router, user?.id]);
 
   async function handleLogout() {
     setOpen(false);
@@ -50,7 +108,7 @@ export function HeaderAuthButton({ user, username }: Props) {
     router.refresh();
   }
 
-  if (!user) {
+  if (!currentUser) {
     return (
       <Button size="sm" asChild>
         {/* Link from ~/i18n/navigation automatically prepends the active locale */}
@@ -59,7 +117,7 @@ export function HeaderAuthButton({ user, username }: Props) {
     );
   }
 
-  const avatarUrl = user.user_metadata?.avatar_url as string | undefined;
+  const avatarUrl = currentUser.user_metadata?.avatar_url as string | undefined;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -72,7 +130,7 @@ export function HeaderAuthButton({ user, username }: Props) {
           <Avatar className="size-8">
             <AvatarImage src={avatarUrl} alt={t("account")} />
             <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-              {getAvatarFallback(user)}
+              {getAvatarFallback(currentUser)}
             </AvatarFallback>
           </Avatar>
         </button>
@@ -83,11 +141,11 @@ export function HeaderAuthButton({ user, username }: Props) {
         className="w-auto max-w-100 px-4 py-2"
         onPointerDownCapture={() => setOpen(false)}
       >
-        {username && (
+        {currentUsername && (
           <>
             <DropdownMenuItem asChild>
               <Link
-                href={`/user/${username}`}
+                href={`/user/${currentUsername}`}
                 className="flex cursor-pointer items-center gap-2"
               >
                 <ExternalLink className="size-4" />
