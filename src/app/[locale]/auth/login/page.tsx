@@ -58,7 +58,9 @@ export default function LoginPage() {
   const locale = params.locale as string;
   const next = searchParams.get("next") ?? `/${locale}`;
 
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(() =>
+    searchParams.get("error") ? t("errorOccurred") : null,
+  );
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
