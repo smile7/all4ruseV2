@@ -35,9 +35,16 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
   const next = searchParams.get("next") ?? `/${DEFAULT_LOCALE}`;
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const isLocal = process.env.NODE_ENV === "development";
+  const base = isLocal || !forwardedHost ? origin : `https://${forwardedHost}`;
 
   if (tokenHash && isEmailOtpType(type)) {
-    const supabase = await createSupabaseServerClient({ remember: true });
+    const response = NextResponse.redirect(`${base}${next}`);
+    const supabase = await createSupabaseServerClient({
+      remember: true,
+      response,
+    });
     const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type,
@@ -55,12 +62,6 @@ export async function GET(request: NextRequest) {
       } catch {
         // Non-fatal — profile bootstrap failure should not block the redirect.
       }
-
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      const isLocal = process.env.NODE_ENV === "development";
-      const base =
-        isLocal || !forwardedHost ? origin : `https://${forwardedHost}`;
-      const response = NextResponse.redirect(`${base}${next}`);
 
       response.cookies.set(
         AUTH_REMEMBER_COOKIE,

@@ -26,9 +26,16 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   // `next` can be an absolute path like /bg/auth/update-password
   const next = searchParams.get("next") ?? `/${DEFAULT_LOCALE}`;
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const isLocal = process.env.NODE_ENV === "development";
+  const base = isLocal || !forwardedHost ? origin : `https://${forwardedHost}`;
 
   if (code) {
-    const supabase = await createSupabaseServerClient({ remember: true });
+    const response = NextResponse.redirect(`${base}${next}`);
+    const supabase = await createSupabaseServerClient({
+      remember: true,
+      response,
+    });
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
@@ -58,12 +65,6 @@ export async function GET(request: NextRequest) {
         // Non-fatal — avatar sync failure should not block the redirect
       }
 
-      // Prefer the forwarded host in production (e.g. behind a reverse proxy)
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      const isLocal = process.env.NODE_ENV === "development";
-      const base =
-        isLocal || !forwardedHost ? origin : `https://${forwardedHost}`;
-      const response = NextResponse.redirect(`${base}${next}`);
       response.cookies.set(
         AUTH_REMEMBER_COOKIE,
         "1",

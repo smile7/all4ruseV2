@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
 
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
@@ -13,6 +14,7 @@ import {
 
 export async function createSupabaseServerClient(options?: {
   remember?: boolean;
+  response?: NextResponse;
 }) {
   const cookieStore = await cookies();
 
@@ -31,17 +33,21 @@ export async function createSupabaseServerClient(options?: {
                 cookieStore.get(AUTH_REMEMBER_COOKIE)?.value,
               );
 
-            cookiesToSet.forEach(({ name, value, options: cookieOptions }) =>
-              cookieStore.set(
-                name,
-                value,
+            cookiesToSet.forEach(({ name, value, options: cookieOptions }) => {
+              const normalizedCookieOptions =
                 applyRememberPolicyToCookieOptions(
                   name,
                   cookieOptions,
                   remember,
-                ),
-              ),
-            );
+                );
+
+              cookieStore.set(name, value, normalizedCookieOptions);
+              options?.response?.cookies.set(
+                name,
+                value,
+                normalizedCookieOptions,
+              );
+            });
           } catch {
             // Supabase may try to refresh the session token during a Server
             // Component render. Next.js only allows cookie writes in Server
