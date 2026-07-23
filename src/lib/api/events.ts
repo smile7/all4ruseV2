@@ -29,12 +29,24 @@ type QueryResult = {
   error: { code?: string; message?: string } | null;
 };
 
+/** The timezone all events are anchored to — kept in sync with APP_TIMEZONE in event-utils.ts. */
+const APP_TIMEZONE = "Europe/Sofia";
+
+/**
+ * Returns today's date string (YYYY-MM-DD) in Europe/Sofia local time.
+ * Using Intl instead of date-fns format() so it matches the Sofia wall clock
+ * on the Vercel server (which runs in UTC).
+ */
 function todayStr() {
-  return format(new Date(), "yyyy-MM-dd");
+  return new Intl.DateTimeFormat("en-CA", { timeZone: APP_TIMEZONE }).format(
+    new Date(),
+  );
 }
 
 function daysAgoStr(days: number) {
-  return format(subDays(new Date(), days), "yyyy-MM-dd");
+  return new Intl.DateTimeFormat("en-CA", { timeZone: APP_TIMEZONE }).format(
+    subDays(new Date(), days),
+  );
 }
 
 // Supabase returns event_tags as a nested array — flatten into Tag[].
