@@ -5,7 +5,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { useLocale, useMessages, useTranslations } from "next-intl";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { addDays, format, parseISO } from "date-fns";
+import { addDays, format, isValid, parseISO } from "date-fns";
 import { bg, enUS, ro, uk } from "date-fns/locale";
 import {
   CalendarDays,
@@ -358,6 +358,22 @@ function buildInitialImages(event: Event): UploadableImage[] {
   }));
 }
 
+function forceDateToCurrentYear(dateStr: string): string {
+  if (!dateStr) return dateStr;
+
+  const parsedDate = parseISO(dateStr);
+  if (!isValid(parsedDate)) return dateStr;
+
+  const currentYear = new Date().getFullYear();
+  const month = parsedDate.getMonth();
+  const day = Math.min(
+    parsedDate.getDate(),
+    new Date(currentYear, month + 1, 0).getDate(),
+  );
+
+  return format(new Date(currentYear, month, day), "yyyy-MM-dd");
+}
+
 function buildDefaultValues(
   mode: EventFormMode,
   initialData: Event | null | undefined,
@@ -588,6 +604,16 @@ export function EventForm({
     setIsSubmitting(true);
     try {
       const supabase = getSupabaseBrowserClient();
+      const shouldForceCurrentYear = mode !== "edit";
+      const startDate = shouldForceCurrentYear
+        ? forceDateToCurrentYear(values.startDate)
+        : values.startDate;
+      const endDate = shouldForceCurrentYear
+        ? forceDateToCurrentYear(values.endDate || values.startDate)
+        : values.endDate || values.startDate;
+      const recurrenceEnd = shouldForceCurrentYear
+        ? forceDateToCurrentYear(recurrencePeriodEnd)
+        : recurrencePeriodEnd;
 
       // Upload new files; keep existing stored paths as-is
       const uploadedPaths: string[] = [];
@@ -636,9 +662,9 @@ export function EventForm({
           return;
         }
         const occurrenceDates = generateOccurrenceDates(
-          values.startDate,
+          startDate,
           recurrencePattern,
-          recurrencePeriodEnd,
+          recurrenceEnd,
           recurrenceWeekdays,
         );
         if (occurrenceDates.length === 0) {
@@ -667,8 +693,8 @@ export function EventForm({
       // ── Single create / edit ─────────────────────────────────────────────
       const eventData = {
         ...baseEventData,
-        startDate: values.startDate,
-        endDate: values.endDate || values.startDate,
+        startDate,
+        endDate,
       };
 
       let saved: Event;
