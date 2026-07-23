@@ -282,16 +282,54 @@ export function formatEventTitle(title: string): string {
     );
 }
 
+/**
+ * The timezone all events are anchored to — Bulgaria year-round.
+ * Using Intl instead of setHours() makes the comparison timezone-agnostic:
+ * Vercel servers run in UTC, but event times are entered as Sofia wall-clock times.
+ */
+const APP_TIMEZONE = "Europe/Sofia";
+
 function parseClockOnLocalDate(dateStr: string, timeStr: string): Date {
-  const d = parseLocalDate(dateStr);
   // Strip timezone offset returned by Supabase timetz columns (e.g. "13:00:00+00" → "13:00:00")
   const clean = timeStr.replace(/[+-]\d{2}(:\d{2})?$/, "");
   const parts = clean.split(":").map(Number);
   const hh = parts[0] ?? 0;
   const mm = parts[1] ?? 0;
   const ss = parts[2] ?? 0;
-  d.setHours(hh, mm, ss, 0);
-  return d;
+
+  // Build a UTC ms value treating hh:mm:ss as a naive UTC anchor, then
+  // shift by the Europe/Sofia offset so the result is the correct UTC instant.
+  // This is DST-aware and server-timezone-independent.
+  const [y, mo, d] = dateStr.split("-").map(Number);
+  const naiveUtcMs = Date.UTC(y!, mo! - 1, d!, hh, mm, ss, 0);
+
+  const probe = new Date(naiveUtcMs);
+  const sofiaParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: APP_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(probe);
+
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(sofiaParts.find((p) => p.type === type)?.value ?? 0);
+
+  // Reconstruct what Sofia's wall clock reads for this UTC instant as if it were UTC.
+  const sofiaAsUtcMs = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour"),
+    get("minute"),
+    get("second"),
+  );
+
+  // offset = naiveUtcMs − sofiaAsUtcMs (e.g. −10 800 000 ms for UTC+3 in summer).
+  return new Date(naiveUtcMs + (naiveUtcMs - sofiaAsUtcMs));
 }
 
 /** Start instant in local time (defaults to midnight if `startTime` is empty). */
