@@ -163,22 +163,36 @@ export function EventCard({
             </p>
           </div>
 
-          {/* Top-right badges — approval state (manage mode) or premium label */}
+          {/* Top-right badges — approval state (manage mode) or status labels */}
           {!live && showManageActions && !event.isEventActive ? (
             <div className="bg-background/92 text-muted-foreground absolute top-2.5 right-2.5 z-20 rounded-full px-3 py-1.5 text-xs font-semibold shadow backdrop-blur-sm">
               {tHome("waitingForApproval")}
             </div>
-          ) : event.isEventPremium && !showManageActions ? (
-            <div className="absolute top-2.5 right-2.5 z-20 rounded-full bg-amber-500 px-3 py-1.5 text-xs font-bold tracking-wide text-white shadow">
-              {t("premium")}
-            </div>
-          ) : null}
+          ) : (
+            !showManageActions &&
+            event.isEventPremium && (
+              <div className="absolute top-2.5 right-2.5 z-20">
+                <span className="rounded-full bg-amber-500 px-3 py-1.5 text-xs font-bold tracking-wide text-white shadow">
+                  {t("premium")}
+                </span>
+              </div>
+            )
+          )}
 
           {/* Cancelled overlay */}
           {event.isEventCancelled && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
               <span className="bg-destructive text-destructive-foreground rounded-full px-3 py-1 text-xs font-semibold">
                 {t("cancelled")}
+              </span>
+            </div>
+          )}
+
+          {/* Sold out overlay — diagonal banner across the whole image, below other badges */}
+          {event.isSoldOut && !event.isEventCancelled && (
+            <div className="absolute inset-0 z-15 flex items-center justify-center bg-black/50">
+              <span className="bg-background text-foreground w-[70%] rotate-[-25deg] py-2 text-center text-base font-bold tracking-widest uppercase shadow-lg">
+                {t("soldOut")}
               </span>
             </div>
           )}

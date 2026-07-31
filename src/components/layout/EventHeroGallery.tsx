@@ -61,6 +61,15 @@ export function EventHeroGallery({
           />
           <div className="absolute inset-0 z-20 bg-linear-to-t from-black/40 via-transparent to-transparent" />
 
+          {/* Sold out overlay — diagonal banner across the whole image */}
+          {soldOut && !cancelled && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-black/50">
+              <span className="bg-background text-foreground w-[40%] rotate-[-25deg] py-2.5 text-center text-lg font-bold tracking-widest uppercase shadow-lg sm:text-xl">
+                {soldOutLabel}
+              </span>
+            </div>
+          )}
+
           {/* Status badges */}
           <div className="absolute top-3 right-3 z-30 flex flex-col items-end gap-2">
             {live && !cancelled && (
@@ -75,11 +84,6 @@ export function EventHeroGallery({
             {cancelled && (
               <span className="bg-destructive text-destructive-foreground rounded-full px-3 py-1.5 text-xs font-semibold shadow">
                 {cancelledLabel}
-              </span>
-            )}
-            {soldOut && !cancelled && (
-              <span className="bg-foreground text-background rounded-full px-3 py-1.5 text-xs font-semibold shadow">
-                {soldOutLabel}
               </span>
             )}
             {premium && (
