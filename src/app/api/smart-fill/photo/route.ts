@@ -7,6 +7,7 @@ import {
 import { preprocessImageForExtraction } from "~/lib/smart-fill/image-preprocess";
 import {
   consumeSmartFillImport,
+  isSmartFillAdmin,
   SmartFillDailyLimitError,
   smartFillDailyLimitResponse,
 } from "~/lib/smart-fill/rate-limit";
@@ -65,13 +66,15 @@ export async function POST(request: Request) {
       ? rawText.trim().slice(0, MAX_TEXT_LENGTH)
       : undefined;
 
-  try {
-    await consumeSmartFillImport(user.id, "image");
-  } catch (err) {
-    if (err instanceof SmartFillDailyLimitError) {
-      return smartFillDailyLimitResponse(err);
+  if (!isSmartFillAdmin(user.id)) {
+    try {
+      await consumeSmartFillImport(user.id, "image");
+    } catch (err) {
+      if (err instanceof SmartFillDailyLimitError) {
+        return smartFillDailyLimitResponse(err);
+      }
+      throw err;
     }
-    throw err;
   }
 
   // Upload the image to permanent storage first

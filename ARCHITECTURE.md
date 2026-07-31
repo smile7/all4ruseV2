@@ -56,6 +56,7 @@ All pages live inside the `[locale]` segment so next-intl routing works out of t
 | `/[locale]/admin/events/new`     | Create event (admin) | Admin role only                              |
 | `/[locale]/admin/events/[id]`    | Edit event           | Admin role only                              |
 | `/[locale]/admin/tags`           | Manage tags          | Admin role only                              |
+| `/[locale]/map`                  | Playgrounds & fitness map (V2) | Public read; admin-only add/edit/delete |
 | `/auth/callback`                 | OAuth callback       | Outside `[locale]` — Supabase redirects here |
 
 Events are grouped and filtered by **tags** (a separate `tags` table joined via `event_tags`).
@@ -915,6 +916,72 @@ These follow the reference project.
 
 ---
 
+## V2 Feature — Ruse Map (Playgrounds & Street Fitness)
+
+A public map page (`/[locale]/map`) showing a pin for every children's playground and street fitness spot in Ruse. Content is admin-only to create/edit/delete — there is no public submission flow, matching the "no in-app admin UI for content moderation, staff manage it directly" philosophy used elsewhere, except here the admin acts through a small in-app form instead of the Supabase Dashboard, since pins are added on-site via GPS.
+
+### Data model
+
+One table for both pin types (simpler filtering than two tables):
+
+```sql
+create table public.map_points (
+  id          uuid primary key default gen_random_uuid(),
+  type        text not null check (type in ('playground', 'street_fitness')),
+  name        text not null,
+  description text,
+  address     text,
+  latitude    double precision not null,
+  longitude   double precision not null,
+  images      jsonb not null default '[]'::jsonb, -- storage paths, same convention as events.images
+  created_by  uuid references auth.users(id),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+alter table public.map_points enable row level security;
+
+create policy "Anyone can view map points"
+  on public.map_points for select
+  using (true);
+
+-- No insert/update/delete policies — all writes go through the
+-- admin-checked API routes using the service-role client (see below).
+```
+
+### Admin-only write path
+
+Reuses the existing single-admin pattern (`ADMIN_USER_ID` / `NEXT_PUBLIC_ADMIN_USER_ID`) from Smart Fill rather than introducing a roles table:
+
+- `POST /api/map-points`, `PATCH /api/map-points/[id]`, `DELETE /api/map-points/[id]` each check `user.id === process.env.ADMIN_USER_ID` server-side before writing via `createSupabaseAdminClient()` — same guard shape as `isSmartFillAdmin` in `src/lib/smart-fill/rate-limit.ts`.
+- Reads have no API route: since RLS allows public `select`, `mapPointsApi` in `src/lib/api/map-points.ts` queries Supabase directly from the Server Component, following the `eventsApi` convention.
+
+### Storage
+
+A dedicated public bucket, `map-point-images`, parallel to `event-images`. Upload flow mirrors `src/app/api/smart-fill/photo/route.ts`: validate type/size → upload via the service-role client → store the path → resolve to a public URL the same way `getEventImageUrl` does in `src/lib/event-utils.ts`.
+
+### Location capture
+
+Two ways to set a pin's coordinates, both admin-only and both landing on a draggable marker preview so the position can be fine-tuned before saving:
+
+1. **GPS** — `navigator.geolocation.getCurrentPosition()` in the browser, used when the admin is physically at the location.
+2. **Address** — a server route `GET /api/map-points/geocode?q=` proxies to OpenStreetMap's Nominatim (free, no extra Google Cloud billing/setup). Nominatim requires a descriptive `User-Agent` and enforces a strict 1 req/sec rate limit, so the lookup must happen server-side, never directly from the browser.
+
+The map display itself (both the admin preview and the public page) stays Google Maps via `@react-google-maps/api`, which is already a dependency with a working `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`.
+
+### Public page and components
+
+- `src/app/[locale]/map/page.tsx` — Server Component, fetches all points via `mapPointsApi.getMapPoints`, renders `MapView`.
+- `src/components/Map/MapView.tsx` — `"use client"`, `GoogleMap` centered on Ruse with a distinct marker icon per `type`, plus a filter control (playgrounds / fitness / both).
+- Clicking a marker opens an info window with the pin's name and a thumbnail; tapping the photo opens a full-screen `lightgallery` viewer — the same plugin setup (`lgZoom`, `lgThumbnail`) already used in `EventImagesGallery.tsx`, supporting multiple images per pin.
+- When the logged-in user is the admin, a floating "+" button opens `MapPointForm` to add a pin, and each info window gets edit/delete actions.
+
+### Navigation
+
+Surfaced the same way other secondary pages (`/why-all4ruse`, `/advertise`) are — a link in the "More" drawer (`MobileBottomNav.tsx`) and in the desktop dropdown (`Footer.tsx`). There is no dedicated bottom-nav tab for it.
+
+---
+
 ## Environment Variables
 
 ```bash
@@ -928,6 +995,9 @@ SUPABASE_PROJECT_ID=xxxx
 
 # Google Translate (for event content translation)
 GOOGLE_TRANSLATE_API_KEY=...
+
+# Ruse map (V2) — reuses NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for map display;
+# address geocoding uses free Nominatim, no extra key needed
 ```
 
 ---

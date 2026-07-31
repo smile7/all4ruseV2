@@ -6,6 +6,7 @@ import {
 } from "~/lib/smart-fill/gemini";
 import {
   consumeSmartFillImport,
+  isSmartFillAdmin,
   SmartFillDailyLimitError,
   smartFillDailyLimitResponse,
 } from "~/lib/smart-fill/rate-limit";
@@ -45,13 +46,15 @@ export async function POST(request: Request) {
   const trimmed =
     text.length > MAX_TEXT_LENGTH ? text.slice(0, MAX_TEXT_LENGTH) : text;
 
-  try {
-    await consumeSmartFillImport(user.id, "text");
-  } catch (err) {
-    if (err instanceof SmartFillDailyLimitError) {
-      return smartFillDailyLimitResponse(err);
+  if (!isSmartFillAdmin(user.id)) {
+    try {
+      await consumeSmartFillImport(user.id, "text");
+    } catch (err) {
+      if (err instanceof SmartFillDailyLimitError) {
+        return smartFillDailyLimitResponse(err);
+      }
+      throw err;
     }
-    throw err;
   }
 
   try {

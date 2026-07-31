@@ -446,6 +446,73 @@ AI assistants (ChatGPT, Perplexity, Claude, Gemini) are increasingly used to ans
 - [x] **`updateProfile` `as any` cast** — `src/lib/api/profiles.ts` payload now typed as `TablesUpdate<"profiles">`; comment about `header_url` removed (it exists in generated types).
 - [x] **Reduce `console.error` in page components** — `src/app/[locale]/page.tsx`, `src/app/[locale]/past/page.tsx`, and `src/app/[locale]/current/page.tsx` no longer swallow errors; they re-throw to the `src/app/[locale]/error.tsx` boundary (created with retry button + home link, all 4 locales).
 
+## Phase 20 — Ruse Map: Playgrounds & Street Fitness (V2)
+
+New public feature, tracked separately from the MVP as V2 scope: an interactive map of Ruse with a pin for every children's playground and street fitness spot. Content is admin-only — reuses the existing single-admin `ADMIN_USER_ID` / `NEXT_PUBLIC_ADMIN_USER_ID` pattern from Smart Fill (no roles table). No public submission flow and no saved/favorites for v1.
+
+### Data model
+
+- [ ] Migration: `map_points` table — `id`, `type` (`playground` | `street_fitness`), `name`, `description`, `address`, `latitude`, `longitude`, `images` (jsonb array of storage paths), `created_by`, `created_at`, `updated_at`
+- [ ] Enable RLS: public `SELECT` only; no client-side `INSERT`/`UPDATE`/`DELETE` policies — all writes go through admin-checked API routes using the service-role client (same pattern as `smart-fill`)
+- [ ] Run `npm run db:types` after the migration
+
+### Storage
+
+- [ ] New public bucket `map-point-images` (parallel to `event-images`)
+- [ ] Upload validation mirrors `src/app/api/smart-fill/photo/route.ts` (file type/size checks, service-role upload)
+
+### Data layer
+
+- [ ] `src/lib/api/map-points.ts` — `mapPointsApi.getMapPoints(client, filters?)`, `getMapPointById` — public reads via the normal Supabase client (no API route needed for reads)
+- [ ] Export from `src/lib/api/index.ts`
+
+### API routes (admin-only writes)
+
+- [ ] `POST /api/map-points` — auth + `user.id === process.env.ADMIN_USER_ID` check, upload image(s) to `map-point-images`, insert via service-role client
+- [ ] `PATCH /api/map-points/[id]` — same admin check, update fields/images
+- [ ] `DELETE /api/map-points/[id]` — same admin check, delete row + associated storage objects
+- [ ] `GET /api/map-points/geocode?q=` — server-side proxy to OpenStreetMap Nominatim (descriptive `User-Agent`, rate-limited to 1 req/sec) for address → lat/lng lookup; kept server-side since Nominatim's usage policy disallows direct browser calls
+
+### Public map page
+
+- [ ] `src/app/[locale]/map/page.tsx` — Server Component, fetches all points via `mapPointsApi`, passes to client `MapView`
+- [ ] `src/components/Map/MapView.tsx` — `"use client"`, `@react-google-maps/api` `GoogleMap` centered on Ruse, distinct marker icon per `type`
+- [ ] Type filter control (playgrounds / fitness / both)
+- [ ] Marker click → info window with name + thumbnail
+- [ ] Tapping a photo opens a full-screen `lightgallery` viewer (same pattern as `EventImagesGallery`), supports multiple images per pin
+
+### Admin add/edit/delete UI
+
+- [ ] Floating "+" button on `/map`, visible only when `user.id === NEXT_PUBLIC_ADMIN_USER_ID`
+- [ ] `MapPointForm` — name, type, description, multi-image upload, location via:
+  - "Use my GPS" button (`navigator.geolocation.getCurrentPosition`)
+  - Address text input → `/api/map-points/geocode` lookup
+  - Either path plots a draggable pin on a small preview map so the exact position can be fine-tuned before saving
+- [ ] Edit/delete affordance in the info window when the logged-in user is admin
+
+### Navigation
+
+- [ ] Add "Map" link to the "More" drawer in `MobileBottomNav.tsx`
+- [ ] Add "Map" link to the desktop dropdown in `Footer.tsx`
+
+### i18n
+
+- [ ] New `MapPage` namespace in `bg.json` (source), `en.json`, `ua.json`, `ro.json`
+- [ ] New nav string for the More drawer / footer link
+
+### Env vars
+
+- [ ] Confirm `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` has the Maps JavaScript API enabled with billing (already confirmed working) — no new Google API needed since geocoding uses Nominatim
+
+### Acceptance checks
+
+- [ ] Guest and non-admin users can view the map and open pins, but see no add/edit/delete controls
+- [ ] Admin can add a pin via GPS and see it appear at their real-world location
+- [ ] Admin can add a pin via typed address and adjust the pin position before saving
+- [ ] Multiple photos per pin open in a full-screen gallery
+- [ ] Admin can edit a pin's name/description/photos and delete a pin
+- [ ] Non-admin direct calls to the write API routes return 403
+
 ## Future scope (deferred)
 
 - [ ] Event content auto-translation via Google Translate API
