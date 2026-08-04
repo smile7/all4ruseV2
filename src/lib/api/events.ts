@@ -104,7 +104,7 @@ async function isCreatorConfirmed(
 }
 
 /** Sets `slug` from title + numeric id — unique URL for public detail pages. */
-async function assignSlugForPublishedEvent(
+async function assignSlug(
   client: Client,
   eventId: number,
   title: string,
@@ -589,9 +589,11 @@ async function createEvent(
       .insert(tagIds.map((tag_id) => ({ event_id: inserted.id, tag_id })));
   }
 
-  if (trustedPublisher) {
-    await assignSlugForPublishedEvent(client, inserted.id, data.title);
-  }
+  // Slug is always assigned, even for unconfirmed creators whose events start
+  // inactive — this guarantees a valid detail URL is ready the moment the
+  // event is later approved (isEventActive flipped to true), regardless of
+  // whether that happens through the app or directly in the database.
+  await assignSlug(client, inserted.id, data.title);
 
   return reloadEventWithTags(client, inserted.id);
 }
@@ -658,13 +660,9 @@ async function createRecurringEvents(
       );
   }
 
-  if (trustedPublisher) {
-    await Promise.all(
-      inserted.map(({ id }) =>
-        assignSlugForPublishedEvent(client, id, baseData.title),
-      ),
-    );
-  }
+  await Promise.all(
+    inserted.map(({ id }) => assignSlug(client, id, baseData.title)),
+  );
 
   const { data: all, error: reloadError } = await client
     .from("events")
@@ -724,8 +722,10 @@ async function updateEvent(
   let result = await reloadEventWithTags(client, eventId);
   const slugMissing = result.slug == null || String(result.slug).trim() === "";
 
-  if (result.isEventActive === true && slugMissing) {
-    await assignSlugForPublishedEvent(client, result.id, result.title);
+  // Safety net for events created before slugs were always assigned on
+  // creation (or otherwise left without one).
+  if (slugMissing) {
+    await assignSlug(client, result.id, result.title);
     result = await reloadEventWithTags(client, eventId);
   }
 
