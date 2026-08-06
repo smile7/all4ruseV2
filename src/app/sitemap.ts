@@ -24,9 +24,9 @@ const STATIC_PATHS = [
   },
   {
     path: "/advertise",
-    priority: 0.5,
+    priority: 0.8,
     changeFrequency: "monthly" as const,
-    lastModified: new Date("2026-01-26"),
+    lastModified: new Date("2026-08-06"),
   },
   {
     path: "/legal/terms",
