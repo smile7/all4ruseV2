@@ -9,8 +9,8 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 // Dynamic listing pages: content changes daily so lastModified = now is accurate.
 const DYNAMIC_PATHS = [
   { path: "", priority: 1.0, changeFrequency: "daily" as const },
-  { path: "/past", priority: 0.7, changeFrequency: "daily" as const },
-  { path: "/current", priority: 0.7, changeFrequency: "daily" as const },
+  { path: "/current", priority: 0.85, changeFrequency: "daily" as const },
+  { path: "/past", priority: 0.85, changeFrequency: "daily" as const },
 ];
 
 // Static/editorial pages: use the date the content was last meaningfully edited.
@@ -18,9 +18,9 @@ const DYNAMIC_PATHS = [
 const STATIC_PATHS = [
   {
     path: "/why-all4ruse",
-    priority: 0.5,
+    priority: 0.8,
     changeFrequency: "monthly" as const,
-    lastModified: new Date("2026-01-26"),
+    lastModified: new Date("2026-08-06"),
   },
   {
     path: "/advertise",
@@ -89,7 +89,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${siteUrl}/${locale}/${slug}`,
         lastModified: new Date(createdAt),
         changeFrequency: "weekly" as const,
-        priority: 0.9,
+        priority: 0.55,
       })),
   );
 

@@ -43,7 +43,7 @@
     "menuEvents": "Evenimente viitoare",
     "menuPastEvents": "Evenimente trecute",
     "menuCurrentEvents": "Acum",
-    "menuWhyAll4Ruse": "De ce All4Ruse?",
+    "menuWhyAll4Ruse": "Despre noi",
     "menuWhyAll4RuseTitle": "Despre noi",
     "menuAdvertise": "Publicitate",
     "host": "Gazdă",
@@ -488,9 +488,9 @@
     "goHome": "Înapoi la evenimente"
   },
   "WhyUs": {
-    "pageTitle": "Despre all4ruse",
+    "pageTitle": "Despre noi",
     "pageDescription": "Cine este în spatele all4ruse, de ce există și cum ne poți contacta — evenimente din Ruse într-un singur loc.",
-    "authorImageAlt": "Silvena — creatoarea all4ruse",
+    "authorImageAlt": "Creatoarea all4ruse",
     "emailAriaLabel": "E-mail de contact: silvena at all4ruse dot com",
     "instagramLabel": "Instagram",
     "instagramHandle": "@all4ruse",

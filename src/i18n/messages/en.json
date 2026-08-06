@@ -43,7 +43,7 @@
     "menuEvents": "Upcoming Events",
     "menuPastEvents": "Past Events",
     "menuCurrentEvents": "Happening now",
-    "menuWhyAll4Ruse": "Why All4Ruse?",
+    "menuWhyAll4Ruse": "About Us",
     "menuWhyAll4RuseTitle": "About Us",
     "menuAdvertise": "Advertise",
     "host": "Host",
@@ -488,9 +488,9 @@
     "goHome": "Back to events"
   },
   "WhyUs": {
-    "pageTitle": "About all4ruse",
+    "pageTitle": "About Us",
     "pageDescription": "Who is behind all4ruse, why it exists, and how to get in touch — Ruse events in one place.",
-    "authorImageAlt": "Silvena — creator of all4ruse",
+    "authorImageAlt": "Creator of all4ruse",
     "emailAriaLabel": "Contact email: silvena at all4ruse dot com",
     "instagramLabel": "Instagram",
     "instagramHandle": "@all4ruse",

@@ -43,7 +43,7 @@
     "menuEvents": "Майбутні події",
     "menuPastEvents": "Минулі події",
     "menuCurrentEvents": "Зараз",
-    "menuWhyAll4Ruse": "Чому all4ruse?",
+    "menuWhyAll4Ruse": "Про нас",
     "menuWhyAll4RuseTitle": "Про нас",
     "menuAdvertise": "Реклама",
     "facebookPage": "Сторінка Facebook",
@@ -488,9 +488,9 @@
     "goHome": "Назад до подій"
   },
   "WhyUs": {
-    "pageTitle": "Про all4ruse",
+    "pageTitle": "Про нас",
     "pageDescription": "Хто стоїть за all4ruse, навіщо він існує і як зв'язатися — події Русе в одному місці.",
-    "authorImageAlt": "Сілвена — творчиня all4ruse",
+    "authorImageAlt": "Творчиня all4ruse",
     "emailAriaLabel": "Контактний email: silvena at all4ruse dot com",
     "instagramLabel": "Instagram",
     "instagramHandle": "@all4ruse",

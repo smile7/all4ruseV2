@@ -14,7 +14,6 @@ import { Typography } from "~/components/layout";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { buildAlternates } from "~/lib/seo";
 import { cn } from "~/lib/utils";
 
@@ -185,9 +184,9 @@ export default async function AdvertisePage() {
               >
                 <a
                   href="mailto:silvena@all4ruse.com"
-                  aria-label={t("emailAriaLabel")}
+                  aria-label="silvena@all4ruse.com"
                 >
-                  <ObfuscatedEmail email="silvena@all4ruse.com" />
+                  silvena@all4ruse.com
                 </a>
               </Button>
             </div>

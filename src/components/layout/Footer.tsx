@@ -130,7 +130,6 @@ export function Footer() {
                 {t("menuPastEvents")}
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link
                 href="/why-all4ruse"
@@ -140,6 +139,7 @@ export function Footer() {
                 {t("menuWhyAll4Ruse")}
               </Link>
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link
                 href="/advertise"

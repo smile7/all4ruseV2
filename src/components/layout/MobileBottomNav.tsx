@@ -404,9 +404,6 @@ export function MobileBottomNav({ initialUsername }: Props) {
               <History className="text-muted-foreground size-4 shrink-0" />
               <span>{t("menuPastEvents")}</span>
             </Link>
-
-            <Separator className="my-3" />
-
             <Link
               href="/why-all4ruse"
               onClick={handleRouteStart("/why-all4ruse", { closeMore: true })}
@@ -415,6 +412,9 @@ export function MobileBottomNav({ initialUsername }: Props) {
               <Info className="text-muted-foreground size-4 shrink-0" />
               <span>{t("menuWhyAll4Ruse")}</span>
             </Link>
+
+            <Separator className="my-3" />
+
             <Link
               href="/advertise"
               onClick={handleRouteStart("/advertise", { closeMore: true })}
