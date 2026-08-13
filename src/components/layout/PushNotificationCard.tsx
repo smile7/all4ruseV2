@@ -35,6 +35,10 @@ const REMINDER_HOURS = [
   "12",
   "13",
   "14",
+  "15",
+  "16",
+  "17",
+  "18",
 ] as const;
 
 function normalizeReminderHour(hour: string) {
@@ -48,8 +52,8 @@ function normalizeReminderHour(hour: string) {
     return "05";
   }
 
-  if (numericHour > 14) {
-    return "14";
+  if (numericHour > 18) {
+    return "18";
   }
 
   return numericHour.toString().padStart(2, "0");
