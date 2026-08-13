@@ -327,11 +327,18 @@
   }
 }
 
+/* Home indicator is 34px. iOS 26+ Safari/PWA can report a much larger
+   safe-area-inset-bottom (browser chrome stacked on the inset), which
+   leaves a tall empty band under the tab bar. Cap to the real inset. */
+:root {
+  --safe-area-bottom: min(env(safe-area-inset-bottom, 0px), 34px);
+}
+
 /* ── Main content bottom padding — clears mobile nav + iPhone home indicator ─
-   On mobile: nav tab height (~58px) + home indicator safe area (~34px on X+)
+   On mobile: nav tab height (~56px) + capped home-indicator inset
    On desktop (md+): clears the fixed footer only; safe area is always 0 there. */
 .main-layout {
-  padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(3.5rem + var(--safe-area-bottom));
 }
 @media (min-width: 768px) {
   .main-layout {

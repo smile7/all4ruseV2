@@ -338,6 +338,7 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
           <EventsCalendarView
             events={events}
             calendarHeight={calendarHeight ?? undefined}
+            onClose={() => setView("grid")}
           />
         ) : (
           <EventsGrid events={events} groupByMonth />

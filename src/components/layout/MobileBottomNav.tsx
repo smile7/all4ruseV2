@@ -171,7 +171,7 @@ export function MobileBottomNav({ initialUsername }: Props) {
 
   const tabClass = (active: boolean, pending = false) =>
     [
-      "relative flex flex-col items-center justify-center gap-1 overflow-hidden py-3 text-[11px] font-medium transition-all duration-200",
+      "relative flex flex-col items-center justify-center gap-1 overflow-hidden pt-2 pb-1 text-[11px] font-medium transition-all duration-200",
       active || pending ? "text-primary" : "text-muted-foreground",
       pending ? "pointer-events-none cursor-progress" : "",
     ].join(" ");
@@ -202,9 +202,8 @@ export function MobileBottomNav({ initialUsername }: Props) {
     <>
       <nav
         aria-label={t("navAriaLabel")}
-        className="border-border/60 bg-muted fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t backdrop-blur-md md:hidden"
+        className="border-border/60 bg-muted fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t pb-[var(--safe-area-bottom)] backdrop-blur-md md:hidden"
         aria-busy={isRoutePending}
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {isRoutePending && (
           <span
@@ -322,10 +321,7 @@ export function MobileBottomNav({ initialUsername }: Props) {
 
       {/* ── More drawer ────────────────────────────────────────────────── */}
       <Drawer open={moreOpen} onOpenChange={setMoreOpen}>
-        <DrawerContent
-          className="rounded-t-2xl"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        >
+        <DrawerContent className="rounded-t-2xl pb-[var(--safe-area-bottom)]">
           <DrawerHeader className="border-border border-b px-5 pt-2 pb-4">
             <DrawerTitle className="text-center text-sm font-semibold">
               {t("more")}
@@ -486,10 +482,7 @@ export function MobileBottomNav({ initialUsername }: Props) {
 
       {/* ── Profile / Auth drawer ─────────────────────────────────────── */}
       <Drawer open={profileOpen} onOpenChange={setProfileOpen}>
-        <DrawerContent
-          className="rounded-t-2xl"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        >
+        <DrawerContent className="rounded-t-2xl pb-[var(--safe-area-bottom)]">
           <DrawerHeader className="border-border border-b px-5 pt-2 pb-4">
             <DrawerTitle className="text-center text-sm font-semibold">
               {user ? t("account") : t("loginSignup")}

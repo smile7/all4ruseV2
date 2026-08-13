@@ -452,9 +452,11 @@ type Props = {
   /** Explicit pixel height so the component fills the remaining viewport without
    *  a page-level scrollbar; the calendar grid scrolls internally. */
   calendarHeight?: number;
+  /** Mobile close: leave calendar entirely (parent switches back to the list). */
+  onClose?: () => void;
 };
 
-export function EventsCalendarView({ events, calendarHeight }: Props) {
+export function EventsCalendarView({ events, calendarHeight, onClose }: Props) {
   const locale = useLocale();
   const t = useTranslations("HomePage");
 
@@ -946,10 +948,10 @@ export function EventsCalendarView({ events, calendarHeight }: Props) {
           isHeightConstrained ? "pt-2" : "mt-3",
         )}
       >
-        {isFullscreen ? (
+        {isFullscreen || onClose ? (
           <Button
             variant="outline"
-            onClick={() => setIsFullscreen(false)}
+            onClick={() => (onClose ? onClose() : setIsFullscreen(false))}
             className="flex flex-1 items-center justify-center gap-2"
           >
             <X className="size-4" aria-hidden />
