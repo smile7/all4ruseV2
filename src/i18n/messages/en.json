@@ -1,4 +1,7 @@
 {
+  "Navigation": {
+    "back": "Back"
+  },
   "HomePage": {
     "createEvent": "Create an Event",
     "pageTitle": "Events in Ruse",

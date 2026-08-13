@@ -18,6 +18,7 @@ export * from "./HeaderDesktopFiltersPanel";
 export * from "./HeaderSearchButton";
 export * from "./LocaleSwitcher";
 export * from "./Logo";
+export * from "./MobileBackButton";
 export * from "./MobileBottomNav";
 export * from "./PushNotificationCard";
 export * from "./ThemeToggle";
