@@ -9,6 +9,7 @@ import {
   Calendar,
   CalendarDays,
   LayoutGrid,
+  RefreshCw,
 } from "lucide-react";
 
 import { EventCard } from "~/components/EventCard";
@@ -32,6 +33,7 @@ import {
 } from "~/hooks/query/events";
 import { useFilters } from "~/hooks/useFilters";
 import { useViewPreference } from "~/hooks/useViewPreference";
+import { useRouter } from "~/i18n/navigation";
 import { formatEventMonthHeading, parseLocalDate } from "~/lib/event-utils";
 import type { Event } from "~/types";
 
@@ -177,6 +179,7 @@ function BackToTopButton() {
 
 function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
   const t = useTranslations("HomePage");
+  const router = useRouter();
   const { filters, hasActiveFilters } = useFilters();
   const [view, setView] = useViewPreference("grid");
   // Ref marks the top edge of the calendar slot so we can measure remaining space.
@@ -192,7 +195,12 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
     host: filters.host || undefined,
     place: filters.place || undefined,
   };
-  const { data: events = [], isLoading } = useActiveEvents(params, {
+  const {
+    data: events = [],
+    isLoading,
+    isFetching,
+    refetch,
+  } = useActiveEvents(params, {
     initialData,
   });
 
@@ -272,14 +280,34 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
 
   return (
     <div className="mt-4 flex flex-col gap-2">
-      <p className="text-muted-foreground text-left text-sm">
-        {hasActiveFilters
-          ? t("filteredEventsSummary", {
-              filtered: events.length,
-              total: totalCount ?? events.length,
-            })
-          : t("allEventsSummary", { count: events.length })}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-muted-foreground text-left text-sm">
+          {hasActiveFilters
+            ? t("filteredEventsSummary", {
+                filtered: events.length,
+                total: totalCount ?? events.length,
+              })
+            : t("allEventsSummary", { count: events.length })}
+        </p>
+        <Button
+          type="button"
+          size="icon"
+          variant="outline"
+          aria-label={t("refreshEvents")}
+          aria-busy={isFetching}
+          className="text-muted-foreground size-8 shrink-0 md:hidden"
+          onClick={() => {
+            if (isFetching) return;
+            void refetch();
+            router.refresh();
+          }}
+        >
+          <RefreshCw
+            className={`size-4 ${isFetching ? "animate-spin" : ""}`}
+            aria-hidden
+          />
+        </Button>
+      </div>
 
       <Tabs
         value={view}

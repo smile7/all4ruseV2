@@ -56,6 +56,7 @@
     "clear": "Очистити фільтри",
     "events": "події",
     "allEventsSummary": "Усі події: {count}",
+    "refreshEvents": "Оновити",
     "filteredEventsSummary": "Відібрані події: {filtered}/{total}",
     "viewPublicProfile": "Переглянути свій публічний профіль",
     "publishedEvents": "Опубліковані події",

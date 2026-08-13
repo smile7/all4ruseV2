@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,13 +50,33 @@ function mapLoginError(message: string, t: (key: string) => string): string {
   return t("errorOccurred");
 }
 
+/** Same-origin path only. Auth pages fall back to locale home so login cannot loop. */
+function getPostLoginPath(next: string | null, locale: string): string {
+  const home = `/${locale}`;
+  if (
+    !next ||
+    !next.startsWith("/") ||
+    next.startsWith("//") ||
+    next.includes("://")
+  ) {
+    return home;
+  }
+
+  const pathOnly = next.split("?")[0] ?? next;
+  const withoutLocale = pathOnly.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
+  if (withoutLocale === "/auth" || withoutLocale.startsWith("/auth/")) {
+    return home;
+  }
+
+  return next;
+}
+
 export default function LoginPage() {
   const t = useTranslations("Profile");
-  const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = params.locale as string;
-  const next = searchParams.get("next") ?? `/${locale}`;
+  const next = getPostLoginPath(searchParams.get("next"), locale);
 
   const [authError, setAuthError] = useState<string | null>(() =>
     searchParams.get("error") ? t("errorOccurred") : null,
@@ -82,8 +102,9 @@ export default function LoginPage() {
       return;
     }
 
-    router.push(next);
-    router.refresh();
+    // Hard navigation: client `push` + `refresh` can race on mobile Safari
+    // and leave the user on this screen after a successful sign-in.
+    window.location.replace(next);
   }
 
   return (

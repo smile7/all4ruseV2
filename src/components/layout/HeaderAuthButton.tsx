@@ -22,7 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { Link, useRouter } from "~/i18n/navigation";
+import { Link, usePathname, useRouter } from "~/i18n/navigation";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 
 type Props = {
@@ -40,6 +40,7 @@ export function HeaderAuthButton({ user, username }: Props) {
   const t = useTranslations("HomePage");
   const tSaved = useTranslations("SavedEvents");
   const tProfile = useTranslations("Profile");
+  const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const refreshedFromBrowser = useRef(false);
@@ -59,6 +60,8 @@ export function HeaderAuthButton({ user, username }: Props) {
     function refreshIfServerStateIsStale(browserUserId: string | null) {
       if (refreshedFromBrowser.current) return;
       if ((user?.id ?? null) === browserUserId) return;
+      // Skip on auth pages — a refresh here races the post-login redirect.
+      if (pathname.startsWith("/auth")) return;
 
       refreshedFromBrowser.current = true;
       router.refresh();
@@ -99,7 +102,7 @@ export function HeaderAuthButton({ user, username }: Props) {
     });
 
     return () => subscription.unsubscribe();
-  }, [router, user?.id]);
+  }, [pathname, router, user?.id]);
 
   async function handleLogout() {
     setOpen(false);

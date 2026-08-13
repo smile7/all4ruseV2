@@ -56,6 +56,7 @@
     "clear": "Clear Filters",
     "events": "events",
     "allEventsSummary": "All events: {count}",
+    "refreshEvents": "Refresh",
     "filteredEventsSummary": "Filtered events: {filtered}/{total}",
     "viewPublicProfile": "View your public profile",
     "publishedEvents": "Published Events",

@@ -56,6 +56,7 @@
     "clear": "Șterge filtrele",
     "events": "evenimente",
     "allEventsSummary": "Toate evenimentele: {count}",
+    "refreshEvents": "Reîmprospătează",
     "filteredEventsSummary": "Evenimente filtrate: {filtered}/{total}",
     "viewPublicProfile": "Vezi profilul tău public",
     "publishedEvents": "Evenimente publicate",
