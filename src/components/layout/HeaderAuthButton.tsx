@@ -48,11 +48,15 @@ export function HeaderAuthButton({ user, username }: Props) {
   const [currentUsername, setCurrentUsername] = useState<string | undefined>(
     username,
   );
+  const [prevUser, setPrevUser] = useState(user);
+  const [prevUsername, setPrevUsername] = useState(username);
 
-  useEffect(() => {
+  if (user !== prevUser || username !== prevUsername) {
+    setPrevUser(user);
+    setPrevUsername(username);
     setCurrentUser(user);
     setCurrentUsername(username);
-  }, [user, username]);
+  }
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();

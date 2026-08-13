@@ -1,4 +1,7 @@
 {
+  "Navigation": {
+    "back": "Назад"
+  },
   "HomePage": {
     "createEvent": "Създай Събитие",
     "pageTitle": "Всички събития в Русе",

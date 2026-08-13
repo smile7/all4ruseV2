@@ -7,6 +7,7 @@ import { HeaderInnerContainer } from "./HeaderInnerContainer";
 import { HeaderSearchButton } from "./HeaderSearchButton";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { Logo } from "./Logo";
+import { MobileBackButton } from "./MobileBackButton";
 import { ThemeToggle } from "./ThemeToggle";
 
 export async function Header() {
@@ -24,15 +25,16 @@ export async function Header() {
     <header className="border-border/60 bg-secondary/85 sticky top-0 z-50 w-full backdrop-blur-md">
       {/* ── Mobile (<md) ──────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 px-3 py-2 md:hidden">
-        {/* Row 1: lang (left) | Logo (center) | theme (right) */}
+        {/* Row 1: back (left) | Logo (center) | language + theme (right) */}
         <div className="grid grid-cols-3 items-center border-b pb-4">
           <div className="flex items-center justify-start">
-            <LocaleSwitcher />
+            <MobileBackButton />
           </div>
           <div className="flex items-center justify-center">
             <Logo />
           </div>
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end gap-1">
+            <LocaleSwitcher />
             <ThemeToggle />
           </div>
         </div>

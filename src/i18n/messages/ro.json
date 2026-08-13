@@ -1,4 +1,7 @@
 {
+  "Navigation": {
+    "back": "Înapoi"
+  },
   "HomePage": {
     "createEvent": "Creează un eveniment",
     "pageTitle": "Evenimente în Ruse",
