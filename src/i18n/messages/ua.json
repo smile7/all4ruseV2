@@ -318,7 +318,8 @@
     "remindersTimeHint": "Ви отримаєте сповіщення в цей час у день події.",
     "remindersSaveTime": "Зберегти час",
     "remindersTimeSaved": "Час збережено.",
-    "remindersError": "Виникла помилка. Спробуйте ще раз."
+    "remindersError": "Виникла помилка. Спробуйте ще раз.",
+    "remindersPromptDescription": "Увімкніть нагадування — ми сповістимо вас у день події."
   },
   "Profile": {
     "personal": "Дані",

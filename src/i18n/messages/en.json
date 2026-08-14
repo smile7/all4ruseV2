@@ -318,7 +318,8 @@
     "remindersTimeHint": "You will be notified at this time on the day of the event.",
     "remindersSaveTime": "Save time",
     "remindersTimeSaved": "Time saved.",
-    "remindersError": "Something went wrong. Please try again."
+    "remindersError": "Something went wrong. Please try again.",
+    "remindersPromptDescription": "Turn on reminders and we'll notify you on the day of the event."
   },
   "Profile": {
     "personal": "Personal",

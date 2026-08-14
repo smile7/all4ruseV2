@@ -93,6 +93,76 @@ async function readPushState(): Promise<
   };
 }
 
+/** True when we can offer to turn reminders on — including in dev, where the SW is off. */
+export async function isEligibleForReminderPrompt(): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  if (!VAPID_PUBLIC_KEY) return false;
+  if (!("Notification" in window) || !("PushManager" in window)) return false;
+
+  const reg = await findRegistration();
+  if (reg) {
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) return false;
+  }
+
+  return true;
+}
+
+export type EnablePushResult =
+  | { status: "subscribed" }
+  | { status: "denied"; permission: PermissionState }
+  | { status: "error"; message: string };
+
+export async function enablePushNotifications(): Promise<EnablePushResult> {
+  try {
+    if (!VAPID_PUBLIC_KEY) {
+      return { status: "error", message: "VAPID key not configured." };
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      return {
+        status: "denied",
+        permission: permission as PermissionState,
+      };
+    }
+
+    const reg = await waitForRegistration();
+    if (!reg) {
+      return { status: "error", message: "Service worker not available." };
+    }
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+
+    const json = sub.toJSON();
+    const p256dh = json.keys?.p256dh;
+    const auth = json.keys?.auth;
+    if (!p256dh || !auth) {
+      return { status: "error", message: "Push subscription missing keys." };
+    }
+
+    const res = await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint: sub.endpoint, p256dh, auth }),
+    });
+    if (!res.ok) {
+      await sub.unsubscribe();
+      return { status: "error", message: "Failed to save subscription." };
+    }
+
+    return { status: "subscribed" };
+  } catch (err) {
+    return {
+      status: "error",
+      message: err instanceof Error ? err.message : "Unknown error",
+    };
+  }
+}
+
 export function usePushNotifications(): UsePushNotificationsReturn {
   const [state, setState] = useState<PushState>({
     isReady: false,
@@ -121,42 +191,9 @@ export function usePushNotifications(): UsePushNotificationsReturn {
 
   const enable = useCallback(async () => {
     setState((s) => ({ ...s, isLoading: true, error: null }));
-    try {
-      if (!VAPID_PUBLIC_KEY) throw new Error("VAPID key not configured.");
+    const result = await enablePushNotifications();
 
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        setState((s) => ({
-          ...s,
-          permission: permission as PermissionState,
-          isLoading: false,
-        }));
-        return;
-      }
-
-      const reg = await waitForRegistration();
-      if (!reg) throw new Error("Service worker not available.");
-
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
-
-      const json = sub.toJSON();
-      const p256dh = json.keys?.p256dh;
-      const auth = json.keys?.auth;
-      if (!p256dh || !auth) throw new Error("Push subscription missing keys.");
-
-      const res = await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ endpoint: sub.endpoint, p256dh, auth }),
-      });
-      if (!res.ok) {
-        await sub.unsubscribe();
-        throw new Error("Failed to save subscription.");
-      }
-
+    if (result.status === "subscribed") {
       setState({
         isReady: true,
         isPushCapable: true,
@@ -166,15 +203,25 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         isLoading: false,
         error: null,
       });
-    } catch (err) {
-      const next = await readPushState();
-      setState({
-        isReady: true,
-        ...next,
-        isLoading: false,
-        error: err instanceof Error ? err.message : "Unknown error",
-      });
+      return;
     }
+
+    if (result.status === "denied") {
+      setState((s) => ({
+        ...s,
+        permission: result.permission,
+        isLoading: false,
+      }));
+      return;
+    }
+
+    const next = await readPushState();
+    setState({
+      isReady: true,
+      ...next,
+      isLoading: false,
+      error: result.message,
+    });
   }, []);
 
   const disable = useCallback(async () => {
