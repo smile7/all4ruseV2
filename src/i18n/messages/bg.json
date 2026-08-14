@@ -315,7 +315,8 @@
     "remindersTimeHint": "Ще получите известие в избрания час в деня на събитието.",
     "remindersSaveTime": "Запази час",
     "remindersTimeSaved": "Часът е запазен.",
-    "remindersError": "Възникна грешка. Опитайте отново."
+    "remindersError": "Възникна грешка. Опитайте отново.",
+    "remindersPromptDescription": "Включете напомняния и ще получите известие в деня на събитието."
   },
   "Profile": {
     "personal": "Данни",

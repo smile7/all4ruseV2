@@ -32,6 +32,8 @@ import {
 import { Link } from "~/i18n/navigation";
 import { cn } from "~/lib/utils";
 
+import { promptRemindersOnSave } from "./promptRemindersOnSave";
+
 type Props = {
   eventId: number;
   initialSaved?: boolean;
@@ -121,7 +123,11 @@ export function EventSaveButton({
       { eventId, nextSaved },
       {
         onSuccess: () => {
-          if (!nextSaved) onUnsaveSuccess?.(eventId);
+          if (!nextSaved) {
+            onUnsaveSuccess?.(eventId);
+            return;
+          }
+          void promptRemindersOnSave(t);
         },
         onError: () => {
           toast.error(t("mutationError"));

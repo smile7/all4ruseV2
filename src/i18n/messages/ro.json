@@ -318,7 +318,8 @@
     "remindersTimeHint": "Vei fi notificat la această oră în ziua evenimentului.",
     "remindersSaveTime": "Salvează ora",
     "remindersTimeSaved": "Ora a fost salvată.",
-    "remindersError": "A apărut o eroare. Te rugăm să încerci din nou."
+    "remindersError": "A apărut o eroare. Te rugăm să încerci din nou.",
+    "remindersPromptDescription": "Activează reminderele și te vom anunța în ziua evenimentului."
   },
   "Profile": {
     "personal": "Personal",
