@@ -20,10 +20,10 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   // Send full origin on same-origin requests, only the origin on cross-origin.
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // Opt out of browser features that the site does not use.
+  // Opt out of unused browser features. Geolocation is allowed for the listing map.
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=()",
+    value: "camera=(), microphone=(), geolocation=(self)",
   },
   // NOTE: Content-Security-Policy is deferred — the app uses inline scripts
   // (JSON-LD, next/script), YouTube/Google Maps iframes, and Supabase storage
@@ -38,6 +38,7 @@ const nextConfig: NextConfig = {
   experimental: {
     viewTransition: true,
   },
+  serverExternalPackages: ["sanitize-html"],
   images: {
     remotePatterns: [
       {

@@ -289,6 +289,13 @@ export function formatEventTitle(title: string): string {
  */
 const APP_TIMEZONE = "Europe/Sofia";
 
+/** Today's date as YYYY-MM-DD in Europe/Sofia (Vercel runs in UTC). */
+export function todayInSofia(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: APP_TIMEZONE }).format(
+    new Date(),
+  );
+}
+
 function parseClockOnLocalDate(dateStr: string, timeStr: string): Date {
   // Strip timezone offset returned by Supabase timetz columns (e.g. "13:00:00+00" → "13:00:00")
   const clean = timeStr.replace(/[+-]\d{2}(:\d{2})?$/, "");

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
+import dynamic from "next/dynamic";
 import { useLocale, useMessages, useTranslations } from "next-intl";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -66,17 +67,38 @@ import { useRouter } from "~/i18n/navigation";
 import { eventsApi } from "~/lib/api/events";
 import {
   plainTextFromHtml,
-  sanitizeEventDescription,
 } from "~/lib/event-description-html";
 import { getEventImageUrl } from "~/lib/event-utils";
+import {
+  coordsFromStoredEvent,
+  type EventCoordsWrite,
+  geocodeLocation,
+  resolveEventCoords,
+  type StashedPlacesCoords,
+} from "~/lib/geocode/event-coords";
+import type { PlaceDetailsResult } from "~/lib/geocode/types";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 import { isOptionalWebUrl, normalizeWebUrl } from "~/lib/url-input";
 import { isValidYoutubeUrl } from "~/lib/youtube-url";
 import type { Event, EventDraft, Tag } from "~/types";
 
+import { AddressAutocomplete } from "./AddressAutocomplete";
 import { EventDescriptionEditor } from "./EventDescriptionEditor";
 import { EventImageUpload, type UploadableImage } from "./EventImageUpload";
+import { GeocodeStatus, type GeocodeStatusKind } from "./GeocodeStatus";
 import { SmartFillPanel } from "./SmartFillPanel";
+
+const EventLocationMapPreview = dynamic(
+  () =>
+    import("./EventLocationMapPreview").then((m) => m.EventLocationMapPreview),
+  { ssr: false },
+);
+
+const EMPTY_COORDS: EventCoordsWrite = {
+  lat: null,
+  lng: null,
+  coords_source: null,
+};
 
 /** Default населено място for new events (Ruse). */
 const DEFAULT_EVENT_TOWN = "Русе";
@@ -250,7 +272,7 @@ function makeFormSchema(t: ReturnType<typeof useTranslations<"CreateEvent">>) {
         .string()
         .refine(
           (html) =>
-            plainTextFromHtml(sanitizeEventDescription(html)).length >= 10,
+            plainTextFromHtml(html).length >= 10,
           { message: t("requiredField") },
         ),
       startDate: z.string().min(1, t("requiredField")),
@@ -392,7 +414,7 @@ function buildDefaultValues(
 
     return {
       title: initialData.title ?? "",
-      description: sanitizeEventDescription(initialData.description ?? ""),
+      description: initialData.description ?? "",
       startDate: initialData.startDate ?? "",
       endDate: initialData.endDate ?? "",
       startTime: initialData.startTime?.slice(0, 5) ?? "",
@@ -485,6 +507,26 @@ export function EventForm({
   const baselineTogglesRef = useRef({
     isFree: baselineFreeFromEvent(initialData),
   });
+  const placesCoordsRef = useRef<StashedPlacesCoords | null>(null);
+  const [draftCoords, setDraftCoords] = useState<EventCoordsWrite>(() =>
+    mode === "edit" && initialData
+      ? coordsFromStoredEvent(initialData)
+      : EMPTY_COORDS,
+  );
+  const [geocodeAttempt, setGeocodeAttempt] = useState<"idle" | "failed">(
+    "idle",
+  );
+  const [isGeocodeRetrying, setIsGeocodeRetrying] = useState(false);
+
+  const coordsBaselineRef = useRef<EventCoordsWrite>(
+    coordsFromStoredEvent(
+      initialData ?? { lat: null, lng: null, coords_source: null },
+    ),
+  );
+  const coordsDirty =
+    draftCoords.lat !== coordsBaselineRef.current.lat ||
+    draftCoords.lng !== coordsBaselineRef.current.lng ||
+    draftCoords.coords_source !== coordsBaselineRef.current.coords_source;
 
   const imagesDirty =
     uploadableImagesFingerprint(images) !==
@@ -582,7 +624,7 @@ export function EventForm({
   }, [startDate, endDate, startTime, form]);
 
   useRegisterUnsavedChanges(
-    form.formState.isDirty || imagesDirty || togglesDirty,
+    form.formState.isDirty || imagesDirty || togglesDirty || coordsDirty,
   );
 
   // ── Image upload ──────────────────────────────────────────────────────────
@@ -597,6 +639,78 @@ export function EventForm({
     // Store the full public URL so both the old and new app can display the image
     // without needing to know the Supabase base URL at render time.
     return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${EVENTS_BUCKET}/${path}`;
+  }
+
+  function clearPlacesStash() {
+    placesCoordsRef.current = null;
+  }
+
+  function clearSessionCoords() {
+    clearPlacesStash();
+    setDraftCoords(EMPTY_COORDS);
+    setGeocodeAttempt("idle");
+  }
+
+  function handlePlacesPick(details: PlaceDetailsResult) {
+    if (details.address) {
+      form.setValue("address", details.address, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+    if (details.town) {
+      form.setValue("town", details.town, { shouldDirty: true });
+    }
+    if (details.place) {
+      form.setValue("place", details.place, { shouldDirty: true });
+    }
+    if (details.lat != null && details.lng != null) {
+      placesCoordsRef.current = { lat: details.lat, lng: details.lng };
+      setDraftCoords({
+        lat: details.lat,
+        lng: details.lng,
+        coords_source: "places",
+      });
+      setGeocodeAttempt("idle");
+    } else {
+      placesCoordsRef.current = null;
+      setDraftCoords(EMPTY_COORDS);
+    }
+  }
+
+  function handlePinDragEnd(lat: number, lng: number) {
+    placesCoordsRef.current = null;
+    setDraftCoords({ lat, lng, coords_source: "manual" });
+    setGeocodeAttempt("idle");
+  }
+
+  async function handleGeocodeRetry() {
+    setIsGeocodeRetrying(true);
+    try {
+      const values = form.getValues();
+      const result = await geocodeLocation({
+        address: values.address,
+        place: values.place || null,
+        town: values.town,
+      });
+      placesCoordsRef.current = null;
+      setDraftCoords(result);
+      setGeocodeAttempt(result.lat == null ? "failed" : "idle");
+      if (result.lat != null && mode === "edit" && initialData) {
+        try {
+          await eventsApi.patchEventCoords(
+            getSupabaseBrowserClient(),
+            initialData.id,
+            result,
+          );
+          coordsBaselineRef.current = result;
+        } catch {
+          toast.error(t("error"));
+        }
+      }
+    } finally {
+      setIsGeocodeRetrying(false);
+    }
   }
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -626,14 +740,27 @@ export function EventForm({
         }
       }
 
+      const locationFields = {
+        address: values.address,
+        place: values.place || null,
+        town: values.town,
+      };
+      const coords = await resolveEventCoords({
+        fields: locationFields,
+        placesPick: placesCoordsRef.current,
+        isEdit: mode === "edit",
+        initial: mode === "edit" ? (initialData ?? null) : null,
+        draftCoords,
+      });
+
       const baseEventData = {
         title: values.title,
-        description: sanitizeEventDescription(values.description),
+        description: values.description,
         startTime: values.startTime,
         endTime: values.endTime || null,
-        address: values.address,
-        town: values.town,
-        place: values.place || null,
+        address: locationFields.address,
+        town: locationFields.town,
+        place: locationFields.place,
         price: isFree ? null : values.price || null,
         ticketsLink: normalizeWebUrl(values.ticketsLink),
         fbLink: normalizeWebUrl(values.fbLink),
@@ -648,6 +775,7 @@ export function EventForm({
             name: o.name,
             link: normalizeWebUrl(o.link) ?? undefined,
           })),
+        ...coords,
       };
 
       const tagIds = values.tagIds ?? [];
@@ -750,6 +878,9 @@ export function EventForm({
 
   // ── Smart Fill ────────────────────────────────────────────────────────────
   function handleDraftApply(draft: EventDraft) {
+    placesCoordsRef.current = null;
+    setDraftCoords(EMPTY_COORDS);
+    setGeocodeAttempt("idle");
     const textFields = [
       "title",
       "description",
@@ -853,6 +984,13 @@ export function EventForm({
       });
     }
   }
+
+  const geocodeStatus: GeocodeStatusKind =
+    draftCoords.lat != null && draftCoords.lng != null
+      ? "on-map"
+      : geocodeAttempt === "failed"
+        ? "failed"
+        : "not-attempted";
 
   return (
     <>
@@ -1215,65 +1353,98 @@ export function EventForm({
                 {t("address")}
               </CardTitle>
             </CardHeader>
-            <CardContent
-              variant="section"
-              className="grid gap-3 md:grid-cols-3"
-            >
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t("address")}
-                      <RequiredMark />
-                    </FormLabel>
-                    <FormControl>
-                      <Input
+            <CardContent variant="section" className="flex flex-col gap-3">
+              <div className="grid gap-3 md:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t("address")}
+                        <RequiredMark />
+                      </FormLabel>
+                      <AddressAutocomplete
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        inputRef={field.ref}
                         placeholder={t("enterAddress")}
-                        aria-required="true"
-                        {...field}
+                        aria-required={true}
+                        onPlacesPick={handlePlacesPick}
+                        onUserTyped={clearSessionCoords}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="place"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("place")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("enterPlace")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="place"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("place")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("enterPlace")}
+                          {...field}
+                          onChange={(event) => {
+                            field.onChange(event);
+                            clearPlacesStash();
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="town"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t("town")}
-                      <RequiredMark />
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Русе"
-                        aria-required="true"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="town"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t("town")}
+                        <RequiredMark />
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Русе"
+                          aria-required="true"
+                          {...field}
+                          onChange={(event) => {
+                            field.onChange(event);
+                            clearPlacesStash();
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {mode === "edit" && (
+                <>
+                  <GeocodeStatus
+                    status={geocodeStatus}
+                    isRetrying={isGeocodeRetrying}
+                    onRetry={() => {
+                      void handleGeocodeRetry();
+                    }}
+                  />
+                  {draftCoords.lat != null && draftCoords.lng != null && (
+                    <EventLocationMapPreview
+                      lat={draftCoords.lat}
+                      lng={draftCoords.lng}
+                      onDragEnd={handlePinDragEnd}
+                    />
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
 

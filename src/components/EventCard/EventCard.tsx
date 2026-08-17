@@ -5,7 +5,14 @@ import { flushSync } from "react-dom";
 import Image from "next/image";
 import { useLocale, useMessages, useTranslations } from "next-intl";
 
-import { CopyPlus, Loader2, Pencil, User } from "lucide-react";
+import {
+  CopyPlus,
+  Loader2,
+  MapPin,
+  MapPinOff,
+  Pencil,
+  User,
+} from "lucide-react";
 
 import { EventTag } from "~/components/EventTag";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
@@ -18,6 +25,7 @@ import {
   getEventImageUrl,
   getFirstHostName,
   isLiveNow,
+  todayInSofia,
 } from "~/lib/event-utils";
 import { cn } from "~/lib/utils";
 import type { Event } from "~/types";
@@ -79,6 +87,10 @@ export function EventCard({
       ? `/create-event?editId=${event.id}`
       : null;
   const href = detailHref ?? manageFallbackHref;
+
+  const todayIso = todayInSofia();
+  const showGeocodeStatus = showManageActions && event.endDate >= todayIso;
+  const hasMapCoords = event.lat != null && event.lng != null;
 
   function handleEdit(e: React.MouseEvent) {
     e.preventDefault();
@@ -241,6 +253,17 @@ export function EventCard({
         <h3 className="line-clamp-2 min-h-11 text-left leading-snug wrap-anywhere">
           {formattedTitle}
         </h3>
+
+        {showGeocodeStatus && (
+          <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            {hasMapCoords ? (
+              <MapPin className="size-3.5 shrink-0" aria-hidden />
+            ) : (
+              <MapPinOff className="size-3.5 shrink-0" aria-hidden />
+            )}
+            {hasMapCoords ? tHome("geocodeOnMap") : tHome("geocodeMissing")}
+          </p>
+        )}
 
         <div className="flex flex-col gap-4">
           {host && (

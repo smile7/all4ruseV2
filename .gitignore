@@ -38,3 +38,6 @@ yarn-error.log*
 .DS_Store
 .vscode/settings.json
 *.swp
+
+# Supabase CLI cache
+supabase/.temp/

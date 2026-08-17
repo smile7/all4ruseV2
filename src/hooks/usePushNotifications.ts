@@ -99,6 +99,9 @@ export async function isEligibleForReminderPrompt(): Promise<boolean> {
   if (!VAPID_PUBLIC_KEY) return false;
   if (!("Notification" in window) || !("PushManager" in window)) return false;
 
+  // Don't prompt if the user has already explicitly denied permission.
+  if (Notification.permission === "denied") return false;
+
   const reg = await findRegistration();
   if (reg) {
     const sub = await reg.pushManager.getSubscription();
