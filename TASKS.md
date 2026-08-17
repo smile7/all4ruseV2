@@ -513,6 +513,125 @@ New public feature, tracked separately from the MVP as V2 scope: an interactive 
 - [ ] Admin can edit a pin's name/description/photos and delete a pin
 - [ ] Non-admin direct calls to the write API routes return 403
 
+## Phase 21 — Events Map View (listing tab)
+
+Full spec: `ARCHITECTURE.md` → **Events Map View (listing tab)**. Do not start this until `GOOGLE_MAPS_GEOCODING_API_KEY` exists in Google Cloud (Geocoding API + Places API New enabled) and in `.env.local` / Vercel, and `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` has **Maps JavaScript API** enabled (needed for the listing; Embed alone is not enough). Distinct from Phase 20 (`/[locale]/map` playgrounds). No map on `/current`.
+
+Implement in order. Each subsection is one doable pass: schema → geocode backend → save wiring → form autocomplete → backfill → public map tab → status/manual pin → detail follow-through.
+
+### 21.1 Schema + types
+
+- [x] Create `supabase/migrations/20260814_events_lat_lng.sql`: nullable `lat`, `lng`, `coords_source` on `events`, with `coords_source` check (`geocode` | `places` | `manual`) and pair check (all null or all set)
+- [x] Apply on the remote project (SQL Editor or CLI). Do not invent coords for past rows.
+- [x] `npm run db:types`
+- [x] Add optional `lat`, `lng`, `coords_source` to `EventWriteInput` in `src/lib/api/events.ts`; pass them through `createEvent`, `updateEvent`, and `createRecurringEvents` (same coords on every occurrence)
+- [x] Confirm generated `Tables<"events">` includes the new columns (no hand-written Event overrides)
+
+### 21.2 Geocode library + API routes
+
+- [x] `src/lib/geocode/ruse.ts` — Ruse center `43.8486, 25.9536`, Haversine, `isInsideRuse` (15 km). Results outside → treat as failure
+- [x] `src/lib/geocode/query.ts` — `buildGeocodeQuery(place, address, town)` appends България, skips blanks
+- [x] `src/lib/geocode/google.ts` — server-only `geocodeAddress`, `placeAutocomplete`, `placeDetails`. Use `GOOGLE_MAPS_GEOCODING_API_KEY`. Never throw into the event save path; return null coords on missing key / HTTP / ZERO_RESULTS / out-of-Ruse. Log a warning
+- [x] `POST /api/geocode` — auth required, zod body `{ address, place, town }`, returns `{ lat, lng, source }` or nulls
+- [x] `GET /api/geocode/suggest?q=` — auth required, Places Autocomplete biased to BG / Ruse
+- [x] `GET /api/geocode/place?id=` — auth required, Place Details → lat/lng + address parts
+- [x] Daily cap (80 Google-backed calls / Sofia day / user, `ADMIN_USER_ID` bypass) on geocode / suggest / place; 429 when exceeded
+- [x] Add `GOOGLE_MAPS_GEOCODING_API_KEY=` to `.env.example` (comment: server-only, Geocoding + Places New)
+- [x] Confirm `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` has **Maps JavaScript API** enabled in Google Cloud (Embed alone is not enough for the listing map)
+- [x] Confirm `@react-google-maps/marker-clusterer` is importable — it is a dep at v2.20.0; no separate install needed
+
+### 21.3 Save path (create / update / recurring)
+
+- [x] `EventForm`: before `createEvent` / `createRecurringEvents` / `updateEvent`, resolve coords:
+  - Places pick this session → `source: "places"`
+  - else `POST /api/geocode` and await
+  - geocode failure → save anyway with null coords (never block publish)
+- [x] Recurring: one geocode, copy onto every occurrence
+- [x] Update: compare `initialData.address` / `.place` / `.town` (trimmed, case-insensitive) against form values at submit time to decide whether location changed. `initialData` is the event as passed to `EventForm` from the server — use it as the baseline, not a ref or a separate fetch
+- [x] If location unchanged, send `initialData.lat` / `initialData.lng` / `initialData.coords_source` through. No Google call
+- [x] If location fields changed, re-geocode even when previous source was `manual`
+- [x] Smart fill / scrape: no extra calls — they only fill the form
+
+### 21.4 Places autocomplete on the address field
+
+- [x] Debounced suggest list on `address` (same debounce idea as `FilterContent`), keyboard-accessible listbox
+- [x] **Session token billing** — generate a `sessionToken` (a random UUID string is fine) when the address input is focused. Pass it with every `GET /api/geocode/suggest?q=&sessionToken=` call and with the final `GET /api/geocode/place?id=&sessionToken=` call. This collapses the whole autocomplete interaction into one **Autocomplete Session Usage** event (unlimited free). Generate a fresh token after each pick, or after the input is dismissed without a pick
+- [x] `GET /api/geocode/suggest` and `GET /api/geocode/place` must forward the `sessionToken` to the Google Places API call
+- [x] Selecting a suggestion: Place Details → fill address / town / place when provided, stash coords in form state
+- [x] Further typing clears stashed Places coords so save geocodes the new text
+- [x] Autocomplete is optional UX — paste and scrape still work with free-text geocode on save
+- [x] i18n: `addressSuggestLoading` and `addressSuggestNoResults` in `CreateEvent` for bg, en, ua, ro
+
+### 21.5 Upcoming backfill
+
+- [x] `POST /api/admin/geocode-upcoming` — `user.id === ADMIN_USER_ID` only; 403 otherwise. Selects upcoming (`endDate >= today`) with `lat is null`. Sequential Google calls with a **200 ms delay** between each. Skip rows whose query is empty or whitespace-only. Do not update past events
+- [x] Optional `npm run geocode:upcoming` script that hits the same helper with the service-role client for local/ops use — still upcoming-only. Prefer this for the first backfill (Vercel Hobby can 504 the HTTP route)
+- [x] Overlapping `POST /api/admin/geocode-upcoming` returns 409 (advisory lock)
+- [x] Missing server key → 503 with a clear message, no partial silent success
+
+### 21.6 Map tab UI
+
+- [x] Use existing `@react-google-maps/api`; import `MarkerClusterer` from `@react-google-maps/marker-clusterer` (v2.20.0, already installed). Do not add Leaflet
+- [x] `src/components/EventsMap/EventsMapView.tsx` — `"use client"`, `dynamic(..., { ssr: false })` from `EventsList` so Maps JS is not in the home bundle and does not bill a map load until the tab opens
+- [x] **Shared Maps JS loader** — call `useJsApiLoader` exactly once in `ActiveEventsList` (or a `GoogleMapsProvider` wrapper); pass `isLoaded` as a prop to `EventsMapView` and the form pin preview. Never call `useJsApiLoader` inside both components independently — duplicate loaders crash at runtime
+- [x] Center/zoom on Ruse; `restriction.latLngBounds` so the user cannot pan to the whole of Bulgaria
+- [x] Dark theme: Google `styles` array (e.g. standard dark palette). Light theme: default roadmap
+- [x] Add `Map` icon from `lucide-react` to the third tab trigger (Grid: `LayoutGrid`, calendar: `CalendarDays`, map: `Map`)
+- [x] `ViewPreference = "grid" | "calendar" | "map"`. Update the localStorage guard in `useViewPreference`: the current `stored === "grid" || stored === "calendar"` check silently drops `"map"`, so preference never restores — add `|| stored === "map"`. Persist `"map"` on mobile. Calendar stays a non-persisted overlay
+- [x] Third tab trigger + `mapView` i18n key in `HomePage` for all 4 locales
+- [x] Reuse `calendarSlotRef` height fill when `view === "calendar" || view === "map"`. Update the height-measurement `useEffect` cleanup condition from `view !== "calendar"` to `view !== "calendar" && view !== "map"` — without this, switching to map tears down the height before the component renders
+- [x] **Today scope (client-side, no extra fetch).** Derive the map’s dataset from the already-fetched `events` array:
+  - No active date filter → keep only events where `startDate <= today AND endDate >= today` (ongoing multi-day included)
+  - Active `filters.from` / `filters.to` → use those dates instead
+- [x] Split that scoped subset into two groups: (a) events with `lat` + `lng` → pins, (b) events without coords → below-map list
+- [x] Show a **date scope label** above the map („Събитията днес, 14 август 2026“ or „Събитията за {from} – {to}“). `mapTodayLabel` / `mapFilteredLabel` i18n keys
+- [x] **Do not** auto-switch map → grid when filters are active. Keep that behavior for calendar only
+- [x] Cluster same-venue pins. InfoWindow: title, date, link to the event. InfoWindow content is plain DOM — use `<a href="/[locale]/[slug]">` with the locale-prefixed URL, **not** Next.js `Link` (which requires the React tree and does not work inside a Maps InfoWindow)
+- [x] **Below-map list for events without coords.** Render a section below the map container with heading `eventsWithoutLocation` („{count} събития нямат локация на картата“). Each entry: event title + date as an `<a>` link. Not a full `EventCard`. Only events from the today-scoped subset that lack coords
+- [x] If the scoped subset is entirely empty (no events today / in filter range): existing empty state. If there are pins but no pin-less events: omit the below-map list entirely
+- [x] `/current` and `/past` stay grid-only
+- [x] **Show my location button.** Floating button inside the map (bottom-right, above Google’s own controls). On click, calls `navigator.geolocation.getCurrentPosition()`. On success, places a blue "You are here" marker distinct from event pins. Does **not** auto-pan to the user. Toggles to “Hide my location” while dot is visible (`mapShowMyLocation` / `mapHideMyLocation` i18n). Location is transient state — never stored. If browser denies permission, show a toast (`mapLocationDenied` i18n)
+- [x] Change `Permissions-Policy` in `next.config.ts` from `geolocation=()` to `geolocation=(self)`
+
+### 21.7 Geocode status + manual pin
+
+- [x] Location card on `EventForm` (edit): on the map / failed / not attempted. Retry button → `POST /api/geocode` and patch coords
+- [x] Upcoming rows on My events (`showManageActions`): quiet mapped / missing indicator. Hide on past rows
+- [x] Small Google Map preview on edit when coords exist; dragging sets `coords_source: "manual"`. Hidden when coords are null. Same lazy Maps JS loader as the listing
+- [x] i18n for status + retry in `CreateEvent` / `HomePage`, all 4 locales
+
+### 21.8 Event detail follow-through
+
+- [x] Detail embed: if `lat`/`lng` present, `q=${lat},${lng}`; else keep today’s address string
+- [x] JSON-LD: add `location.geo` (`GeoCoordinates`) only when coords exist
+
+### 21.9 Quality gate
+
+- [x] `npm run types` after the phase
+- [x] Lint on touched files
+- [ ] Manual check: create with a real Ruse street → pin appears; create with garbage address → event saves, no pin; filter concerts on the map → only those pins; recurring series → identical coords; edit title only → no Google call; edit address → new coords; past events untouched
+- [x] Tab switching: grid → map → calendar → map → grid — height fills correctly each time; no visible layout jump or collapsed map
+
+### Acceptance checks
+
+- [ ] Home has three tabs: grid, calendar, map. Preference restores map on desktop and mobile
+- [ ] Map shows upcoming (and currently running home-list) events that have coords; never past events
+- [ ] Filters change the pins in place
+- [ ] Events in today’s scope that failed geocoding appear in the below-map list with a heading; they still appear in the grid. Events outside today’s scope are absent from both map and list (expected)
+- [ ] New events get coords on save without a manual lat/lng field
+- [ ] Places pick stores `coords_source = 'places'`; typed address stores `geocode`; dragged pin stores `manual` and survives a title-only save
+- [ ] Autocomplete interactions bill as Autocomplete Session Usage (confirm in Google Cloud billing console after test — should show session events, not per-request events)
+- [ ] Publish never fails because Google is down or the key is missing
+- [ ] Guest can open the map tab; geocode/suggest routes return 401 when unauthenticated
+- [ ] Admin backfill does not write to past rows
+- [ ] Event detail embed and JSON-LD use stored coords when present
+- [ ] Map defaults to today’s events when no date filter is active; applying a date filter changes the map scope and label
+- [ ] Date scope label is visible and updates correctly (today default vs active filter)
+- [ ] "Show my location" button places a blue dot; "Hide my location" removes it; denying permission shows a toast
+- [ ] `geolocation=(self)` in Permissions-Policy (verify via browser devtools → Application → Permissions Policy)
+- [ ] Listing map uses Google Maps JS, lazy-loaded only when the map tab opens. Event detail keeps the Embed iframe
+- [ ] `/map` playgrounds URL is unused and not claimed by this feature
+
 ## Future scope (deferred)
 
 - [ ] Event content auto-translation via Google Translate API

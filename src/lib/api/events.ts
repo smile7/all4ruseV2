@@ -8,11 +8,14 @@ import {
   RELATED_EVENTS_MIN_COUNT,
 } from "~/constants";
 import { buildEventSlugFromTitle } from "~/lib/event-slug";
+import { sanitizeEventDescription } from "~/lib/event-description-html";
 import {
   isEventEnded,
   isVisibleOnCurrentEventsList,
   isVisibleOnHomeActiveList,
+  todayInSofia,
 } from "~/lib/event-utils";
+import type { CoordsSource } from "~/lib/geocode/types";
 import type { Event, GetEventsParams, Tag } from "~/types";
 import type { Database, Tables } from "~/types/database";
 
@@ -32,15 +35,8 @@ type QueryResult = {
 /** The timezone all events are anchored to — kept in sync with APP_TIMEZONE in event-utils.ts. */
 const APP_TIMEZONE = "Europe/Sofia";
 
-/**
- * Returns today's date string (YYYY-MM-DD) in Europe/Sofia local time.
- * Using Intl instead of date-fns format() so it matches the Sofia wall clock
- * on the Vercel server (which runs in UTC).
- */
 function todayStr() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: APP_TIMEZONE }).format(
-    new Date(),
-  );
+  return todayInSofia();
 }
 
 function daysAgoStr(days: number) {
@@ -520,7 +516,35 @@ type EventWriteInput = {
   images?: string[] | null;
   organizers?: { name: string; link?: string }[] | null;
   seriesId?: string | null;
+  // Map coords — pass all three together. Create/recurring default omitted values to null.
+  lat?: number | null;
+  lng?: number | null;
+  coords_source?: CoordsSource | null;
 };
+
+function eventCoordsFields(
+  data: Pick<EventWriteInput, "lat" | "lng" | "coords_source">,
+) {
+  return {
+    lat: data.lat ?? null,
+    lng: data.lng ?? null,
+    coords_source: data.coords_source ?? null,
+  };
+}
+
+/** On update, omit the triple to leave stored coords unchanged. */
+function eventCoordsUpdateFields(
+  data: Pick<EventWriteInput, "lat" | "lng" | "coords_source">,
+) {
+  if (
+    data.lat === undefined &&
+    data.lng === undefined &&
+    data.coords_source === undefined
+  ) {
+    return {};
+  }
+  return eventCoordsFields(data);
+}
 
 // ─── Fetch by ID ──────────────────────────────────────────────────────────────
 
@@ -554,7 +578,7 @@ async function createEvent(
     .from("events")
     .insert({
       title: data.title,
-      description: data.description,
+      description: sanitizeEventDescription(data.description),
       startDate: data.startDate,
       endDate: data.endDate,
       startTime: data.startTime,
@@ -572,6 +596,7 @@ async function createEvent(
       images: (data.images ?? null) as import("~/types/database").Json,
       organizers: (data.organizers ?? null) as import("~/types/database").Json,
       seriesId: data.seriesId ?? null,
+      ...eventCoordsFields(data),
       isEventActive: trustedPublisher,
       isEventPremium: false,
       isEventCancelled: false,
@@ -617,7 +642,7 @@ async function createRecurringEvents(
 
   const rows = occurrenceDates.map((date) => ({
     title: baseData.title,
-    description: baseData.description,
+    description: sanitizeEventDescription(baseData.description),
     startDate: date,
     endDate: date,
     startTime: baseData.startTime,
@@ -636,6 +661,7 @@ async function createRecurringEvents(
     organizers: (baseData.organizers ??
       null) as import("~/types/database").Json,
     seriesId,
+    ...eventCoordsFields(baseData),
     isEventActive: trustedPublisher,
     isEventPremium: false,
     isEventCancelled: false,
@@ -687,7 +713,7 @@ async function updateEvent(
     .from("events")
     .update({
       title: data.title,
-      description: data.description,
+      description: sanitizeEventDescription(data.description),
       startDate: data.startDate,
       endDate: data.endDate,
       startTime: data.startTime,
@@ -704,6 +730,7 @@ async function updateEvent(
       image: data.image ?? null,
       images: (data.images ?? null) as import("~/types/database").Json,
       organizers: (data.organizers ?? null) as import("~/types/database").Json,
+      ...eventCoordsUpdateFields(data),
     })
     .eq("id", eventId)
     .select("id")
@@ -739,6 +766,24 @@ async function deleteEvent(client: Client, eventId: number): Promise<void> {
   if (error) throw error;
 }
 
+async function patchEventCoords(
+  client: Client,
+  eventId: number,
+  coords: Pick<EventWriteInput, "lat" | "lng" | "coords_source">,
+): Promise<void> {
+  const fields = eventCoordsUpdateFields(coords);
+  if (Object.keys(fields).length === 0) return;
+
+  const { error } = await client
+    .from("events")
+    .update(fields)
+    .eq("id", eventId)
+    .select("id")
+    .single();
+
+  if (error) throw error;
+}
+
 export const eventsApi = {
   getActiveEvents,
   getCurrentEvents,
@@ -754,5 +799,6 @@ export const eventsApi = {
   createEvent,
   createRecurringEvents,
   updateEvent,
+  patchEventCoords,
   deleteEvent,
 };

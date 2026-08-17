@@ -361,3 +361,30 @@
     bottom: calc(env(safe-area-inset-bottom) + 1rem);
   }
 }
+
+/* ── Google Maps InfoWindow ─────────────────────────────────────────────────
+   Maps JS builds the bubble outside React with hardcoded light-mode chrome, so
+   on the dark theme it renders dark-on-dark and is unreadable. Retheme it with
+   the popover tokens. Selectors are Google's internals and can change when the
+   Maps JS version rolls — check the pin popup after a maps upgrade. */
+.gm-style .gm-style-iw-c {
+  padding: 0.75rem;
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border-radius: var(--radius);
+}
+
+.gm-style .gm-style-iw-d {
+  background-color: var(--popover);
+  overflow: auto !important;
+}
+
+/* Pointer wedge under the bubble. */
+.gm-style .gm-style-iw-tc::after {
+  background: var(--popover);
+}
+
+/* Close button glyph is a masked span coloured for a white bubble. */
+.gm-style .gm-ui-hover-effect > span {
+  background-color: var(--popover-foreground);
+}

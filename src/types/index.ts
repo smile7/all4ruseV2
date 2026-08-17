@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import {
   plainTextFromHtml,
-  sanitizeEventDescription,
 } from "~/lib/event-description-html";
 import {
   USERNAME_PATTERN,
@@ -57,7 +56,7 @@ export const createEventSchema = z.object({
   description: z
     .string()
     .refine(
-      (html) => plainTextFromHtml(sanitizeEventDescription(html)).length >= 10,
+      (html) => plainTextFromHtml(html).length >= 10,
       { message: "Описанието е задължително" },
     ),
   startDate: z.string().min(1, "Начална дата е задължителна"),

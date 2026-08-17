@@ -284,6 +284,15 @@ export default async function EventDetailPage({ params }: Props) {
               addressLocality: event.town || undefined,
               addressCountry: "BG",
             },
+            ...(event.lat != null && event.lng != null
+              ? {
+                  geo: {
+                    "@type": "GeoCoordinates",
+                    latitude: event.lat,
+                    longitude: event.lng,
+                  },
+                }
+              : {}),
           }
         : undefined,
     organizer: (() => {
@@ -324,9 +333,10 @@ export default async function EventDetailPage({ params }: Props) {
   };
 
   const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const mapsQuery = [event.place, event.address, event.town]
-    .filter(Boolean)
-    .join(", ");
+  const mapsQuery =
+    event.lat != null && event.lng != null
+      ? `${event.lat},${event.lng}`
+      : [event.place, event.address, event.town].filter(Boolean).join(", ");
   const mapsEmbedUrl =
     mapsApiKey && mapsQuery
       ? `https://www.google.com/maps/embed/v1/place?key=${mapsApiKey}&q=${encodeURIComponent(mapsQuery)}&zoom=15`

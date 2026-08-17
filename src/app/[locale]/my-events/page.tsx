@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { format } from "date-fns";
 import { Plus } from "lucide-react";
 
 import { EventCard } from "~/components/EventCard";
@@ -9,6 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { Link } from "~/i18n/navigation";
 import { eventsApi } from "~/lib/api";
+import { todayInSofia } from "~/lib/event-utils";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 export default async function MyEventsPage() {
@@ -23,7 +23,7 @@ export default async function MyEventsPage() {
   }
 
   const t = await getTranslations("HomePage");
-  const today = format(new Date(), "yyyy-MM-dd");
+  const today = todayInSofia();
 
   const allEvents = await eventsApi.getMyEvents(supabase, user.id);
 

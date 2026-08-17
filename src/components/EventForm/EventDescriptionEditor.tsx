@@ -18,7 +18,7 @@ import {
   Bold,
   Italic,
   Smile,
-  Underline,
+  Underline as UnderlineIcon,
 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
@@ -253,7 +253,7 @@ export function EventDescriptionEditor({
           aria-label={t("editorUnderline")}
           onPointerDown={(e) => e.preventDefault()}
         >
-          <Underline className="size-4" />
+          <UnderlineIcon className="size-4" />
         </Toggle>
 
         <Separator

@@ -205,16 +205,15 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
   });
 
   // When the user applies any filter while in calendar view, switch to grid
-  // automatically — the calendar doesn't filter events visually.
+  // automatically — the calendar doesn't filter events visually. Map stays.
   useEffect(() => {
     if (hasActiveFilters && view === "calendar") {
       setView("grid");
     }
   }, [hasActiveFilters, view, setView]);
 
-  // In calendar view: measure the calendar slot's viewport-top, fill the remaining
-  // space down to the bottom chrome (mobile nav or desktop footer), then lock page
-  // scroll so only the calendar grid scrolls internally.
+  // Fill remaining viewport for calendar and map. Lock page scroll so only
+  // the slot scrolls internally.
   useEffect(() => {
     if (view !== "calendar") {
       document.documentElement.style.overflow = "";
@@ -272,7 +271,8 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
       cancelAnimationFrame(frameId);
       window.removeEventListener("resize", measure);
       document.documentElement.style.overflow = "";
-      setCalendarHeight(null);
+      // Keep the measured height when swapping to avoid
+      // the slot collapsing for a frame. Grid view clears it in the branch above.
     };
   }, [view]);
 
@@ -311,7 +311,11 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
 
       <Tabs
         value={view}
-        onValueChange={(v) => setView(v as "grid" | "calendar")}
+        onValueChange={(v) => {
+          if (v === "grid" || v === "calendar") {
+            setView(v);
+          }
+        }}
         className="w-full"
       >
         <TabsList className="h-9 w-full gap-1 p-[3px]">
@@ -332,7 +336,7 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
         </TabsList>
       </Tabs>
 
-      {/* calendarSlotRef marks where the calendar starts so we can measure height */}
+      {/* Slot top edge for remaining-viewport height (calendar + map). */}
       <div ref={calendarSlotRef}>
         {view === "calendar" ? (
           <EventsCalendarView

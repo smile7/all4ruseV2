@@ -123,6 +123,7 @@ export type Database = {
       events: {
         Row: {
           address: string
+          coords_source: string | null
           created_at: string
           created_by_full_name: string | null
           createdBy: string | null
@@ -138,6 +139,8 @@ export type Database = {
           isEventCancelled: boolean | null
           isEventPremium: boolean | null
           isSoldOut: boolean | null
+          lat: number | null
+          lng: number | null
           organizers: Json | null
           phoneNumber: string | null
           place: string | null
@@ -153,6 +156,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          coords_source?: string | null
           created_at?: string
           created_by_full_name?: string | null
           createdBy?: string | null
@@ -168,6 +172,8 @@ export type Database = {
           isEventCancelled?: boolean | null
           isEventPremium?: boolean | null
           isSoldOut?: boolean | null
+          lat?: number | null
+          lng?: number | null
           organizers?: Json | null
           phoneNumber?: string | null
           place?: string | null
@@ -183,6 +189,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          coords_source?: string | null
           created_at?: string
           created_by_full_name?: string | null
           createdBy?: string | null
@@ -198,6 +205,8 @@ export type Database = {
           isEventCancelled?: boolean | null
           isEventPremium?: boolean | null
           isSoldOut?: boolean | null
+          lat?: number | null
+          lng?: number | null
           organizers?: Json | null
           phoneNumber?: string | null
           place?: string | null
@@ -220,6 +229,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      geocode_daily_usage: {
+        Row: {
+          call_count: number
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          call_count?: number
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          call_count?: number
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -417,6 +444,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_geocode_call: {
+        Args: { p_daily_limit?: number; p_user_id: string }
+        Returns: {
+          allowed: boolean
+          remaining: number
+          used: number
+        }[]
+      }
       consume_smart_fill_import:
         | {
             Args: { p_daily_limit?: number; p_user_id: string }
@@ -439,6 +474,14 @@ export type Database = {
             }[]
           }
       is_valid_push_endpoint: { Args: { endpoint: string }; Returns: boolean }
+      try_lock_geocode_upcoming: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      unlock_geocode_upcoming: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
