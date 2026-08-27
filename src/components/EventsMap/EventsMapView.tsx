@@ -49,7 +49,6 @@ type Props = {
   events: Event[];
   from: string;
   to: string;
-  mapHeight?: number;
 };
 
 type CanvasProps = Props & {
@@ -64,6 +63,16 @@ type InfoSelection = {
 
 const USER_LOCATION_Z_INDEX = 1000;
 const MAP_FALLBACK_MIN_HEIGHT = 320;
+/** Below this, filling the viewport would leave the map unusable — keep scrolling instead. */
+const MIN_VIEWPORT_FILL_HEIGHT = 240;
+
+/** Height of the fixed mobile nav / desktop footer that overlays the bottom of the viewport. */
+function bottomChromeHeight(): number {
+  const selector = window.matchMedia("(max-width: 767px)").matches
+    ? "nav.fixed"
+    : "footer.fixed";
+  return document.querySelector<HTMLElement>(selector)?.offsetHeight ?? 0;
+}
 
 function userLocationIcon(): google.maps.Symbol {
   return {
@@ -76,19 +85,14 @@ function userLocationIcon(): google.maps.Symbol {
   };
 }
 
-function EventsMapCanvas({
-  events,
-  from,
-  to,
-  mapHeight,
-  isLoaded,
-  loadError,
-}: CanvasProps) {
+function EventsMapCanvas({ events, from, to, isLoaded, loadError }: CanvasProps) {
   const t = useTranslations("HomePage");
   const locale = useLocale();
   const { resolvedTheme } = useTheme();
+  const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerEventsRef = useRef(new Map<google.maps.Marker, Event[]>());
+  const [shellHeight, setShellHeight] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [selection, setSelection] = useState<InfoSelection | null>(null);
@@ -141,10 +145,51 @@ function EventsMapCanvas({
     });
   }, [isDark]);
 
+  // Fill the remaining viewport below the header and lock page scroll, so the
+  // map gets the whole screen and the unmapped list scrolls inside its own box.
   useEffect(() => {
-    if (!mapRef.current || mapHeight == null) return;
+    let frameId = -1;
+    let cancelled = false;
+
+    function measure() {
+      if (cancelled || !containerRef.current) return;
+
+      // On iOS momentum scrolling can delay scrollTo, so retry until we're
+      // truly at the top before reading the container offset.
+      if (window.scrollY !== 0) {
+        window.scrollTo({ top: 0 });
+        frameId = requestAnimationFrame(measure);
+        return;
+      }
+
+      const top = containerRef.current.getBoundingClientRect().top;
+      const next = window.innerHeight - top - bottomChromeHeight();
+      if (next < MIN_VIEWPORT_FILL_HEIGHT) return;
+
+      document.documentElement.style.overflow = "hidden";
+      setShellHeight(next);
+    }
+
+    window.scrollTo({ top: 0 });
+    // Double-rAF: first frame lets the browser apply the scroll, second measures
+    // against a settled layout.
+    frameId = requestAnimationFrame(() => {
+      frameId = requestAnimationFrame(measure);
+    });
+    window.addEventListener("resize", measure);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("resize", measure);
+      document.documentElement.style.overflow = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapRef.current || shellHeight == null) return;
     google.maps.event.trigger(mapRef.current, "resize");
-  }, [mapHeight]);
+  }, [shellHeight]);
 
   function handleMapLoad(map: google.maps.Map) {
     mapRef.current = map;
@@ -224,18 +269,18 @@ function EventsMapCanvas({
     );
   }
 
-  const isHeightConstrained = mapHeight != null;
+  const locationLabel = userLocation
+    ? t("mapHideMyLocation")
+    : t("mapShowMyLocation");
   const showUnmappedList = withoutCoords.length > 0;
 
   return (
     <div
-      className={cn(
-        "flex w-full flex-col gap-2",
-        isHeightConstrained ? "" : "mt-2",
-      )}
+      ref={containerRef}
+      className="flex w-full flex-col gap-2"
       style={
-        isHeightConstrained
-          ? { height: mapHeight }
+        shellHeight != null
+          ? { height: shellHeight }
           : { minHeight: MAP_FALLBACK_MIN_HEIGHT }
       }
     >
@@ -356,14 +401,13 @@ function EventsMapCanvas({
 
             <Button
               type="button"
-              size="sm"
+              size="icon"
               variant="secondary"
               aria-pressed={userLocation != null}
-              aria-label={
-                userLocation ? t("mapHideMyLocation") : t("mapShowMyLocation")
-              }
+              aria-label={locationLabel}
+              title={locationLabel}
               disabled={isLocating}
-              className="absolute right-2.5 bottom-18 z-1 max-w-[min(100%-1.25rem,16rem)] shadow-md"
+              className="absolute right-2.5 bottom-18 z-1 shadow-md"
               onClick={handleToggleMyLocation}
             >
               {isLocating ? (
@@ -371,9 +415,25 @@ function EventsMapCanvas({
               ) : (
                 <LocateFixed className="size-4" aria-hidden />
               )}
-              <span className="truncate">
-                {userLocation ? t("mapHideMyLocation") : t("mapShowMyLocation")}
-              </span>
+            </Button>
+          </div>
+
+          <div className="flex shrink-0 justify-start">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              aria-pressed={userLocation != null}
+              disabled={isLocating}
+              className="w-full sm:w-auto"
+              onClick={handleToggleMyLocation}
+            >
+              {isLocating ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <LocateFixed className="size-4" aria-hidden />
+              )}
+              <span className="truncate">{locationLabel}</span>
             </Button>
           </div>
 

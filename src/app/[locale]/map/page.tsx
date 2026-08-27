@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 
+import { Loader2 } from "lucide-react";
+
 import { EventsMapView } from "~/components/EventsMap/EventsMapView";
 import { eventsApi } from "~/lib/api";
 import { buildAlternates } from "~/lib/seo";
@@ -24,14 +26,18 @@ export default async function MapPage() {
   const events = await eventsApi.getActiveEvents(client, {});
 
   return (
-    <div className="max-w-9xl mx-auto flex h-[calc(100vh-8rem)] w-full flex-col px-4 py-6 sm:px-6 lg:px-8">
-      <Suspense fallback={<div className="flex h-full items-center justify-center">Loading map...</div>}>
-        <EventsMapView
-          events={events}
-          from=""
-          to=""
-          mapHeight={undefined}
-        />
+    <div className="max-w-9xl mx-auto flex w-full flex-col px-4 pt-4 sm:px-6 lg:px-8">
+      <Suspense
+        fallback={
+          <div className="flex min-h-80 items-center justify-center">
+            <Loader2
+              className="text-muted-foreground size-6 animate-spin"
+              aria-hidden
+            />
+          </div>
+        }
+      >
+        <EventsMapView events={events} from="" to="" />
       </Suspense>
     </div>
   );
