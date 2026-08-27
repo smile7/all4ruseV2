@@ -784,6 +784,216 @@ Open link in new tab. Simple `<a href="..." target="_blank" rel="noopener">` —
 
 ---
 
+## Phase 15 — Observability: Error Tracking & Product Analytics
+
+Today the app has **no error monitoring**. The only visibility is scattered `console.error` calls that land in Vercel runtime logs (retained **1 hour** on Hobby, **1 day** on Pro) plus Supabase auth logs (**1 hour** on Free, **7 days** on Pro). By the time a user reports a problem, the evidence is usually already gone. Worse, the flows we care most about are the least covered: event creation swallows its error entirely, and registration runs in the browser so its failures never reach our server at all.
+
+Goal: **every user-facing failure becomes a durable, grouped, alertable event with enough context to fix it without asking the user to reproduce.**
+
+Split into two parts. **Part A (15.1–15.12) is error tracking** — build this now. **Part B (15.13) is button-click analytics** — deferred, and it needs a product decision before we start.
+
+### 15.1 Locked decisions
+
+- **Sentry** (`@sentry/nextjs`) is the error backend. Not a DIY `error_log` table: a homegrown table cannot capture client-side crashes (which is exactly where registration lives), gives no sourcemap symbolication so minified stacks stay unreadable, and has no grouping or alerting. Free tier is 5k errors/month — ample for this traffic.
+- **Errors only in v1.** `tracesSampleRate: 0` and **no Session Replay**. Rationale: 80% of traffic is mobile and this is an SEO-first site, so the client bundle matters; Replay adds roughly 50 KB and pulls in real GDPR obligations (it records user input). Performance tracing and Replay can be switched on later — both are config-only changes once the wiring exists.
+- **Tunnel through our own domain** (`tunnelRoute`). Roughly a third of EU browser traffic runs an ad blocker that blocks `*.ingest.sentry.io` outright. Without a tunnel our client error counts would be silently wrong, and biased toward exactly the technical users most likely to hit edge cases. This is not optional given that capturing registration errors is a primary goal.
+- **No PII.** `sendDefaultPii: false`. We attach the Supabase user **UUID** only — never email, name, or phone. See 15.10.
+- **Sentry is not consent-gated.** It runs as security/functionality processing under legitimate interest, cookie-free. Gating it behind analytics consent would drop the majority of the errors we are trying to see. This is only defensible because we send no PII and no Replay — if either changes, revisit.
+- **A thin internal wrapper**, not scattered SDK calls. All Sentry imports live in `src/lib/observability/*`, matching how `lib/api/*` and `lib/geocode/*` already isolate external services. Swapping vendors later touches one folder.
+- **No Server Actions exist** in this codebase (`"use server"` appears nowhere), so `Sentry.withServerActionInstrumentation` is not needed. Revisit if server actions are introduced.
+
+### 15.2 Install and wire Sentry
+
+- `npm install @sentry/nextjs`. Create the Sentry project (platform: Next.js), note the org slug, project slug, and DSN.
+- `src/instrumentation-client.ts` — browser init. Export `onRouterTransitionStart = Sentry.captureRouterTransitionStart`.
+- `sentry.server.config.ts` and `sentry.edge.config.ts` at the project root — Node and edge init.
+- `src/instrumentation.ts` — `register()` dynamically imports the server/edge config based on `process.env.NEXT_RUNTIME`, and **must** export `onRequestError = Sentry.captureRequestError`. Without that export, errors thrown in Server Components, route handlers, and middleware never reach Sentry — this is the single most common setup mistake.
+- `next.config.ts` — wrap with `withSentryConfig` as the **outermost** wrapper: `withSentryConfig(withSerwist(withNextIntl(nextConfig)), { ... })`. Order matters; wrapping inside `withSerwist` breaks source map upload.
+
+Options to set in `withSentryConfig`:
+
+| Option | Value | Why |
+| --- | --- | --- |
+| `org` / `project` | from env | required for upload |
+| `authToken` | `process.env.SENTRY_AUTH_TOKEN` | source map upload |
+| `tunnelRoute` | `"/monitoring"` | fixed route, ad-blocker bypass. Must be fixed, not `true` — a random route cannot be excluded from the middleware matcher |
+| `sourcemaps.deleteSourcemapsAfterUpload` | `true` | readable stacks in Sentry without shipping our source to the browser |
+| `disableLogger` | `true` | strips Sentry's own debug logging from the production bundle |
+| `automaticVercelMonitors` | `true` | free cron monitoring for the `/api/push/send-reminders` job in `vercel.json` |
+| `silent` | `!process.env.CI` | quiet local builds |
+
+- **Middleware matcher fix.** `src/middleware.ts` currently uses `matcher: ["/((?!_next|_vercel|api|auth|.*\\..*).*)"]`. `/monitoring` is **not** excluded by that pattern, so every tunnelled error POST would be run through next-intl + a Supabase `getUser()` call. Add `monitoring` to the negative lookahead.
+- Build uses `next build --webpack`, so the Sentry **webpack** setup path applies: source maps upload via the plugin during build, and `webpack.treeshake.removeDebugLogging` is available. No Turbopack caveats.
+- **No service worker change needed.** `src/app/sw.ts` only caches `/_next/static/*` and images; the tunnel is a `POST` and is never cached.
+- Builds must not break when `SENTRY_AUTH_TOKEN` is absent (local dev, or a contributor without Sentry access) — the build should succeed and simply skip source map upload. Verify this explicitly.
+
+**Env vars** (add to `.env.local` and Vercel; document in ARCHITECTURE.md):
+
+```bash
+# Error tracking — public DSN, safe in the browser
+NEXT_PUBLIC_SENTRY_DSN=https://xxxx@oXXXX.ingest.de.sentry.io/XXXX
+
+# Build-time only (source map upload). Never needed at runtime.
+SENTRY_AUTH_TOKEN=sntrys_...
+SENTRY_ORG=your-org-slug
+SENTRY_PROJECT=all4ruse
+```
+
+Prefer an **EU-region** Sentry project (`ingest.de.sentry.io`) so error data stays in the EU — simpler GDPR story for a Bulgarian site.
+
+### 15.3 Internal reporting layer — `src/lib/observability/`
+
+Three small modules. Everything else in the app imports from here, never from `@sentry/nextjs` directly.
+
+- **`features.ts`** — a string-literal union of every feature we tag. Consistent tags are what make Sentry searchable; free-form tag strings rot within a week. Start with:
+
+```ts
+export type ObservedFeature =
+  | "event-create" | "event-update" | "event-delete" | "event-image-upload"
+  | "smart-fill-facebook" | "smart-fill-facebook-check" | "smart-fill-text"
+  | "smart-fill-photo" | "smart-fill-admin-scrape" | "smart-fill-image-reupload"
+  | "auth-signup" | "auth-login" | "auth-oauth" | "auth-callback"
+  | "auth-captcha" | "auth-password-reset" | "account-delete"
+  | "profile-update" | "profile-avatar-upload"
+  | "saved-events" | "event-claim" | "event-report"
+  | "geocode" | "push-subscribe" | "push-reminders";
+```
+
+- **`report.ts`** — `reportError(error: unknown, ctx: { feature: ObservedFeature; extra?: Record<string, unknown> }): void`. Isomorphic (works in both Server Components/route handlers and Client Components). Normalizes `unknown` into an `Error`, sets the `feature` tag, attaches `extra` as Sentry context, and never throws — a failure in reporting must never break the user's flow. Optionally mirror to `console.error` in development for local visibility.
+- **`user.ts`** — `setObservedUser(userId: string | null)` wrapping `Sentry.setUser({ id })` / `Sentry.setUser(null)`. **UUID only.** Call it once where the session is already known (locale layout for the initial state, and after login/logout/signup) so every subsequent error is attributable to a user without us storing an email in Sentry.
+
+Rule for the rest of the phase: **replace** existing `console.error` calls with `reportError`, do not stack both. The prefixed-string convention (`[smart-fill/facebook]`) becomes the `feature` tag.
+
+### 15.4 Event creation coverage
+
+The biggest blind spot in the app. `src/components/EventForm/EventForm.tsx` has bare `catch {}` blocks that discard the error object completely:
+
+- **line ~855** — the entire `onSubmit` path: image uploads, coord resolution, `createEvent` / `updateEvent`, tag writes. Every possible failure becomes `toast.error(t("error"))` with nothing recorded anywhere.
+- **line ~871** — `handleDelete`.
+- **line ~707** — `patchEventCoords` on geocode retry.
+
+Tasks:
+
+- Change all three to `catch (err)` and call `reportError(err, { feature: ..., extra: ... })`. Keep the user-facing toast exactly as-is — this is diagnostics, not a UX change.
+- Attach enough context to fix a failure without the user: `mode` (create/edit/duplicate), `isRecurring`, image count, whether images were newly uploaded vs reused stored paths, `coords_source`, tag count, and `initialData.id` when editing. **Never** attach full form values (free-text description could contain personal data).
+- Split the submit `try` so we can tell *which step* failed. One generic "event create failed" issue covering four distinct root causes is nearly useless. Either wrap the image-upload loop and the save call separately, or tag a `step` (`"image-upload" | "geocode" | "save" | "tags"`) in `extra`.
+- `src/lib/api/events.ts` — leave throwing behaviour as-is; the form is the right place to report, since that's where the user-visible outcome is decided.
+
+### 15.5 Smart Fill coverage — Facebook, AI text, AI photo
+
+Where the external dependencies are, and where failures are least reproducible. Give every import a **correlation id** so the client-side symptom and the server-side cause are one search.
+
+- Generate a short `importId` at the start of each `src/app/api/smart-fill/*` route, return it in the JSON response, and include it in every `reportError` call from that request. When a user says "the Facebook import failed", the id from the UI leads straight to the issue.
+- **`facebook/route.ts`** — replace `console.warn` (~L69) and `console.error` (~L90). Attach: source URL, Apify `runId`, retry attempt number, whether it was the empty-dataset retry path. Also report the currently **re-thrown** rate-limit RPC failure (~L56), which today becomes an unhandled 500 with no log at all.
+- **`text/route.ts`** — replace `console.error` (~L65). Attach prompt **length** (not the prompt text), Gemini model used, and whether the fallback model was reached. Same re-thrown rate-limit gap as above.
+- **`photo/route.ts`** — two distinct paths, and they must not be conflated:
+  - Storage upload failure (~L89) → 502, report as an error.
+  - Gemini extraction failure (~L105) → currently returns **HTTP 200** with a partial draft and a `warning`. This is correct UX (the image is saved) but it means "AI upload didn't work" is invisible in every error metric. Report it explicitly with a `partial_success` marker so it shows up without changing the response contract.
+- **`facebook/check/route.ts`** (~L43) and **`admin-scrape/route.ts`** (~L83) — same treatment; tag the scrape `source` (grabo / ruse-danube) on admin-scrape.
+- **`src/lib/smart-fill/apify.ts`** — the empty-dataset diagnostics at ~L411–424 already log URL, run id, and a raw response snippet. Move that payload into `reportError` context so it survives longer than an hour.
+- **`src/lib/smart-fill/image-reupload.ts`** — logs and returns `null` on every failure (~L41, L49, L54), so an event can be created with a **missing image** and no signal at all. Report each failure. Keep returning `null` — swallowing is the right behaviour here, silence is not.
+- **`src/lib/smart-fill/gemini.ts`** — retry and fallback-model `console.warn`s (~L129, ~L255) are useful signal, not errors. Report as Sentry **breadcrumbs** or messages at `warning` level, not exceptions, so they add context to real failures without inflating the error count against the free-tier quota.
+- **`SmartFillPanel.tsx`** — report the client-side network/abort catch (~L249) with the `importId`, but **skip user-initiated aborts** (the overlay's cancel button uses `AbortController`; a deliberate cancel is not an error). Check for `AbortError` before reporting.
+
+### 15.6 Auth and registration coverage
+
+Registration is currently invisible to us: `src/app/[locale]/auth/signup/page.tsx` is a Client Component, so `supabase.auth.signUp` failures never touch our server and never reach Vercel logs.
+
+- **`signup/page.tsx`** (~L134) — report `signUp` errors before showing the mapped message. Attach: the Supabase error code/message, whether it was classified as a duplicate, whether reCAPTCHA passed, and locale. **Never** attach the email or password. Exclude the anti-enumeration duplicate case (empty `identities`) from error reporting — that's expected behaviour, not a fault.
+- **`login/page.tsx`** (~L100) and **`forgot-password/page.tsx`** (~L61) — same pattern.
+- **`SocialAuthButtons.tsx`** (~L62) — report OAuth initiation failures, tagged with provider.
+- **`src/app/auth/callback/route.ts`** — the highest-value fix in this section. Today an `exchangeCodeForSession` failure (~L39) just redirects to `?error=auth_callback_failed` with **nothing logged**, and the profile-bootstrap error is caught by an **empty `catch`** (~L64). If OAuth signups are quietly failing for a subset of users right now, we have no way to know. Report both. Keep the redirect behaviour unchanged.
+- **`src/app/auth/confirm/route.ts`** — same empty-catch pattern (~L62), same fix.
+- **`verify-captcha/route.ts`** (~L52–61) — already logs score/action/hostname on failure. Report as a `warning`-level message with those fields, not an exception: a low reCAPTCHA score is usually a bot, not a bug. Watch the volume and adjust if it drowns the quota.
+- **`src/lib/api/profiles.ts`** (~L103) — `if (error && error.code !== "23505") throw error` is thrown from the callbacks and then ignored there. Once the callbacks report, this is covered.
+- Wire `setObservedUser` on successful login/signup and clear it on logout.
+
+### 15.7 Remaining API route coverage
+
+Sweep the rest so "every user error" is literally true. For each: replace `console.error` with `reportError`, or add reporting where there is none.
+
+- `account/delete/route.ts` — service-role deletion; a partial failure here leaves orphaned data and must be loud.
+- `events/claim/route.ts`, `events/report/route.ts` — distinguish real errors from expected 409 duplicates (do **not** report 409s).
+- `geocode/route.ts`, `geocode/suggest/route.ts`, `geocode/place/route.ts`, and `src/lib/geocode/google.ts` (~L60–174 `console.warn`s) — report as warnings, not exceptions. A failed geocode is a designed-for outcome (publish must never fail because Google is down), so these must not look like crashes.
+- `admin/geocode-upcoming/route.ts` (~L35, L50, L55).
+- `push/subscribe/route.ts`, `push/reminder-time/route.ts`.
+- `push/send-reminders/route.ts` — the hourly cron currently discards individual send failures via `Promise.allSettled` (~L44–60) with no logging. Report an aggregate (counts of sent/failed plus a sample of failure reasons), not one issue per subscription. `automaticVercelMonitors` separately catches the case where the cron stops running at all.
+- `saved-events/route.ts` — treat the `23505` unique violation as a no-op, not an error (already handled in `saved-events.ts`; do not start reporting it).
+- `src/lib/api/events.ts` (~L464, L486) and `src/lib/api/profiles.ts` (~L334) — build/sitemap helpers. `getAllSlugs` deliberately returns `[]` on error so builds don't fail; report it so that silent degradation is at least visible.
+- Client-side toast catches: `ProfileForm.tsx` (10 sites, including the `.catch(console.error)` at ~L550), `ProfileAccountSecurity.tsx`, `ClaimEventButton.tsx`, `ReportEventButton.tsx`, `EventSaveButton.tsx`, `PushNotificationCard.tsx`, `EventsMapView.tsx`, `ProfilePastEvents.tsx`, `promptRemindersOnSave.tsx`.
+
+### 15.8 Global boundaries
+
+- **Create `src/app/global-error.tsx`** — does not exist today. Must be at `src/app/` (not under `[locale]`), be a Client Component, render its own `<html>` and `<body>`, and call `Sentry.captureException(error)`. This is the last-resort net for render errors in the root layout, which `[locale]/error.tsx` cannot catch.
+- **`src/app/[locale]/error.tsx`** — currently `console.error(error)` in a `useEffect` (L19–21), which writes only to the **user's own browser console** where we can never see it. Replace with `reportError`, passing the `error.digest` so the client-side boundary can be correlated with the server-side issue that produced it.
+- Keep both boundaries' visual output unchanged.
+- `src/app/[locale]/not-found.tsx` — leave alone. A 404 is not an error and reporting it would be noise.
+- This overlaps with the open TASKS Phase 10 item for `loading.tsx` / `error.tsx` — do the Sentry wiring here and cross-reference rather than duplicating the work.
+
+### 15.9 Verify the wiring actually works
+
+Do not trust a green build; each runtime is wired separately and can silently fail. Deliberately trigger one error in each and confirm it arrives in Sentry:
+
+- A Client Component error (throw from a button handler).
+- A Server Component error (throw in a page).
+- A route handler error (throw in an API route) — this is the one that proves `onRequestError` is exported correctly.
+- Middleware.
+- Confirm the stack trace is **readable** (source maps uploaded and applied), that the event was delivered via `/monitoring` and not `*.ingest.sentry.io` (check the network tab), and that it still arrives with an ad blocker enabled.
+- Confirm no `email` appears anywhere in a signup-failure event's payload.
+
+### 15.10 GDPR and legal
+
+Non-optional given the existing cookie-consent system and legal pages.
+
+- `sendDefaultPii: false`; user context is the Supabase **UUID** only.
+- Add a `beforeSend` scrubber that strips `email`, `password`, `phone`, and `full_name` keys from any event payload — defence in depth, so a future careless `extra` cannot leak PII.
+- Prefer the **EU** Sentry region (see 15.2).
+- Update `src/app/[locale]/legal/privacy/page.tsx` — Sentry as a data processor: what is collected (error diagnostics, pseudonymous user id, IP for the request), why (security and service functionality, legitimate interest), where it is stored (EU), and retention. The page already names Vercel, so extend the existing sub-processor list rather than adding a new section.
+- Update `src/app/[locale]/legal/cookies/page.tsx` — state that error monitoring is cookie-free and therefore not consent-gated. If Session Replay is ever enabled, it **must** move behind analytics consent.
+- All four locales.
+
+### 15.11 Alerting — otherwise none of this gets read
+
+A dashboard nobody opens is worth nothing. The point of this phase is finding out *without being told*.
+
+- Sentry alert rule: **email on every new issue** (first occurrence of a not-seen-before error). Low volume at this scale, high value.
+- A second rule for **spike detection** on the `feature` tag values `event-create`, `auth-signup`, `smart-fill-facebook` — these are the flows where a silent breakage costs real users.
+- Cron monitor alert from `automaticVercelMonitors` if `send-reminders` stops running.
+- Set a **spend cap / rate limit** in Sentry so a runaway loop cannot burn the whole monthly quota in an hour.
+
+### 15.12 Quality gate
+
+- `npm run types` and lint on touched files.
+- Check the production client bundle delta. Errors-only Sentry should land around 30–40 KB gzipped. If it is materially larger, tracing or replay integrations are being pulled in and need tree-shaking.
+- Re-run a Lighthouse pass on the home page — this is an SEO-first site and the phase must not regress mobile performance.
+- Update **ARCHITECTURE.md**: new `src/lib/observability/` layer in the folder structure, the four Sentry env vars, `@sentry/nextjs` in Dependencies, and a short "Observability" section covering the tagging convention and the no-PII rule. Do this at implementation time, once the code exists.
+
+### 15.13 Part B — button click analytics (deferred, needs a decision)
+
+Separate concern from error tracking, deliberately **not** built into Sentry (it is not an analytics tool, and click volume would obliterate the error quota). Goal: count clicks on specific UI elements — Create Event CTA, view-mode toggles (grid/calendar/map), Smart Fill tabs, save-event icon, filter usage, signup CTAs.
+
+Three viable options, with an honest read on each:
+
+| Option | Cost | Accuracy | Effort |
+| --- | --- | --- | --- |
+| **GA4 custom events** via the existing `gtag` in `TrackingScripts.tsx` | free | undercounts ~30–40% (consent-gated + ad blockers) | very low — gtag is already loaded |
+| **PostHog** | free to 1M events/mo | good, and supports funnels + session replay | medium — new vendor, new privacy-policy entry, new consent decision |
+| **First-party `ui_events` table** in Supabase | DB rows | exact, ad-blocker-proof | medium — table, RLS, batching endpoint, and an admin view to read it |
+
+**Recommendation: start with GA4 custom events.** Google Analytics is already wired and consent-gated in `src/components/layout/TrackingScripts.tsx`, so this is close to zero new infrastructure. The undercount is uniform across buttons, so *relative* comparisons — which is what actually drives product decisions ("the Create Event CTA gets 3× the clicks of the calendar toggle") — stay valid. Absolute totals will be low; if exact first-party numbers are ever needed, the Supabase table is the fallback.
+
+When we build it:
+
+- `src/lib/observability/track.ts` — `trackEvent(name: TrackedEvent, props?: Record<string, string | number>)` with a string-literal union of event names, mirroring `features.ts`. One file to change if we later switch to PostHog.
+- Respect the existing `hasAnalyticsConsent` check — no event fires without analytics consent.
+- No-op safely when `NEXT_PUBLIC_GA_ID` is unset (local dev).
+- Never pass PII or free-text user content as event properties.
+- Instrument a **small** initial set (5–8 buttons). Tracking everything produces a dashboard nobody reads; pick the elements where a real decision is pending.
+
+**Blocked on a decision:** GA4 vs PostHog vs first-party table. Do not start Part B until that is settled.
+
+---
+
 ## Notes
 
 - **Design tokens** in `globals.css` are finalized — the oklch token set from ARCHITECTURE.md is ready to copy in on day one. No placeholder colors.

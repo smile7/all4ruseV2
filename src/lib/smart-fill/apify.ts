@@ -44,7 +44,8 @@ type ApifyFacebookEventResult = {
   ticketUrl?: string;
   /** Snake_case ticket URL (community actors). */
   ticket_url?: string;
-  externalLinks?: string[];
+  /** Facebook sometimes returns null placeholders here. */
+  externalLinks?: Array<string | null>;
   url?: string;
   /** Top-level image URL — the field the actor actually populates. */
   imageUrl?: string;
@@ -181,7 +182,10 @@ function pickTicketUrl(item: ApifyFacebookEventResult): string | undefined {
   if (direct) return direct;
 
   return item.externalLinks?.find(
-    (url) => !url.toLowerCase().includes("facebook.com"),
+    (url): url is string =>
+      typeof url === "string" &&
+      url.trim().length > 0 &&
+      !url.toLowerCase().includes("facebook.com"),
   );
 }
 
