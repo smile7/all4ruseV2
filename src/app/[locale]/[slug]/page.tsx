@@ -25,6 +25,7 @@ import {
   Typography,
 } from "~/components/layout";
 import { RelatedEventsRow } from "~/components/layout/RelatedEventsRow";
+import { PartnerNearby } from "~/components/PartnerNearby";
 import { Card, CardContent } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import type { Locale } from "~/constants";
@@ -593,6 +594,15 @@ export default async function EventDetailPage({ params }: Props) {
                   alreadyReported={alreadyReported}
                 />
               </div>
+
+              {/* Mobile: below the map. Desktop: below the description, full
+                  width (the map lives in the sidebar there). */}
+              <PartnerNearby
+                eventLat={event.lat}
+                eventLng={event.lng}
+                eventPlace={event.place ?? event.address}
+                mapsApiKey={mapsApiKey}
+              />
 
               {/* Image gallery — skip when only one image (hero already covers it) */}
               {galleryImages.length > 1 && (
