@@ -598,6 +598,7 @@ export default async function EventDetailPage({ params }: Props) {
               {/* Mobile: below the map. Desktop: below the description, full
                   width (the map lives in the sidebar there). */}
               <PartnerNearby
+                eventSlug={event.slug}
                 eventLat={event.lat}
                 eventLng={event.lng}
                 eventPlace={event.place ?? event.address}

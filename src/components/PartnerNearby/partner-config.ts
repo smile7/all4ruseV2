@@ -24,6 +24,15 @@ export type NearbyPartner = {
 export const PARTNER_RADIUS_KM = 0.5;
 
 /**
+ * DEMO PIN — while this list is non-empty the card renders only on these event
+ * slugs. Empty the array to fall back to the radius check alone, which is the
+ * real behaviour (44 upcoming events currently qualify).
+ */
+export const PARTNER_ONLY_EVENT_SLUGS: string[] = [
+  "komediyata-izneveri-v-poveche-1557",
+];
+
+/**
  * The Google Maps Embed API only offers "roadmap" and "satellite" tiles.
  * "terrain" and "hybrid" exist in the Maps JavaScript and Static Maps APIs
  * only, so switching to terrain means dropping the iframe for one of those.

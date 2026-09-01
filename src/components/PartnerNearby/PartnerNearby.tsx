@@ -10,11 +10,13 @@ import {
   PARTNER_COPY,
   PARTNER_MAP_TYPE,
   PARTNER_MAP_ZOOM,
+  PARTNER_ONLY_EVENT_SLUGS,
   PARTNER_RADIUS_KM,
   walkingMinutes,
 } from "./partner-config";
 
 type PartnerNearbyProps = {
+  eventSlug: string | null;
   eventLat: number | null;
   eventLng: number | null;
   eventPlace: string;
@@ -22,11 +24,19 @@ type PartnerNearbyProps = {
 };
 
 export function PartnerNearby({
+  eventSlug,
   eventLat,
   eventLng,
   eventPlace,
   mapsApiKey,
 }: PartnerNearbyProps) {
+  if (
+    PARTNER_ONLY_EVENT_SLUGS.length > 0 &&
+    (eventSlug == null || !PARTNER_ONLY_EVENT_SLUGS.includes(eventSlug))
+  ) {
+    return null;
+  }
+
   if (eventLat == null || eventLng == null) return null;
 
   const km = distanceKm(
