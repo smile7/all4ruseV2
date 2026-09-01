@@ -4,7 +4,7 @@ import {
   EmptyDatasetError,
   scrapeApifyFacebookEvent,
 } from "~/lib/smart-fill/apify";
-import { FB_EVENT_URL_RE } from "~/lib/smart-fill/facebook-public-check";
+import { resolveFacebookEventUrl } from "~/lib/smart-fill/facebook-url";
 
 export const maxDuration = 120;
 import { reuploadImageFromUrl } from "~/lib/smart-fill/image-reupload";
@@ -39,9 +39,14 @@ export async function POST(request: Request) {
       ? String((body as { url: unknown }).url ?? "").trim()
       : "";
 
-  if (!FB_EVENT_URL_RE.test(url)) {
+  const eventUrl = await resolveFacebookEventUrl(url);
+
+  if (!eventUrl) {
     return NextResponse.json(
-      { error: "Please provide a valid facebook.com/events/... URL" },
+      {
+        error:
+          "Please provide a valid facebook.com/events/... or fb.me/e/... URL",
+      },
       { status: 422 },
     );
   }
@@ -61,7 +66,7 @@ export async function POST(request: Request) {
     let scrapeResult: Awaited<ReturnType<typeof scrapeApifyFacebookEvent>>;
 
     try {
-      scrapeResult = await scrapeApifyFacebookEvent(url);
+      scrapeResult = await scrapeApifyFacebookEvent(eventUrl);
     } catch (firstErr) {
       // On an empty dataset (likely Facebook rate-limiting), retry once after
       // a short pause before giving up entirely.
@@ -70,7 +75,7 @@ export async function POST(request: Request) {
           "[smart-fill/facebook] empty dataset on first attempt, retrying once…",
         );
         await new Promise((resolve) => setTimeout(resolve, 4000));
-        scrapeResult = await scrapeApifyFacebookEvent(url);
+        scrapeResult = await scrapeApifyFacebookEvent(eventUrl);
       } else {
         throw firstErr;
       }

@@ -619,7 +619,7 @@
     "tabPhoto": "Fotografie",
     "tabGrabo": "Grabo",
     "tabRuseDanube": "Ruse on the Danube",
-    "fbPlaceholder": " https://www.facebook.com/events/1314048237578819/",
+    "fbPlaceholder": "https://www.facebook.com/events/... sau https://fb.me/e/...",
     "textPlaceholder": "Descrie evenimentul — date, oră, locație, preț, despre ce este... Cu cât mai multe detalii, cu atât mai bine.",
     "graboPlaceholder": "https://grabo.bg/ruse/...",
     "ruseDanubePlaceholder": "https://ruseonthedanube.com/event/...",
@@ -663,7 +663,7 @@
     "fbCheckPublicWithTitle": "Eveniment public: {title}",
     "fbCheckPrivate": "Evenimentul nu pare public. Fă-l public pe Facebook, apoi încearcă din nou importul.",
     "fbCheckUnknown": "Nu am putut confirma vizibilitatea. Poți încerca totuși importul.",
-    "fbCheckInvalidUrl": "Introdu mai întâi un URL valid facebook.com/events/...",
+    "fbCheckInvalidUrl": "Introdu mai întâi un URL valid facebook.com/events/... sau fb.me/e/...",
     "fbCheckError": "Verificarea a eșuat. Încearcă din nou peste puțin."
   },
   "Offline": {

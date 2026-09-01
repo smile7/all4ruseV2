@@ -619,7 +619,7 @@
     "tabPhoto": "Photo",
     "tabGrabo": "Grabo",
     "tabRuseDanube": "Ruse on the Danube",
-    "fbPlaceholder": " https://www.facebook.com/events/1314048237578819/",
+    "fbPlaceholder": "https://www.facebook.com/events/1314048237578819/ or https://fb.me/e/4P68471",
     "textPlaceholder": "Describe the event — dates, time, location, price, what it's about... The more detail, the better.",
     "graboPlaceholder": "https://grabo.bg/ruse/...",
     "ruseDanubePlaceholder": "https://ruseonthedanube.com/event/...",
@@ -663,7 +663,7 @@
     "fbCheckPublicWithTitle": "Public event: {title}",
     "fbCheckPrivate": "This event doesn't look public. Make it public on Facebook first, then try importing.",
     "fbCheckUnknown": "Couldn't verify visibility. You can still try importing.",
-    "fbCheckInvalidUrl": "Enter a valid facebook.com/events/... URL first.",
+    "fbCheckInvalidUrl": "Enter a valid facebook.com/events/... or fb.me/e/... URL first.",
     "fbCheckError": "Couldn't check this event right now. Try again in a moment."
   },
   "Offline": {

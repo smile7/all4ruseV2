@@ -14,7 +14,7 @@ export function Logo() {
         priority
       />
       <Image
-        src="/all4ruse_white.png"
+        src="/logotrp.png"
         alt="All4Ruse"
         width={120}
         height={40}

@@ -610,7 +610,7 @@
     "tabPhoto": "Попълни от снимка",
     "tabGrabo": "Grabo",
     "tabRuseDanube": "Ruse on the Danube",
-    "fbPlaceholder": " https://www.facebook.com/events/1314048237578819/",
+    "fbPlaceholder": "https://www.facebook.com/events/... или https://fb.me/e/...",
     "textPlaceholder": "Опиши събитието — дати, час, място, цена, за какво е... Колкото повече детайли, толкова по-добре.",
     "graboPlaceholder": "https://grabo.bg/ruse/...",
     "ruseDanubePlaceholder": "https://ruseonthedanube.com/event/...",
@@ -654,7 +654,7 @@
     "fbCheckPublicWithTitle": "Публично събитие: {title}",
     "fbCheckPrivate": "Събитието не изглежда публично. Направете го публично във Facebook и опитайте отново.",
     "fbCheckUnknown": "Не успяхме да потвърдим видимостта. Можете все пак да опитате импорт.",
-    "fbCheckInvalidUrl": "Първо въведете валиден facebook.com/events/... URL.",
+    "fbCheckInvalidUrl": "Първо въведете валиден facebook.com/events/... или fb.me/e/... URL.",
     "fbCheckError": "Проверката не успя. Опитайте отново след малко."
   },
   "Offline": {

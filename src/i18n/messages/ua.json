@@ -619,7 +619,7 @@
     "tabPhoto": "Фото",
     "tabGrabo": "Grabo",
     "tabRuseDanube": "Ruse on the Danube",
-    "fbPlaceholder": " https://www.facebook.com/events/1314048237578819/",
+    "fbPlaceholder": "https://www.facebook.com/events/... або https://fb.me/e/...",
     "textPlaceholder": "Опишіть подію — дати, час, місце, ціна, про що йдеться... Чим більше деталей, тим краще.",
     "graboPlaceholder": "https://grabo.bg/ruse/...",
     "ruseDanubePlaceholder": "https://ruseonthedanube.com/event/...",
@@ -663,7 +663,7 @@
     "fbCheckPublicWithTitle": "Публічна подія: {title}",
     "fbCheckPrivate": "Подія не виглядає публічною. Зробіть її публічною у Facebook і спробуйте знову.",
     "fbCheckUnknown": "Не вдалося підтвердити видимість. Ви все одно можете спробувати імпорт.",
-    "fbCheckInvalidUrl": "Спочатку введіть дійсний facebook.com/events/... URL.",
+    "fbCheckInvalidUrl": "Спочатку введіть дійсний facebook.com/events/... або fb.me/e/... URL.",
     "fbCheckError": "Перевірку не вдалося виконати. Спробуйте ще раз за мить."
   },
   "Offline": {

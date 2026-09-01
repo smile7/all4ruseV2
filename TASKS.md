@@ -750,6 +750,173 @@ Not built into Sentry — it is not an analytics tool and click volume would obl
 - [ ] Never pass PII or free-text user content as event properties
 - [ ] Instrument a **small** initial set (5–8 buttons) where a real decision is pending — tracking everything produces a dashboard nobody reads
 
+## Phase 23 — "Още от Русе" Editorial Articles (`IMPLEMENTATION_PLAN.md` Phase 16)
+
+Full spec and rationale: `IMPLEMENTATION_PLAN.md` → **Phase 16**. A blog-style section at `/[locale]/more-from-ruse` with an index and per-article detail pages, each article having a hero image and rich-text body. Content is evergreen city guides and listicles, not news. **This section exists for SEO** — event pages decay after two weeks, so articles are the only content on the site that can accumulate authority over years and rank for queries like „какво да правя в Русе".
+
+Locked decisions: URL `/[locale]/more-from-ruse[/slug]`; **one row per language** linked by `group_id` (BG required, others optional, hreflang only between translations that exist); admin-only authoring via an in-app form; TipTap → sanitize-html → `dangerouslySetInnerHTML`; `Article` + `BreadcrumbList` JSON-LD; slug **locked after publish** (no redirect table); `revalidate = 300` + `revalidatePath` on write; category column now, archive pages later.
+
+**Blocked before starting:** confirm the **category vocabulary** with the owner. Until then `category` is a nullable column with no DB check constraint and allowed values enforced only in zod.
+
+Implement in order — the data layer and content pipeline must exist before the pages.
+
+### 23.1 Data model + storage
+
+- [ ] Migration `supabase/migrations/20260901_articles.sql` — `articles` table: `id`, `group_id`, `locale`, `slug`, `title`, `excerpt`, `meta_description`, `body_html`, `hero_image`, `hero_image_alt`, `category`, `status` (draft/published), `reading_minutes`, `published_at`, `updated_at`, `created_at`, `created_by`
+- [ ] Unique indexes `(locale, slug)` and `(group_id, locale)`; indexes on `(locale, status, published_at desc)` and `(group_id)`
+- [ ] Check constraint: `status = 'draft' or published_at is not null`
+- [ ] RLS: `select using (status = 'published' or created_by = auth.uid())`. **No** insert/update/delete policies — all writes go through admin-checked API routes with the service-role client
+- [ ] `set_articles_updated_at` trigger — `updated_at` feeds sitemap `lastModified` and JSON-LD `dateModified`, so it must be real; never touch rows programmatically for non-content reasons
+- [ ] `npm run db:types`
+- [ ] Create public Supabase bucket `article-images`
+- [ ] `src/constants/index.ts` — `ARTICLES_BUCKET`, `ARTICLES_PAGE_SIZE = 12`, `ARTICLES_TEASER_COUNT = 3`
+- [ ] Confirm no `next.config.ts` change is needed (existing `*.supabase.co/storage/v1/object/public/**` pattern covers the new bucket)
+
+### 23.2 Types + validation
+
+- [ ] `src/types/index.ts` — `Article = Tables<"articles">`, `ARTICLE_CATEGORIES` const tuple + `ArticleCategory` union
+- [ ] `articleSchema` (zod) with SEO limits encoded: `title` 10–110 chars (110 = practical `headline` limit for Google rich results), `slug` lowercase-hyphen regex + max 80 + reserved words (`new`, `edit`, `page`, `rss`), `excerpt` 60–300 required, `meta_description` optional max 160, `body_html` non-empty after sanitizing, `hero_image_alt` **required whenever `hero_image` is set**
+- [ ] `ArticleFormValues = z.infer<typeof articleSchema>`
+
+### 23.3 Content pipeline
+
+- [ ] `src/lib/article-html.ts` — `sanitizeArticleHtml` with a **wider allowlist than events** (`a`, `img`, `figure`, `figcaption`, `h4`, `hr`). Do **not** widen the event allowlist — event descriptions come from arbitrary users, article bodies only from the admin
+- [ ] Sanitizer must: strip `h1` (the page `<h1>` is the title), force `rel="noopener"` on external links (no `noreferrer` — see Phase 11), force `loading="lazy"` + `decoding="async"` on images, and **drop any `img` whose host is not our Supabase storage domain** (hotlinks leak visitor IPs and wreck LCP)
+- [ ] `addHeadingIds(html)` — transliterated `id` on `h2`/`h3` at save time so the ToC and deep links need no client JS
+- [ ] `estimateReadingMinutes(html)` — word count ÷ 200, min 1; stored in `reading_minutes` on write
+- [ ] `ARTICLE_BODY_CLASSES` prose string, following `EVENT_DESCRIPTION_BODY_CLASSES`
+- [ ] `src/lib/article-slug.ts` — `buildArticleSlugFromTitle` reusing `transliterateCyrillicToLatin`, **no `-{id}` suffix** (unlike events; the slug is the strongest on-page keyword signal), max 80, shared reserved-word list
+
+### 23.4 Data layer — `src/lib/api/articles.ts`
+
+- [ ] `getPublishedArticles(client, { locale, page, pageSize })` → `{ articles, total }` with `.range()` + exact count
+- [ ] `getPublishedArticleBySlug(client, locale, slug)` → `Article | null` (`PGRST116` → null, else throw)
+- [ ] `getTranslationSiblings(client, groupId)` → `{ locale, slug }[]`, **published only** — this is what hreflang is built from
+- [ ] `getLatestArticles(client, locale, limit)` for the homepage teaser
+- [ ] `getArticleById(client, id)` for the edit form (relies on the `created_by` select policy)
+- [ ] `getArticleSitemapEntries(client)` → all published `{ locale, slug, updatedAt }`; **throws** on error like `getAllSlugsWithDates`
+- [ ] `isSlugAvailable(client, locale, slug, excludeId?)` mirroring `profilesApi.isUsernameAvailable`
+- [ ] Export from `src/lib/api/index.ts`
+- [ ] **Every public listing query filters `.eq("status", "published")` explicitly** — the select policy also matches `created_by = auth.uid()`, so without it the admin sees their own drafts in the public index
+
+### 23.5 SEO helpers
+
+- [ ] `src/lib/seo.ts` — `buildArticleAlternates(locale, slug, siblings)`: canonical + hreflang for **existing published siblings only**, keyed via the existing `LOCALE_TO_HREFLANG` map (`ua` → `uk`), **including a self-referencing entry** (Google treats a set without one as invalid), `x-default` → BG sibling when it exists. Do not reuse `buildAlternates`, which blindly emits all 4 locales
+- [ ] `src/lib/article-jsonld.ts` — `buildArticleJsonLd`: `@type: "Article"`, `headline` hard-trimmed to 110, `description`, `image` array, `datePublished`, `dateModified`, `inLanguage`, `articleSection`, `author` + `publisher` as the All4Ruse `Organization` with a `logo` `ImageObject`, `mainEntityOfPage`, `isAccessibleForFree`
+- [ ] `buildBreadcrumbJsonLd(items)` → `BreadcrumbList`, written generically (worth backporting to event detail + public profiles later — the site has no breadcrumbs today)
+- [ ] `buildArticleListJsonLd` → `CollectionPage` with an `ItemList` `mainEntity`
+- [ ] Serialize all JSON-LD with the existing `.replace(/</g, "\\u003c")` guard
+
+### 23.6 Index page
+
+- [ ] `src/app/[locale]/more-from-ruse/page.tsx` — Server Component, `export const revalidate = 300`
+- [ ] `generateMetadata` — translated title/description, `buildAlternates(locale, "/more-from-ruse")`, OG `type: "website"`; canonical includes `?page=n` on page 2+
+- [ ] **Locale with zero published articles** → translated empty state + `robots: { index: false }`. Four empty archive pages must not enter the index
+- [ ] `<h1>` „Още от Русе" + keyword-bearing intro paragraph (real copy, not filler) + responsive `ArticleCard` grid
+- [ ] `src/components/ArticleCard/ArticleCard.tsx` — Server-Component-friendly (no hooks): `next/image` hero, `<h2>` title in a locale-aware `Link`, `<time dateTime>`, reading time, category badge, 3-line clamped excerpt, **`aria-label` on the card link** (do not repeat the `EventCard` gap flagged in Phase 10)
+- [ ] Pagination with `rel="prev"`/`rel="next"`, self-referencing canonical per page, out-of-range page → `notFound()`
+- [ ] `CollectionPage` + `ItemList` JSON-LD
+
+### 23.7 Article detail page
+
+- [ ] `src/app/[locale]/more-from-ruse/[articleSlug]/page.tsx` — Server Component, `revalidate = 300`, fetch wrapped in React `cache()` so `generateMetadata` and the body share one query (same as `getEventBySlugCached`)
+- [ ] `notFound()` when the slug does not exist **for this locale** — an untranslated article must 404, not render a wrong-language stub
+- [ ] `generateMetadata` — title; description = `meta_description` or `excerpt` trimmed to 160 on a **word boundary** (same fix as Phase 19); `buildArticleAlternates`; OG `type: "article"` with `publishedTime`, `modifiedTime`, `section`, absolute 1200×630 image, `locale` + `alternateLocale`; Twitter `summary_large_image`
+- [ ] Visible breadcrumb `<nav aria-label="Breadcrumb">`: Home → Още от Русе → title
+- [ ] `<article>`, single `<h1>`, byline row with `<time dateTime>` + reading time + category
+- [ ] Hero image in a fixed-aspect-ratio `<figure>` — `next/image` with `priority` + explicit `sizes`, wrapper reserving space so there is **no CLS**
+- [ ] Server-rendered table of contents (`<nav>` list of `h2` anchors) when the body has ≥ 3 `h2`s — zero client JS
+- [ ] Body via `dangerouslySetInnerHTML` with `ARTICLE_BODY_CLASSES`; sanitize on read as well as on write so a row edited in the Dashboard can't inject anything
+- [ ] „Още статии" block — up to 3 other published articles in the same locale + link back to the index
+- [ ] `Article` + `BreadcrumbList` JSON-LD
+
+### 23.8 Admin authoring
+
+- [ ] `src/app/[locale]/create-article/page.tsx` — server wrapper mirroring `create-event`; `notFound()` (not `redirect`) when `user.id !== ADMIN_USER_ID` so the route's existence isn't advertised; `?editId=` for edit
+- [ ] Add `/create-article` to `AUTH_REQUIRED` in `src/middleware.ts`
+- [ ] `generateMetadata` with `robots: { index: false, follow: false }`
+- [ ] `src/components/ArticleForm/ArticleForm.tsx` — `"use client"`, react-hook-form + zod, structured like `EventForm`
+- [ ] Locale select + "translation of" picker that attaches the row to an existing `group_id` (empty = new group)
+- [ ] Slug auto-derived from title, editable, debounced availability check; **disabled once published**, with an inline explanation so the lock reads as intentional
+- [ ] Category select; excerpt textarea with live counter + 120–160 guidance; optional `meta_description` with counter and SERP-snippet preview
+- [ ] Hero image upload (react-dropzone, same constraints as `EventImageUpload`) with a **required** alt-text field directly beneath it
+- [ ] `src/components/ArticleForm/ArticleBodyEditor.tsx` — TipTap setup from `EventDescriptionEditor` plus `Link` + `Image` extensions and `h4`. **Do not add article-only features to the event editor**
+- [ ] Draft / Publish actions + a "Preview" link (works via the `created_by` select policy)
+- [ ] Report failures through `reportError` once Phase 22 exists — do not repeat `EventForm`'s bare `catch {}`
+- [ ] `POST /api/articles` — admin gate → sanitize body, add heading ids, compute `reading_minutes`, set `published_at` on publish
+- [ ] `PATCH /api/articles/[id]` — **rejects a slug change when the stored row is already published**
+- [ ] `DELETE /api/articles/[id]` — delete row + associated storage objects
+- [ ] `POST /api/articles/image` — upload to `article-images`, type/size validation mirroring `smart-fill/photo`; the browser never writes to storage directly here
+- [ ] All mutating routes call `revalidatePath` for the article path + the locale index so edits are live immediately instead of waiting out the 300 s window
+
+### 23.9 Homepage teaser
+
+- [ ] `src/components/ArticlesTeaser/ArticlesTeaser.tsx` — Server Component, 3 latest published for the locale
+- [ ] Fetched in the **same `Promise.all`** as events in `src/app/[locale]/page.tsx` — no serial latency
+- [ ] Placed **below** the events list: the events grid is the primary content and owns the LCP element
+- [ ] `<h2>` heading that links to `/more-from-ruse` + an explicit „Виж всички" link (real internal links)
+- [ ] Images `loading="lazy"`, never `priority`
+- [ ] Renders `null` when the locale has no published articles
+
+### 23.10 Crawling and indexing
+
+- [ ] `src/app/sitemap.ts` — one entry per **existing** published translation (`/${locale}/more-from-ruse/${slug}`), `lastModified` from `updated_at`, `changeFrequency: "monthly"`, priority `0.7` (above events at `0.55`); section index per locale **only where ≥ 1 published article exists**, priority `0.8`
+- [ ] `src/app/robots.ts` — add `/*/create-article` to disallow (no allow rule needed for the section)
+- [ ] `public/llms.txt` — add the section under `## Key pages` + a line noting articles are editorial city guides. Far more citable by an LLM answering „what should I do in Ruse?" than any single event page
+- [ ] `ARCHITECTURE.md` — add both routes to the Pages table, `articles` to the data model, the `article-images` bucket, and `src/lib/api/articles.ts` to the folder structure. Do this **at implementation time**, once the code exists
+
+### 23.11 i18n
+
+- [ ] `MoreFromRuse` namespace in `bg.json` (source) → `en.json`, `ua.json`, `ro.json`: section title, intro, index metadata title/description, empty state, „Още статии", reading-time format (`{minutes} мин четене`), breadcrumb labels, ToC heading, pagination labels, „Достъпно на български" chip
+- [ ] Admin form strings (labels, counter hints, slug-locked explanation, validation messages) — fold into `MoreFromRuse` rather than adding a namespace for one admin screen
+- [ ] `HomePage.moreFromRuseTitle` + `HomePage.moreFromRuseSeeAll` for the teaser
+- [ ] Category display names once the vocabulary is confirmed
+
+### 23.12 Performance + accessibility
+
+- [ ] Both public pages ship **zero feature-level client JS** — no TanStack Query, no `useSearchParams` (pagination reads `searchParams` on the server)
+- [ ] Hero `priority` + explicit `sizes` + reserved aspect ratio; cards lazy with grid-matching `sizes`
+- [ ] Lighthouse on the index and a real article — mobile performance must not regress against the homepage
+- [ ] Single `<h1>`, correct `h2`/`h3` nesting, `<time dateTime>`, `<figure>`/`<figcaption>`, `aria-label` on card links and breadcrumb nav, keyboard-reachable pagination
+- [ ] WCAG AA contrast on category badge + byline text in both themes
+- [ ] `npm run types` + lint on touched files
+
+### 23.13 Acceptance checks
+
+- [ ] BG article renders at `/bg/more-from-ruse/{slug}` with hero image, body, and exactly one `<h1>`
+- [ ] Article with no EN translation is absent from `/en/more-from-ruse`, and `/en/more-from-ruse/{bg-slug}` returns 404
+- [ ] After adding an EN translation, both pages emit hreflang for `bg` and `en` **only** (not `uk`/`ro`), each including a self-referencing alternate
+- [ ] `x-default` points at the Bulgarian URL
+- [ ] Google Rich Results Test passes `Article` + `BreadcrumbList` with no errors or warnings; index emits valid `CollectionPage` + `ItemList`
+- [ ] Locale with zero articles → empty state, `noindex`, absent from sitemap
+- [ ] Sitemap has exactly one entry per existing published translation, `lastModified` = `updated_at`
+- [ ] Drafts invisible to guests in the listing, sitemap, and on the direct URL (404); author can preview
+- [ ] Slug field disabled on a published article; direct `PATCH` attempting a slug change is rejected
+- [ ] Guest and non-admin both get 404 on `/create-article`; direct calls to every `/api/articles/*` route return 403
+- [ ] An `<img>` pointing outside our Supabase storage domain is stripped on save
+- [ ] Publishing blocked when a hero image has no alt text
+- [ ] Editing a published article is visible immediately; `dateModified` updates while `datePublished` does not
+- [ ] Homepage teaser shows 3 latest, disappears when there are none, and is not the LCP element
+- [ ] Page 2 has a self-referencing canonical (not one pointing at page 1) and is absent from the sitemap; out-of-range page → 404
+- [ ] Reading time present and plausible; ToC appears only with ≥ 3 `h2`s and its anchors work
+
+### 23.14 Not selected — reconsider at implementation time
+
+The only entry point chosen was the homepage teaser. With 80% mobile traffic and no link in the mobile "More" drawer or desktop footer, the section is reachable only by scrolling the homepage — which also means deep crawl paths.
+
+- [ ] Mobile "More" drawer link in `MobileBottomNav.tsx` (two-line change, alongside `why-all4ruse` / `advertise`)
+- [ ] Desktop footer dropdown link in `Footer.tsx`
+- [ ] Bidirectional event ↔ article cross-linking (related articles on event detail, related events on articles)
+
+### 23.15 Deliberately out of scope
+
+- Category **archive pages** — column exists, pages wait for content volume (~15–20 articles)
+- **Auto-translation** — hand-written for now. Machine-translated articles are exactly what Google's quality guidance targets; if ever automated it must produce reviewable drafts, never auto-publish
+- Comments, per-article author profiles, article search, shared taxonomy with event tags
+- **RSS feed** at `/more-from-ruse/rss.xml` — cheap and useful for distribution, not required to rank; add once there is enough content to be worth subscribing to
+- Newsletter integration — belongs with Brevo (Phase 16)
+- `FAQPage` / `HowTo` structured data — only where an article genuinely has that shape; misapplied schema earns manual actions
+
 ## Future scope (deferred)
 
 - [ ] Event content auto-translation via Google Translate API
