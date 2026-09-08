@@ -17,7 +17,6 @@ import { EventTag } from "~/components/EventTag";
 import {
   EventActionButtons,
   EventDetailRow,
-  EventDetailScrollReset,
   EventHeroGallery,
   EventImagesGallery,
   EventMapAndReport,
@@ -345,8 +344,6 @@ export default async function EventDetailPage({ params }: Props) {
 
   return (
     <>
-      <EventDetailScrollReset />
-
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

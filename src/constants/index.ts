@@ -27,9 +27,10 @@ export const TIKTOK_URL = "https://www.tiktok.com/@all4ruse";
 export const FACEBOOK_BRAND_COLOR = "#1877F2";
 export const INSTAGRAM_BRAND_COLOR = "#E4405F";
 
+/** Public advertise page. In-page CTAs on that route use `ADVERTISE_CONTACT_HASH`. */
+export const ADVERTISE_HREF = "/advertise";
 /** Hash target for the advertising contact form on `/advertise`. */
 export const ADVERTISE_CONTACT_HASH = "contact";
-export const ADVERTISE_CONTACT_HREF = `/advertise#${ADVERTISE_CONTACT_HASH}`;
 
 export const LOCALES = ["bg", "en", "ua", "ro"] as const;
 export type Locale = (typeof LOCALES)[number];

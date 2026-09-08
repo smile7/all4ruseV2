@@ -12,6 +12,7 @@ import {
   Footer,
   Header,
   MobileBottomNav,
+  ScrollToTopOnNavigate,
   TrackingScripts,
 } from "~/components/layout";
 import Providers from "~/components/Providers";
@@ -96,6 +97,7 @@ export default async function LocaleLayout({ children, params }: Props) {
               <AppSerwistProvider>
                 <AuthProvider userId={user?.id ?? null}>
                   <CookieConsentProvider>
+                    <ScrollToTopOnNavigate />
                     <Header />
                     {/*
                       main-layout — responsive bottom padding that clears the mobile nav

@@ -44,7 +44,7 @@ import {
 } from "~/components/ui/drawer";
 import { Separator } from "~/components/ui/separator";
 import {
-  ADVERTISE_CONTACT_HREF,
+  ADVERTISE_HREF,
   FACEBOOK_BRAND_COLOR,
   FACEBOOK_URL,
   INSTAGRAM_BRAND_COLOR,
@@ -422,7 +422,7 @@ export function MobileBottomNav({ initialUsername }: Props) {
             <Separator className="my-3" />
 
             <Link
-              href={ADVERTISE_CONTACT_HREF}
+              href={ADVERTISE_HREF}
               onClick={handleRouteStart("/advertise", { closeMore: true })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >

@@ -287,164 +287,175 @@ export default async function AdvertisePage() {
   ];
 
   return (
-    <div className="from-primary/10 via-background to-background mx-auto flex w-full max-w-7xl flex-col items-center gap-16 rounded-xl bg-linear-to-b px-6 py-10 lg:px-8">
-      {/* ── 1. Hero — width matches the header's logo/auth-button bounds ── */}
-      <section className="relative w-full pb-4">
-        <div
-          className="from-primary/30 via-primary/10 absolute inset-x-0 top-0 -z-10 h-40 bg-linear-to-b to-transparent opacity-60 blur-2xl"
-          aria-hidden
-        />
-        <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-14">
-          {/* Left — copy */}
-          <div className="flex min-w-0 flex-col items-center text-center lg:flex-1 lg:items-start lg:text-left">
-            <Badge
-              variant="default"
-              className="why-fade-in why-fade-delay-0 mb-6 h-auto gap-2 rounded-lg px-5 py-2 text-base font-semibold shadow-lg [&>svg]:size-5"
-            >
-              <Megaphone className="shrink-0" aria-hidden />
-              <span className="text-pretty">{t("heroEyebrow")}</span>
-            </Badge>
-            <Typography.H1 className="why-fade-in why-fade-delay-100 mb-4 text-pretty drop-shadow-sm">
-              {t("heroTitle")}
-            </Typography.H1>
-            <Typography.P className="text-muted-foreground why-fade-in why-fade-delay-200 max-w-xl text-lg text-pretty">
-              {t("heroText")}
-            </Typography.P>
-            {/* <Typography.P className="text-muted-foreground why-fade-in why-fade-delay-300 mt-3 max-w-xl text-pretty">
+    // Offset main's xl:px-30 so width matches HeaderInnerContainer (logo → auth button).
+    <div className="xl:-mx-30">
+      <div className="mx-auto w-full max-w-7xl px-6 pt-6 sm:pt-8 lg:px-8">
+        <div className="from-primary/10 via-background to-background flex w-full flex-col items-center gap-16 rounded-xl bg-linear-to-b px-4 py-10 sm:px-6">
+          {/* ── 1. Hero — width matches the header's logo/auth-button bounds ── */}
+          <section className="relative w-full pb-4">
+            <div
+              className="from-primary/30 via-primary/10 absolute inset-x-0 top-0 -z-10 h-40 bg-linear-to-b to-transparent opacity-60 blur-2xl"
+              aria-hidden
+            />
+            <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-14">
+              {/* Left — copy */}
+              <div className="flex min-w-0 flex-col items-center text-center lg:flex-1 lg:items-start lg:text-left">
+                <Badge
+                  variant="default"
+                  className="why-fade-in why-fade-delay-0 mb-6 h-auto gap-2 rounded-lg px-5 py-2 text-base font-semibold shadow-lg [&>svg]:size-5"
+                >
+                  <Megaphone className="shrink-0" aria-hidden />
+                  <span className="text-pretty">{t("heroEyebrow")}</span>
+                </Badge>
+                <Typography.H1 className="why-fade-in why-fade-delay-100 mb-4 text-pretty drop-shadow-sm">
+                  {t("heroTitle")}
+                </Typography.H1>
+                <Typography.P className="text-muted-foreground why-fade-in why-fade-delay-200 max-w-xl text-lg text-pretty">
+                  {t("heroText")}
+                </Typography.P>
+                {/* <Typography.P className="text-muted-foreground why-fade-in why-fade-delay-300 mt-3 max-w-xl text-pretty">
               {t("heroSubtext")}
             </Typography.P> */}
 
-            <div className="why-fade-in why-fade-delay-400 mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-              <Button asChild size="lg">
-                <a href={contactHref}>
-                  <Handshake className="size-4" aria-hidden />
-                  {t("ctaDiscussPartnership")}
-                </a>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <a href="#opportunities">{t("heroCtaSecondary")}</a>
-              </Button>
-            </div>
+                <div className="why-fade-in why-fade-delay-400 mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                  <Button asChild size="lg">
+                    <a href={contactHref}>
+                      <Handshake className="size-4" aria-hidden />
+                      {t("ctaDiscussPartnership")}
+                    </a>
+                  </Button>
+                  <Button asChild variant="outline" size="lg">
+                    <a href="#opportunities">{t("heroCtaSecondary")}</a>
+                  </Button>
+                </div>
 
-            {/* Stats */}
-            <div className="why-fade-in why-fade-delay-500 mt-8 flex flex-col items-center gap-3 lg:items-start">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="bg-primary/10 border-primary/20 flex flex-col items-center gap-1.5 rounded-xl border px-4 py-3 text-center">
-                  <Users className="text-primary size-5 shrink-0" aria-hidden />
-                  <span className="text-primary text-sm font-semibold">
-                    {t("statVisitors")}
-                  </span>
-                </div>
-                <div className="bg-primary/10 border-primary/20 flex flex-col items-center gap-1.5 rounded-xl border px-4 py-3 text-center">
-                  <CalendarDays
-                    className="text-primary size-5 shrink-0"
-                    aria-hidden
-                  />
-                  <span className="text-primary text-sm font-semibold">
-                    {t("statEvents", { count: upcomingEventsCount })}
-                  </span>
-                </div>
-                <div className="bg-primary/10 border-primary/20 flex flex-col items-center gap-1.5 rounded-xl border px-4 py-3 text-center">
-                  <MapPin
-                    className="text-primary size-5 shrink-0"
-                    aria-hidden
-                  />
-                  <span className="text-primary text-sm font-semibold">
-                    {t("statAudience")}
-                  </span>
-                </div>
-              </div>
-              {/* <p className="text-muted-foreground text-xs">
+                {/* Stats */}
+                <div className="why-fade-in why-fade-delay-500 mt-8 flex flex-col items-center gap-3 lg:items-start">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="bg-primary/10 border-primary/20 flex flex-col items-center gap-1.5 rounded-xl border px-4 py-3 text-center">
+                      <Users
+                        className="text-primary size-5 shrink-0"
+                        aria-hidden
+                      />
+                      <span className="text-primary text-sm font-semibold">
+                        {t("statVisitors")}
+                      </span>
+                    </div>
+                    <div className="bg-primary/10 border-primary/20 flex flex-col items-center gap-1.5 rounded-xl border px-4 py-3 text-center">
+                      <CalendarDays
+                        className="text-primary size-5 shrink-0"
+                        aria-hidden
+                      />
+                      <span className="text-primary text-sm font-semibold">
+                        {t("statEvents", { count: upcomingEventsCount })}
+                      </span>
+                    </div>
+                    <div className="bg-primary/10 border-primary/20 flex flex-col items-center gap-1.5 rounded-xl border px-4 py-3 text-center">
+                      <MapPin
+                        className="text-primary size-5 shrink-0"
+                        aria-hidden
+                      />
+                      <span className="text-primary text-sm font-semibold">
+                        {t("statAudience")}
+                      </span>
+                    </div>
+                  </div>
+                  {/* <p className="text-muted-foreground text-xs">
                 {t("statVisitorsNote")}
               </p> */}
+                </div>
+              </div>
+
+              {/* Right — visual example of the ad format */}
+              <div className="why-fade-in why-fade-delay-500 w-full max-w-sm shrink-0 lg:max-w-xs xl:max-w-sm">
+                <EventPageAdMockup
+                  label={t("mockupLabel")}
+                  title={t("mockupTitle")}
+                  businessName={t("mockupBusinessName")}
+                  description={t("mockupDescription")}
+                  cta={t("mockupCta")}
+                />
+              </div>
             </div>
-          </div>
+          </section>
 
-          {/* Right — visual example of the ad format */}
-          <div className="why-fade-in why-fade-delay-500 w-full max-w-sm shrink-0 lg:max-w-xs xl:max-w-sm">
-            <EventPageAdMockup
-              label={t("mockupLabel")}
-              title={t("mockupTitle")}
-              businessName={t("mockupBusinessName")}
-              description={t("mockupDescription")}
-              cta={t("mockupCta")}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ── 2. Основно предимство ──────────────────────────────────────── */}
-      <AdvertiseSection
-        id="opportunities"
-        fadeDelay="why-fade-delay-300"
-        title={t("opportunitiesTitle")}
-      >
-        <Typography.P className="text-pretty">
-          {t("opportunitiesText")}
-        </Typography.P>
-        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
-          {opportunities.map(({ icon: Icon, title, text }) => (
-            <div key={title} className={highlightCardClass}>
-              <Icon className="text-primary mb-2 size-8" aria-hidden />
-              <Typography.H3 className="mb-2 text-center text-lg">
-                {title}
-              </Typography.H3>
-              <Typography.Small className="text-center leading-snug">
-                {text}
-              </Typography.Small>
-            </div>
-          ))}
-        </div>
-      </AdvertiseSection>
-
-      {/* ── 3. Основен рекламен формат ─────────────────────────────────── */}
-      <AdvertiseSection fadeDelay="why-fade-delay-400" title={t("formatTitle")}>
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-center">
-          <div className="flex flex-1 flex-col gap-4">
+          {/* ── 2. Основно предимство ──────────────────────────────────────── */}
+          <AdvertiseSection
+            id="opportunities"
+            fadeDelay="why-fade-delay-300"
+            title={t("opportunitiesTitle")}
+          >
             <Typography.P className="text-pretty">
-              {t("formatText")}
+              {t("opportunitiesText")}
             </Typography.P>
-            <Typography.P className="text-muted-foreground text-pretty">
-              {t("formatSubtext")}
-            </Typography.P>
-          </div>
-          <div className="w-full shrink-0 lg:w-72">
-            <EventPageAdMockup
-              label={t("mockupLabel")}
-              title={t("mockupTitle")}
-              businessName={t("mockupBusinessName")}
-              description={t("mockupDescription")}
-              cta={t("mockupCta")}
-              compact
-            />
-          </div>
-        </div>
-        {/* <p className="text-muted-foreground mt-6 text-center text-sm text-pretty">
+            <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+              {opportunities.map(({ icon: Icon, title, text }) => (
+                <div key={title} className={highlightCardClass}>
+                  <Icon className="text-primary mb-2 size-8" aria-hidden />
+                  <Typography.H3 className="mb-2 text-center text-lg">
+                    {title}
+                  </Typography.H3>
+                  <Typography.Small className="text-center leading-snug">
+                    {text}
+                  </Typography.Small>
+                </div>
+              ))}
+            </div>
+          </AdvertiseSection>
+
+          {/* ── 3. Основен рекламен формат ─────────────────────────────────── */}
+          <AdvertiseSection
+            fadeDelay="why-fade-delay-400"
+            title={t("formatTitle")}
+          >
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-center">
+              <div className="flex flex-1 flex-col gap-4">
+                <Typography.P className="text-pretty">
+                  {t("formatText")}
+                </Typography.P>
+                <Typography.P className="text-muted-foreground text-pretty">
+                  {t("formatSubtext")}
+                </Typography.P>
+              </div>
+              <div className="w-full shrink-0 lg:w-72">
+                <EventPageAdMockup
+                  label={t("mockupLabel")}
+                  title={t("mockupTitle")}
+                  businessName={t("mockupBusinessName")}
+                  description={t("mockupDescription")}
+                  cta={t("mockupCta")}
+                  compact
+                />
+              </div>
+            </div>
+            {/* <p className="text-muted-foreground mt-6 text-center text-sm text-pretty">
           {t("formatNote")}
         </p> */}
-      </AdvertiseSection>
+          </AdvertiseSection>
 
-      {/* ── 4. Профилна страница на бизнеса ────────────────────────────── */}
-      <AdvertiseSection
-        fadeDelay="why-fade-delay-500"
-        title={t("profileTitle")}
-      >
-        <Typography.P className="text-pretty">{t("profileText")}</Typography.P>
-        <ul className="mt-5 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-          {profileItems.map((item) => (
-            <li key={item} className="flex items-start gap-2 text-sm">
-              <CheckCircle2
-                className="text-primary mt-0.5 size-4 shrink-0"
-                aria-hidden
-              />
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-        <Typography.P className="text-muted-foreground mt-6 text-pretty">
-          {t("profileNote")}
-        </Typography.P>
-        {/* <div className="mt-6 flex justify-center">
+          {/* ── 4. Профилна страница на бизнеса ────────────────────────────── */}
+          <AdvertiseSection
+            fadeDelay="why-fade-delay-500"
+            title={t("profileTitle")}
+          >
+            <Typography.P className="text-pretty">
+              {t("profileText")}
+            </Typography.P>
+            <ul className="mt-5 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+              {profileItems.map((item) => (
+                <li key={item} className="flex items-start gap-2 text-sm">
+                  <CheckCircle2
+                    className="text-primary mt-0.5 size-4 shrink-0"
+                    aria-hidden
+                  />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <Typography.P className="text-muted-foreground mt-6 text-pretty">
+              {t("profileNote")}
+            </Typography.P>
+            {/* <div className="mt-6 flex justify-center">
           <Button asChild size="lg">
             <a href={featureBusinessHref}>
               <Store className="size-4" aria-hidden />
@@ -452,10 +463,10 @@ export default async function AdvertisePage() {
             </a>
           </Button>
         </div> */}
-      </AdvertiseSection>
+          </AdvertiseSection>
 
-      {/* ── 5. Допълнително офлайн присъствие (по-малка секция) ────────── */}
-      {/* <AdvertiseSection
+          {/* ── 5. Допълнително офлайн присъствие (по-малка секция) ────────── */}
+          {/* <AdvertiseSection
         fadeDelay="why-fade-delay-600"
         className="max-w-2xl"
         bgTint="bg-background/70"
@@ -478,62 +489,64 @@ export default async function AdvertisePage() {
         </div>
       </AdvertiseSection> */}
 
-      {/* ── 6. За кого е подходящо ──────────────────────────────────────── */}
-      <AdvertiseSection
-        fadeDelay="why-fade-delay-700"
-        title={t("audienceTitle")}
-      >
-        <Typography.P className="text-pretty">{t("audienceText")}</Typography.P>
-        <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {audienceCategories.map(({ icon: Icon, text }) => (
-            <li
-              key={text}
-              className="border-border/80 bg-background/60 flex items-start gap-3 rounded-lg border p-3"
-            >
-              <Icon
-                className="text-primary mt-0.5 size-5 shrink-0"
-                aria-hidden
-              />
-              <span className="text-sm">{text}</span>
-            </li>
-          ))}
-        </ul>
-        <Typography.P className="text-muted-foreground mt-6 text-pretty">
-          {t("audienceNote")}
-        </Typography.P>
-      </AdvertiseSection>
+          {/* ── 6. За кого е подходящо ──────────────────────────────────────── */}
+          <AdvertiseSection
+            fadeDelay="why-fade-delay-700"
+            title={t("audienceTitle")}
+          >
+            <Typography.P className="text-pretty">
+              {t("audienceText")}
+            </Typography.P>
+            <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {audienceCategories.map(({ icon: Icon, text }) => (
+                <li
+                  key={text}
+                  className="border-border/80 bg-background/60 flex items-start gap-3 rounded-lg border p-3"
+                >
+                  <Icon
+                    className="text-primary mt-0.5 size-5 shrink-0"
+                    aria-hidden
+                  />
+                  <span className="text-sm">{text}</span>
+                </li>
+              ))}
+            </ul>
+            <Typography.P className="text-muted-foreground mt-6 text-pretty">
+              {t("audienceNote")}
+            </Typography.P>
+          </AdvertiseSection>
 
-      {/* ── 7. PREMIUM събития (второстепенна секция) ──────────────────── */}
-      <AdvertiseSection
-        fadeDelay="why-fade-delay-800"
-        className="max-w-2xl"
-        bgTint="bg-background/70"
-      >
-        <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:text-left">
-          <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
-            <Crown className="size-5" aria-hidden />
-          </div>
-          <div className="flex-1">
-            <Typography.H3 className="mb-2 text-lg">
-              {t("premiumTitle")}
-            </Typography.H3>
-            <Typography.Small className="block leading-relaxed text-pretty">
-              {t("premiumText")}
-            </Typography.Small>
-            <div className="mt-4 flex justify-center sm:justify-start">
-              <Button asChild variant="secondary">
-                <Link href="/create-event">
-                  <CalendarDays className="size-4" aria-hidden />
-                  {t("premiumCta")}
-                </Link>
-              </Button>
+          {/* ── 7. PREMIUM събития (второстепенна секция) ──────────────────── */}
+          <AdvertiseSection
+            fadeDelay="why-fade-delay-800"
+            className="max-w-2xl"
+            bgTint="bg-background/70"
+          >
+            <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:text-left">
+              <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
+                <Crown className="size-5" aria-hidden />
+              </div>
+              <div className="flex-1">
+                <Typography.H3 className="mb-2 text-lg">
+                  {t("premiumTitle")}
+                </Typography.H3>
+                <Typography.Small className="block leading-relaxed text-pretty">
+                  {t("premiumText")}
+                </Typography.Small>
+                <div className="mt-4 flex justify-center sm:justify-start">
+                  <Button asChild variant="secondary">
+                    <Link href="/create-event">
+                      <CalendarDays className="size-4" aria-hidden />
+                      {t("premiumCta")}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </AdvertiseSection>
+          </AdvertiseSection>
 
-      {/* ── 8. Как започваме ────────────────────────────────────────────── */}
-      {/* <AdvertiseSection fadeDelay="why-fade-delay-800" title={t("stepsTitle")}>
+          {/* ── 8. Как започваме ────────────────────────────────────────────── */}
+          {/* <AdvertiseSection fadeDelay="why-fade-delay-800" title={t("stepsTitle")}>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {steps.map(({ icon: Icon, title, text }, index) => (
             <div key={title} className={highlightCardClass}>
@@ -560,48 +573,50 @@ export default async function AdvertisePage() {
         </div>
       </AdvertiseSection> */}
 
-      {/* ── 9. Често задавани въпроси ────────────────────────────────────── */}
-      <AdvertiseSection
-        fadeDelay="why-fade-delay-800"
-        title={
-          <span className="flex items-center gap-2">
-            <HelpCircle className="size-6 shrink-0" aria-hidden />
-            {t("faqTitle")}
-          </span>
-        }
-      >
-        <Accordion type="single" collapsible className="w-full">
-          {faqs.map(({ q, a }, index) => (
-            <AccordionItem key={q} value={`faq-${index}`}>
-              <AccordionTrigger className="text-base">{q}</AccordionTrigger>
-              <AccordionContent className="text-muted-foreground text-pretty">
-                {a}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </AdvertiseSection>
+          {/* ── 9. Често задавани въпроси ────────────────────────────────────── */}
+          <AdvertiseSection
+            fadeDelay="why-fade-delay-800"
+            title={
+              <span className="flex items-center gap-2">
+                <HelpCircle className="size-6 shrink-0" aria-hidden />
+                {t("faqTitle")}
+              </span>
+            }
+          >
+            <Accordion type="single" collapsible className="w-full">
+              {faqs.map(({ q, a }, index) => (
+                <AccordionItem key={q} value={`faq-${index}`}>
+                  <AccordionTrigger className="text-base">{q}</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-pretty">
+                    {a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </AdvertiseSection>
 
-      {/* ── 10. Контактна форма ──────────────────────────────────────────── */}
-      <AdvertiseSection
-        id={ADVERTISE_CONTACT_HASH}
-        fadeDelay="why-fade-delay-800"
-        title={t("finalTitle")}
-      >
-        <Typography.P className="mb-6 text-pretty">
-          {t.rich("finalText", {
-            email: (chunks) => (
-              <a
-                href={`mailto:${PARTNERSHIP_EMAIL}`}
-                className="text-primary font-medium underline"
-              >
-                {chunks}
-              </a>
-            ),
-          })}
-        </Typography.P>
-        <AdvertiseContactForm />
-      </AdvertiseSection>
+          {/* ── 10. Контактна форма ──────────────────────────────────────────── */}
+          <AdvertiseSection
+            id={ADVERTISE_CONTACT_HASH}
+            fadeDelay="why-fade-delay-800"
+            title={t("finalTitle")}
+          >
+            <Typography.P className="mb-6 text-pretty">
+              {t.rich("finalText", {
+                email: (chunks) => (
+                  <a
+                    href={`mailto:${PARTNERSHIP_EMAIL}`}
+                    className="text-primary font-medium underline"
+                  >
+                    {chunks}
+                  </a>
+                ),
+              })}
+            </Typography.P>
+            <AdvertiseContactForm />
+          </AdvertiseSection>
+        </div>
+      </div>
     </div>
   );
 }
