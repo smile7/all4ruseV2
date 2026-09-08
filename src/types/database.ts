@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      advertise_inquiries: {
+        Row: {
+          business_name: string
+          created_at: string
+          email: string
+          id: string
+          locale: string | null
+          message: string
+          name: string
+        }
+        Insert: {
+          business_name: string
+          created_at?: string
+          email: string
+          id?: string
+          locale?: string | null
+          message: string
+          name: string
+        }
+        Update: {
+          business_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          locale?: string | null
+          message?: string
+          name?: string
+        }
+        Relationships: []
+      }
       articles: {
         Row: {
           author_name: string | null

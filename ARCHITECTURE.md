@@ -41,6 +41,7 @@ All pages live inside the `[locale]` segment so next-intl routing works out of t
 | `/[locale]/[slug]`                       | Event detail                   | SSR                                               |
 | `/[locale]/more-from-ruse`               | „Още от Русе" index            | ISR (300 s); `noindex` while a locale is empty    |
 | `/[locale]/more-from-ruse/[articleSlug]` | Article detail                 | ISR (300 s); 404 when untranslated in this locale |
+| `/[locale]/advertise`                    | Advertising & partnerships     | SSR; public contact form at `#contact`            |
 | `/[locale]/create-article`               | Create / edit article          | Admin only — `notFound()` for everyone else       |
 | `/[locale]/why-all4ruse`                 | Why All4Ruse                   | Static content page                               |
 | `/[locale]/legal/cookies`                | Cookies policy                 | Static                                            |
@@ -83,6 +84,8 @@ src/
 │   │   ├── more-from-ruse/
 │   │   │   ├── page.tsx             # Article index („Още от Русе")
 │   │   │   └── [articleSlug]/page.tsx
+│   │   ├── advertise/
+│   │   │   └── page.tsx             # Advertising + public contact form
 │   │   ├── create-article/
 │   │   │   └── page.tsx             # Admin-only article form
 │   │   ├── why-all4ruse/
@@ -139,6 +142,7 @@ src/
 │   ├── api/
 │   │   ├── events.ts                # Typed Supabase query functions
 │   │   ├── articles.ts              # „Още от Русе" reads + admin writes
+│   │   ├── advertise-inquiries.ts   # Public advertising contact inserts
 │   │   ├── tags.ts
 │   │   ├── profiles.ts
 │   │   └── index.ts
@@ -176,6 +180,7 @@ src/
 | Upcoming / current / past events | SSR                       | Server Component → Supabase server client                       |
 | Event detail `[slug]`            | SSR                       | Server Component → Supabase public server client                |
 | Why All4Ruse, legal pages        | Static                    | No data fetching                                                |
+| Advertise                        | SSR                       | Upcoming event count; contact form posts to `/api/advertise/inquiries` |
 | Profile, my events, create event | SSR                       | Server Component reads session + data                           |
 | Admin pages                      | SSR + client interactions | Server Component for initial load; TanStack Query for mutations |
 | Auth pages                       | Client-only               | Supabase browser client directly                                |

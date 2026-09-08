@@ -254,6 +254,32 @@ export const articleSchema = z
 
 export type ArticleFormValues = z.infer<typeof articleSchema>;
 
+// ─── Advertise contact form ───────────────────────────────────────────────────
+
+export const ADVERTISE_INQUIRY_LIMITS = {
+  name: 100,
+  email: 254,
+  businessName: 150,
+  message: 4000,
+} as const;
+
+/** Server-side payload. User-facing messages live in the form schema factory. */
+export const advertiseInquiryApiSchema = z.object({
+  name: z.string().trim().min(1).max(ADVERTISE_INQUIRY_LIMITS.name),
+  email: z.email().max(ADVERTISE_INQUIRY_LIMITS.email),
+  businessName: z
+    .string()
+    .trim()
+    .min(1)
+    .max(ADVERTISE_INQUIRY_LIMITS.businessName),
+  message: z.string().trim().min(1).max(ADVERTISE_INQUIRY_LIMITS.message),
+  /** Honeypot — real users leave this empty. */
+  website: z.string().max(200).optional(),
+  locale: z.enum(LOCALES).optional(),
+});
+
+export type AdvertiseInquiryInput = z.infer<typeof advertiseInquiryApiSchema>;
+
 // ─── Smart Fill ───────────────────────────────────────────────────────────────
 
 /**

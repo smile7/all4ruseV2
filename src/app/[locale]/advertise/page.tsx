@@ -12,7 +12,6 @@ import {
   Handshake,
   HelpCircle,
   Landmark,
-  Mail,
   MapPin,
   MapPinned,
   Megaphone,
@@ -24,6 +23,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { AdvertiseContactForm } from "~/components/AdvertiseContactForm";
 import { Typography } from "~/components/layout";
 import {
   Accordion,
@@ -34,6 +34,7 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { ADVERTISE_CONTACT_HASH } from "~/constants";
 import { Link } from "~/i18n/navigation";
 import { eventsApi } from "~/lib/api";
 import { buildAlternates } from "~/lib/seo";
@@ -41,8 +42,6 @@ import { createSupabaseServerClient } from "~/lib/supabase/server";
 import { cn } from "~/lib/utils";
 
 const PARTNERSHIP_EMAIL = "silvena@all4ruse.com";
-const partnershipMailto = (subject: string) =>
-  `mailto:${PARTNERSHIP_EMAIL}?subject=${encodeURIComponent(subject)}`;
 
 const sectionCardClass = cn("border-primary/30 shadow-md", "why-fade-in");
 const sectionContentPad = "px-6 py-6 sm:px-8 sm:py-8";
@@ -233,13 +232,7 @@ export default async function AdvertisePage() {
   const upcomingEvents = await eventsApi.getActiveEvents(client);
   const upcomingEventsCount = upcomingEvents.length;
 
-  const discussPartnershipHref = partnershipMailto(
-    "Интерес към партньорство с All4Ruse",
-  );
-  const featureBusinessHref = partnershipMailto(
-    "Представяне на бизнес в All4Ruse",
-  );
-  const inquiryHref = partnershipMailto("Запитване за реклама в All4Ruse");
+  const contactHref = `#${ADVERTISE_CONTACT_HASH}`;
 
   const opportunities = [
     {
@@ -323,7 +316,7 @@ export default async function AdvertisePage() {
 
             <div className="why-fade-in why-fade-delay-400 mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <Button asChild size="lg">
-                <a href={discussPartnershipHref}>
+                <a href={contactHref}>
                   <Handshake className="size-4" aria-hidden />
                   {t("ctaDiscussPartnership")}
                 </a>
@@ -589,46 +582,26 @@ export default async function AdvertisePage() {
         </Accordion>
       </AdvertiseSection>
 
-      {/* ── 10. Финален CTA ──────────────────────────────────────────────── */}
-      <section className="why-fade-in why-fade-delay-800 w-full max-w-4xl">
-        <div className="bg-primary text-primary-foreground relative overflow-hidden rounded-2xl px-6 py-10 text-center shadow-xl sm:px-12 sm:py-14">
-          <div
-            className="absolute inset-0 -z-10 bg-linear-to-br from-white/10 via-transparent to-black/10"
-            aria-hidden
-          />
-          <Typography.H2 className="mb-4 border-0 pb-0 text-3xl text-pretty text-white">
-            {t("finalTitle")}
-          </Typography.H2>
-          <Typography.P className="mx-auto mb-8 max-w-2xl text-pretty text-white/90">
-            {t("finalText")}
-          </Typography.P>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button
-              asChild
-              size="lg"
-              variant="secondary"
-              className="text-primary bg-white hover:bg-white/90"
-            >
-              <a href={discussPartnershipHref}>
-                <Mail className="size-4" aria-hidden />
-                {t("ctaDiscussPartnership")}
+      {/* ── 10. Контактна форма ──────────────────────────────────────────── */}
+      <AdvertiseSection
+        id={ADVERTISE_CONTACT_HASH}
+        fadeDelay="why-fade-delay-800"
+        title={t("finalTitle")}
+      >
+        <Typography.P className="mb-6 text-pretty">
+          {t.rich("finalText", {
+            email: (chunks) => (
+              <a
+                href={`mailto:${PARTNERSHIP_EMAIL}`}
+                className="text-primary font-medium underline"
+              >
+                {chunks}
               </a>
-            </Button>
-            <Button
-              asChild
-              variant="link"
-              className="h-auto p-0 text-base font-medium text-white"
-            >
-              <a href={discussPartnershipHref} aria-label={t("emailAriaLabel")}>
-                {PARTNERSHIP_EMAIL}
-              </a>
-            </Button>
-          </div>
-          <p className="mx-auto mt-8 max-w-xl text-xs text-pretty text-white/70">
-            {t("finalMediaNote")}
-          </p>
-        </div>
-      </section>
+            ),
+          })}
+        </Typography.P>
+        <AdvertiseContactForm />
+      </AdvertiseSection>
     </div>
   );
 }

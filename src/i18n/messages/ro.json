@@ -652,10 +652,23 @@
     "faq8Q": "Adăugarea de evenimente rămâne gratuită?",
     "faq8A": "Da. Organizatorii își pot publica evenimentele gratuit. Poziționarea PREMIUM și parteneriatele publicitare sunt opțiuni suplimentare.",
 
-    "finalTitle": "Hai să găsim locul potrivit pentru afacerea ta pe All4Ruse",
-    "finalText": "Povestește-mi pe scurt despre afacerea ta și ce vrei să promovezi. Vom discuta dacă și cum All4Ruse te poate ajuta.",
-    "finalMediaNote": "Reprezinți o media, o organizație sau o instituție? Scrie-mi dacă ai o idee pentru o integrare, un parteneriat media sau altă inițiativă în beneficiul oamenilor din Ruse.",
-    "emailAriaLabel": "E-mail de contact: silvena at all4ruse dot com"
+    "finalTitle": "Formular de contact",
+    "finalText": "Povestește-mi pe scurt despre afacerea ta și ce vrei să promovezi. Vom discuta cum All4Ruse te poate ajuta. Îmi poți scrie și la <email>silvena@all4ruse.com</email>",
+    "formNameLabel": "Nume",
+    "formEmailLabel": "Email",
+    "formBusinessNameLabel": "Numele afacerii",
+    "formMessageLabel": "Mesaj",
+    "formSubmit": "Trimite solicitarea",
+    "formSending": "Se trimite...",
+    "formSuccessTitle": "Solicitarea a fost trimisă",
+    "formSuccessText": "Mulțumesc! Te voi contacta în curând.",
+    "formError": "Ceva nu a mers bine. Încearcă din nou peste puțin.",
+    "formRateLimited": "Ai trimis deja mai multe solicitări. Încearcă din nou mai târziu.",
+    "formNameRequired": "Introdu numele",
+    "formEmailInvalid": "Introdu un email valid",
+    "formBusinessNameRequired": "Introdu numele afacerii",
+    "formMessageRequired": "Scrie un mesaj",
+    "formPrivacyNote": "Trimițând formularul, accepți prelucrarea datelor conform <privacyLink>Politicii de confidențialitate</privacyLink>."
   },
   "EventTags": {
     "COMEDY": "Comedie",

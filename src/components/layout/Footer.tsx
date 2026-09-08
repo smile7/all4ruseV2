@@ -33,6 +33,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Separator } from "~/components/ui/separator";
 import {
+  ADVERTISE_CONTACT_HREF,
   FACEBOOK_BRAND_COLOR,
   FACEBOOK_URL,
   INSTAGRAM_BRAND_COLOR,
@@ -158,7 +159,7 @@ export function Footer() {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link
-                href="/advertise"
+                href={ADVERTISE_CONTACT_HREF}
                 className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
               >
                 <Megaphone className="text-muted-foreground size-4 shrink-0" />

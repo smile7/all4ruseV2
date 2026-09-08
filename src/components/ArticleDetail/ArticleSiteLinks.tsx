@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import { ArrowRight, Megaphone } from "lucide-react";
 
+import { ADVERTISE_CONTACT_HREF } from "~/constants";
 import { Link } from "~/i18n/navigation";
 
 type Props = {
@@ -38,12 +39,12 @@ export async function ArticleSiteLinks({ locale }: Props) {
         </div>
         <ArrowRight
           aria-hidden
-          className="text-muted-foreground size-5 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+          className="text-muted-foreground group-hover:text-primary size-5 shrink-0 transition-transform group-hover:translate-x-0.5"
         />
       </Link>
 
       <Link
-        href="/advertise"
+        href={ADVERTISE_CONTACT_HREF}
         className="group border-primary/35 from-primary/20 to-background hover:border-primary/55 focus-visible:ring-ring flex items-center gap-4 rounded-2xl border bg-linear-to-br p-4 shadow-sm transition-all hover:shadow-md focus-visible:ring-2 focus-visible:outline-none"
       >
         <div className="bg-primary text-primary-foreground flex size-16 shrink-0 items-center justify-center rounded-2xl shadow-sm">
@@ -57,7 +58,7 @@ export async function ArticleSiteLinks({ locale }: Props) {
         </div>
         <ArrowRight
           aria-hidden
-          className="text-muted-foreground size-5 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+          className="text-muted-foreground group-hover:text-primary size-5 shrink-0 transition-transform group-hover:translate-x-0.5"
         />
       </Link>
     </aside>

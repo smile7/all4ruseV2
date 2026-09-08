@@ -652,10 +652,23 @@
     "faq8Q": "Is adding events still free?",
     "faq8A": "Yes. Organizers can publish their events for free. PREMIUM positioning and advertising partnerships are additional options.",
 
-    "finalTitle": "Let's find the right place for your business on All4Ruse",
-    "finalText": "Tell me briefly about your business and what you'd like to promote. We'll discuss whether and how All4Ruse can be useful to you.",
-    "finalMediaNote": "Represent a media outlet, organization, or institution? Write to me if you have an idea for an integration, media partnership, or other initiative that benefits the people of Ruse.",
-    "emailAriaLabel": "Contact email: silvena at all4ruse dot com"
+    "finalTitle": "Contact form",
+    "finalText": "Tell me briefly about your business and what you'd like to promote. We'll discuss how All4Ruse can be useful to you. You can also write to me at <email>silvena@all4ruse.com</email>",
+    "formNameLabel": "Name",
+    "formEmailLabel": "Email",
+    "formBusinessNameLabel": "Business name",
+    "formMessageLabel": "Message",
+    "formSubmit": "Send inquiry",
+    "formSending": "Sending...",
+    "formSuccessTitle": "Inquiry sent",
+    "formSuccessText": "Thank you! I'll get back to you soon.",
+    "formError": "Something went wrong. Please try again in a moment.",
+    "formRateLimited": "You've already sent several inquiries. Please try again later.",
+    "formNameRequired": "Enter your name",
+    "formEmailInvalid": "Enter a valid email",
+    "formBusinessNameRequired": "Enter your business name",
+    "formMessageRequired": "Write a message",
+    "formPrivacyNote": "By submitting this form, you accept the processing of your data according to the <privacyLink>Privacy Policy</privacyLink>."
   },
   "EventTags": {
     "COMEDY": "Comedy",
