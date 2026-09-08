@@ -33,31 +33,35 @@ We add dependencies only when there is a clear need. Nothing is pre-installed "j
 
 All pages live inside the `[locale]` segment so next-intl routing works out of the box. Visiting `all4ruse.com` redirects to `all4ruse.com/bg/` (Bulgarian default). The user can switch language from the header.
 
-| URL                              | Page                 | Notes                                        |
-| -------------------------------- | -------------------- | -------------------------------------------- |
-| `/[locale]`                      | Upcoming events      | Home page — grid / calendar / map tabs       |
-| `/[locale]/current`              | Current events       | Events happening right now                   |
-| `/[locale]/past`                 | Past events          | Archive                                      |
-| `/[locale]/[slug]`               | Event detail         | SSR                                          |
-| `/[locale]/why-all4ruse`         | Why All4Ruse         | Static content page                          |
-| `/[locale]/legal/cookies`        | Cookies policy       | Static                                       |
-| `/[locale]/legal/gdpr`           | GDPR                 | Static                                       |
-| `/[locale]/legal/privacy`        | Privacy policy       | Static                                       |
-| `/[locale]/auth/login`           | Login                |                                              |
-| `/[locale]/auth/signup`          | Sign up              |                                              |
-| `/[locale]/auth/signup-success`  | Sign up success      |                                              |
-| `/[locale]/auth/forgot-password` | Forgot password      |                                              |
-| `/[locale]/auth/update-password` | Update password      | Requires session                             |
-| `/[locale]/create-event`         | Create event         | Requires auth                                |
-| `/[locale]/profile`              | Profile              | Requires auth                                |
-| `/[locale]/my-events`            | My events            | Requires auth                                |
-| `/[locale]/admin`                | Admin dashboard      | Admin role only                              |
-| `/[locale]/admin/events`         | Admin event list     | Admin role only                              |
-| `/[locale]/admin/events/new`     | Create event (admin) | Admin role only                              |
-| `/[locale]/admin/events/[id]`    | Edit event           | Admin role only                              |
-| `/[locale]/admin/tags`           | Manage tags          | Admin role only                              |
-| `/[locale]/map`                  | Playgrounds & fitness map (V2) | Public read; admin-only add/edit/delete |
-| `/auth/callback`                 | OAuth callback       | Outside `[locale]` — Supabase redirects here |
+| URL                                      | Page                           | Notes                                             |
+| ---------------------------------------- | ------------------------------ | ------------------------------------------------- |
+| `/[locale]`                              | Upcoming events                | Home page — grid / calendar / map tabs            |
+| `/[locale]/current`                      | Current events                 | Events happening right now                        |
+| `/[locale]/past`                         | Past events                    | Archive                                           |
+| `/[locale]/[slug]`                       | Event detail                   | SSR                                               |
+| `/[locale]/more-from-ruse`               | „Още от Русе" index            | ISR (300 s); `noindex` while a locale is empty    |
+| `/[locale]/more-from-ruse/[articleSlug]` | Article detail                 | ISR (300 s); 404 when untranslated in this locale |
+| `/[locale]/advertise`                    | Advertising & partnerships     | SSR; public contact form at `#contact`            |
+| `/[locale]/create-article`               | Create / edit article          | Admin only — `notFound()` for everyone else       |
+| `/[locale]/why-all4ruse`                 | Why All4Ruse                   | Static content page                               |
+| `/[locale]/legal/cookies`                | Cookies policy                 | Static                                            |
+| `/[locale]/legal/gdpr`                   | GDPR                           | Static                                            |
+| `/[locale]/legal/privacy`                | Privacy policy                 | Static                                            |
+| `/[locale]/auth/login`                   | Login                          |                                                   |
+| `/[locale]/auth/signup`                  | Sign up                        |                                                   |
+| `/[locale]/auth/signup-success`          | Sign up success                |                                                   |
+| `/[locale]/auth/forgot-password`         | Forgot password                |                                                   |
+| `/[locale]/auth/update-password`         | Update password                | Requires session                                  |
+| `/[locale]/create-event`                 | Create event                   | Requires auth                                     |
+| `/[locale]/profile`                      | Profile                        | Requires auth                                     |
+| `/[locale]/my-events`                    | My events                      | Requires auth                                     |
+| `/[locale]/admin`                        | Admin dashboard                | Admin role only                                   |
+| `/[locale]/admin/events`                 | Admin event list               | Admin role only                                   |
+| `/[locale]/admin/events/new`             | Create event (admin)           | Admin role only                                   |
+| `/[locale]/admin/events/[id]`            | Edit event                     | Admin role only                                   |
+| `/[locale]/admin/tags`                   | Manage tags                    | Admin role only                                   |
+| `/[locale]/map`                          | Playgrounds & fitness map (V2) | Public read; admin-only add/edit/delete           |
+| `/auth/callback`                         | OAuth callback                 | Outside `[locale]` — Supabase redirects here      |
 
 Events are grouped and filtered by **tags** (a separate `tags` table joined via `event_tags`).
 
@@ -77,6 +81,13 @@ src/
 │   │   │   └── page.tsx             # Past events
 │   │   ├── [slug]/
 │   │   │   └── page.tsx             # Event detail
+│   │   ├── more-from-ruse/
+│   │   │   ├── page.tsx             # Article index („Още от Русе")
+│   │   │   └── [articleSlug]/page.tsx
+│   │   ├── advertise/
+│   │   │   └── page.tsx             # Advertising + public contact form
+│   │   ├── create-article/
+│   │   │   └── page.tsx             # Admin-only article form
 │   │   ├── why-all4ruse/
 │   │   │   └── page.tsx
 │   │   ├── legal/
@@ -130,6 +141,8 @@ src/
 │   │   └── server.ts                # Server client (per-request)
 │   ├── api/
 │   │   ├── events.ts                # Typed Supabase query functions
+│   │   ├── articles.ts              # „Още от Русе" reads + admin writes
+│   │   ├── advertise-inquiries.ts   # Public advertising contact inserts
 │   │   ├── tags.ts
 │   │   ├── profiles.ts
 │   │   └── index.ts
@@ -167,6 +180,7 @@ src/
 | Upcoming / current / past events | SSR                       | Server Component → Supabase server client                       |
 | Event detail `[slug]`            | SSR                       | Server Component → Supabase public server client                |
 | Why All4Ruse, legal pages        | Static                    | No data fetching                                                |
+| Advertise                        | SSR                       | Upcoming event count; contact form posts to `/api/advertise/inquiries` |
 | Profile, my events, create event | SSR                       | Server Component reads session + data                           |
 | Admin pages                      | SSR + client interactions | Server Component for initial load; TanStack Query for mutations |
 | Auth pages                       | Client-only               | Supabase browser client directly                                |
@@ -929,25 +943,25 @@ Google is not unlimited-free. Dynamic Maps, Geocoding, and Autocomplete each hav
 
 ### Locked decisions
 
-| Topic | Decision |
-| --- | --- |
-| Where it lives | Home upcoming list only (`ActiveEventsList`). New tab, not a new URL. |
-| Past events | Out. No backfill, no pins, no map tab on `/past`. |
-| Filters | Map **respects** current filters. Do not kick the user back to grid (calendar still does that). |
-| Failed geocode | `lat`/`lng` stay `null`. Event still publishes. No fake pin on the city center. |
-| Outliers | A result more than 40 km from Ruse center is treated as failure (`null`). Do not zoom the map out to Sofia. |
-| Coarse results | A result whose Google viewport spans more than 5 km is treated as failure. Ruse itself spans ~15 km, so a settlement-centroid fallback would pin the event on an arbitrary street. Village centroids stay under the threshold and are kept. |
+| Topic          | Decision                                                                                                                                                                                                                                                                                                                           |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Where it lives | Home upcoming list only (`ActiveEventsList`). New tab, not a new URL.                                                                                                                                                                                                                                                              |
+| Past events    | Out. No backfill, no pins, no map tab on `/past`.                                                                                                                                                                                                                                                                                  |
+| Filters        | Map **respects** current filters. Do not kick the user back to grid (calendar still does that).                                                                                                                                                                                                                                    |
+| Failed geocode | `lat`/`lng` stay `null`. Event still publishes. No fake pin on the city center.                                                                                                                                                                                                                                                    |
+| Outliers       | A result more than 40 km from Ruse center is treated as failure (`null`). Do not zoom the map out to Sofia.                                                                                                                                                                                                                        |
+| Coarse results | A result whose Google viewport spans more than 5 km is treated as failure. Ruse itself spans ~15 km, so a settlement-centroid fallback would pin the event on an arbitrary street. Village centroids stay under the threshold and are kept.                                                                                        |
 | Stacked venues | One marker per venue, not per event (`groupEventsByCoords`), labelled with the event count when it holds more than one. Markers at identical coords otherwise stack and only the top one is clickable. Clustering is still required on top of that, and cluster bubbles count events rather than venues via the `calculator` prop. |
-| Pin popup | Title, date, link to the event page, for every event at that venue. Not a full `EventCard`. Maps JS builds the bubble outside React with light-mode chrome, so it is rethemed with the popover tokens in `globals.css` — verify it after a Maps JS version bump. |
-| Mobile | In-page view that fills remaining viewport (same height measurement as calendar). **Persist** the map tab in `localStorage` on mobile — unlike calendar, which is a one-shot overlay. |
-| Re-geocode | Only when `address`, `place`, or `town` change. Unrelated edits (title, dates, image) must not call Google. |
-| Manual pin | `coords_source = 'manual'` is kept on unrelated saves. If location fields change, re-geocode and clear the manual flag — the old pin is stale. |
-| Venues table | Not in this phase. Coords live on `events`. Recurring series geocode once and copy. |
-| Map library | Google Maps JavaScript via `@react-google-maps/api` (already in `package.json`). Lazy-load so the home grid does not pay a map load. |
-| Geocoding | Google Geocoding API + Places Autocomplete/Details, **server-only** (`GOOGLE_MAPS_GEOCODING_API_KEY`). |
-| Cookies | Same vendor as the event-detail embed. No new cookie category. Lazy-load Maps JS only when the map tab (or form preview) opens. |
-| Geolocation | Change `Permissions-Policy` in `next.config.ts` from `geolocation=()` (blocked) to `geolocation=(self)`. The map offers an opt-in “Show my location” button that places a transient blue dot — no proximity filtering, no data stored. "Near me" distance-based filtering is still deferred. |
-| Default center | Ruse. Never fitBounds to the whole country because of one bad pin. |
+| Pin popup      | Title, date, link to the event page, for every event at that venue. Not a full `EventCard`. Maps JS builds the bubble outside React with light-mode chrome, so it is rethemed with the popover tokens in `globals.css` — verify it after a Maps JS version bump.                                                                   |
+| Mobile         | In-page view that fills remaining viewport (same height measurement as calendar). **Persist** the map tab in `localStorage` on mobile — unlike calendar, which is a one-shot overlay.                                                                                                                                              |
+| Re-geocode     | Only when `address`, `place`, or `town` change. Unrelated edits (title, dates, image) must not call Google.                                                                                                                                                                                                                        |
+| Manual pin     | `coords_source = 'manual'` is kept on unrelated saves. If location fields change, re-geocode and clear the manual flag — the old pin is stale.                                                                                                                                                                                     |
+| Venues table   | Not in this phase. Coords live on `events`. Recurring series geocode once and copy.                                                                                                                                                                                                                                                |
+| Map library    | Google Maps JavaScript via `@react-google-maps/api` (already in `package.json`). Lazy-load so the home grid does not pay a map load.                                                                                                                                                                                               |
+| Geocoding      | Google Geocoding API + Places Autocomplete/Details, **server-only** (`GOOGLE_MAPS_GEOCODING_API_KEY`).                                                                                                                                                                                                                             |
+| Cookies        | Same vendor as the event-detail embed. No new cookie category. Lazy-load Maps JS only when the map tab (or form preview) opens.                                                                                                                                                                                                    |
+| Geolocation    | Change `Permissions-Policy` in `next.config.ts` from `geolocation=()` (blocked) to `geolocation=(self)`. The map offers an opt-in “Show my location” button that places a transient blue dot — no proximity filtering, no data stored. "Near me" distance-based filtering is still deferred.                                       |
+| Default center | Ruse. Never fitBounds to the whole country because of one bad pin.                                                                                                                                                                                                                                                                 |
 
 ### Data model
 
@@ -1038,12 +1052,12 @@ Places (autocomplete uses **session tokens** to avoid per-request billing):
 
 API routes (auth required for writes/lookups used by the form; listing never calls these). Any logged-in user can call them, so they share a **Sofia-day cap of 80 Google-backed requests** per user (`consume_geocode_call`). `ADMIN_USER_ID` bypasses the cap. Over-limit returns 429; save still proceeds with null coords.
 
-| Route | Purpose |
-| --- | --- |
-| `POST /api/geocode` | Body `{ address, place, town }` → `{ lat, lng, source: "geocode" }` or nulls. Used on save when the user typed a free-text address. |
-| `GET /api/geocode/suggest?q=` | Places Autocomplete. |
-| `GET /api/geocode/place?id=` | Place Details after a suggestion is picked. |
-| `POST /api/admin/geocode-upcoming` | Admin-only backfill. Upcoming rows with null coords, sequential, skip past. Overlapping runs return 409. |
+| Route                              | Purpose                                                                                                                             |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/geocode`                | Body `{ address, place, town }` → `{ lat, lng, source: "geocode" }` or nulls. Used on save when the user typed a free-text address. |
+| `GET /api/geocode/suggest?q=`      | Places Autocomplete.                                                                                                                |
+| `GET /api/geocode/place?id=`       | Place Details after a suggestion is picked.                                                                                         |
+| `POST /api/admin/geocode-upcoming` | Admin-only backfill. Upcoming rows with null coords, sequential, skip past. Overlapping runs return 409.                            |
 
 Env: **`GOOGLE_MAPS_GEOCODING_API_KEY`** — server-only, never `NEXT_PUBLIC_`. Enable Geocoding API and Places API (New) on that key. Do not reuse `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (that key is already in the browser for the detail embed). Vercel IPs are dynamic, so restrict the server key by API type, not by IP.
 
@@ -1149,22 +1163,22 @@ JSON-LD: if coords exist, add `location.geo` (`GeoCoordinates`). Skip when null.
 
 Bulgarian source in `HomePage` and `CreateEvent`; keep `en` / `ua` / `ro` in sync. Minimum keys:
 
-| Key | Namespace | Purpose |
-| --- | --- | --- |
-| `mapView` | `HomePage` | Third tab label („Карта“) |
-| `mapTodayLabel` | `HomePage` | Date scope label: „Събитията днес, {date}“ |
-| `mapFilteredLabel` | `HomePage` | Date scope when filter active: „Събитията за {from} – {to}“ |
-| `eventsWithoutLocation` | `HomePage` | Heading above below-map list: „{count} събития нямат локация на картата“ |
-| `mapOpenEvent` | `HomePage` | Link text in the InfoWindow popup („Виж събитието“) |
-| `mapShowMyLocation` | `HomePage` | Button: „Покажи местоположението ми“ |
-| `mapHideMyLocation` | `HomePage` | Button toggle: „Скрий местоположението ми“ |
-| `mapLocationDenied` | `HomePage` | Toast when browser denies geolocation permission |
-| `geocodeOnMap` | `CreateEvent` | Status: event is on the map |
-| `geocodeFailed` | `CreateEvent` | Status: could not place on the map |
-| `geocodeNotAttempted` | `CreateEvent` | Status: location not yet geocoded |
-| `geocodeRetry` | `CreateEvent` | Retry button label |
-| `addressSuggestLoading` | `CreateEvent` | Autocomplete loading state |
-| `addressSuggestNoResults` | `CreateEvent` | Autocomplete empty state |
+| Key                       | Namespace     | Purpose                                                                  |
+| ------------------------- | ------------- | ------------------------------------------------------------------------ |
+| `mapView`                 | `HomePage`    | Third tab label („Карта“)                                                |
+| `mapTodayLabel`           | `HomePage`    | Date scope label: „Събитията днес, {date}“                               |
+| `mapFilteredLabel`        | `HomePage`    | Date scope when filter active: „Събитията за {from} – {to}“              |
+| `eventsWithoutLocation`   | `HomePage`    | Heading above below-map list: „{count} събития нямат локация на картата“ |
+| `mapOpenEvent`            | `HomePage`    | Link text in the InfoWindow popup („Виж събитието“)                      |
+| `mapShowMyLocation`       | `HomePage`    | Button: „Покажи местоположението ми“                                     |
+| `mapHideMyLocation`       | `HomePage`    | Button toggle: „Скрий местоположението ми“                               |
+| `mapLocationDenied`       | `HomePage`    | Toast when browser denies geolocation permission                         |
+| `geocodeOnMap`            | `CreateEvent` | Status: event is on the map                                              |
+| `geocodeFailed`           | `CreateEvent` | Status: could not place on the map                                       |
+| `geocodeNotAttempted`     | `CreateEvent` | Status: location not yet geocoded                                        |
+| `geocodeRetry`            | `CreateEvent` | Retry button label                                                       |
+| `addressSuggestLoading`   | `CreateEvent` | Autocomplete loading state                                               |
+| `addressSuggestNoResults` | `CreateEvent` | Autocomplete empty state                                                 |
 
 ### What this phase does not do
 
@@ -1242,6 +1256,70 @@ The map display itself (both the admin preview and the public page) stays Google
 ### Navigation
 
 Surfaced the same way other secondary pages (`/why-all4ruse`, `/advertise`) are — a link in the "More" drawer (`MobileBottomNav.tsx`) and in the desktop dropdown (`Footer.tsx`). There is no dedicated bottom-nav tab for it.
+
+---
+
+## „Още от Русе" — Editorial Articles
+
+A blog-style section at `/[locale]/more-from-ruse` with an index and per-article detail pages. It exists for SEO: event pages decay two weeks after the event, so articles are the only content on the site that can accumulate authority over years and rank for evergreen queries like „какво да правя в Русе". Full rationale in `IMPLEMENTATION_PLAN.md` → Phase 16.
+
+### Data model
+
+**One row per language**, linked by `group_id`. Translations publish independently, so a Bulgarian article goes live without waiting for the other three.
+
+```sql
+create table public.articles (
+  id               uuid primary key default gen_random_uuid(),
+  group_id         uuid not null default gen_random_uuid(), -- ties translations together
+  locale           text not null check (locale in ('bg', 'en', 'ua', 'ro')),
+  slug             text not null,                           -- no -{id} suffix, unlike events
+  title            text not null,
+  excerpt          text not null,
+  meta_description text,
+  body_html        text not null,
+  hero_image       text,                                    -- public storage URL
+  hero_image_alt   text,
+  category         text,                                    -- stable key, displayed via i18n
+  author_name      text,
+  is_sponsored     boolean not null default false,
+  sponsor_name     text,
+  sponsor_url      text,
+  status           text not null default 'draft',
+  reading_minutes  integer,
+  published_at     timestamptz,
+  updated_at       timestamptz not null default now(),
+  created_at       timestamptz not null default now(),
+  created_by       uuid references auth.users(id) on delete set null
+);
+
+-- select using (status = 'published' or created_by = auth.uid())
+-- No insert/update/delete policies — writes go through admin-checked API routes.
+```
+
+Unique on `(locale, slug)` and `(group_id, locale)`. `updated_at` is maintained by a trigger and feeds both sitemap `lastModified` and JSON-LD `dateModified`, so rows must never be touched programmatically for non-content reasons.
+
+**Every public query filters `status = 'published'` explicitly.** The select policy also matches `created_by = auth.uid()`, so without it the admin would see their own drafts inside the public listing.
+
+### Content pipeline
+
+`src/lib/article-html.ts` sanitizes with a **wider allowlist than event descriptions** (`a`, `img`, `figure`, `figcaption`, `h4`, `hr`) because article bodies come only from the admin, while event descriptions come from arbitrary users — the event allowlist must not be widened to match. The sanitizer strips `h1`, forces `loading="lazy"`/`decoding="async"` on images, drops any `img` outside our Supabase storage host, and forces `rel="noopener"` — or `rel="sponsored noopener"` on a sponsored article. Bodies are sanitized on write **and** on read, so a row edited in the Supabase Dashboard still cannot inject anything.
+
+`addHeadingIds` assigns transliterated ids to `h2`/`h3` at save time, which is what makes the table of contents work with zero client JS.
+
+### SEO specifics
+
+- `buildArticleAlternates` emits hreflang for **published translations that exist only** — never all four locales, since an untranslated article 404s. It always includes a self-referencing alternate, and `x-default` points at the Bulgarian URL when there is one.
+- `Article` + `BreadcrumbList` JSON-LD on detail pages; `CollectionPage` + `ItemList` on the index. `author` is a `Person` built from `author_name` plus the localized bio.
+- A locale with zero published articles renders a translated empty state with `robots: noindex` and stays out of the sitemap.
+- Paginated index pages self-canonicalize; page 2 must not canonicalize to page 1.
+
+### Admin write path
+
+Same single-admin pattern as the map (`ADMIN_USER_ID` + service-role client), via `requireArticleAdmin` in `src/lib/articles/admin-guard.ts`: `POST /api/articles`, `PATCH|DELETE /api/articles/[id]`, `POST /api/articles/image`, `GET /api/articles/slug-available`. `PATCH` **rejects a slug change on a published row** — the site has no redirect table, so renaming a live URL would silently discard its ranking. Every mutation calls `revalidatePath` for the article, the locale index, and the homepage, since all three are ISR with a 300 s window.
+
+### Storage
+
+Public bucket `article-images`, parallel to `event-images`. The browser never writes to it directly; uploads go through the API route with the service-role client. `hero_image` stores the full public URL rather than a path, so it needs no `getEventImageUrl`-style resolver.
 
 ---
 

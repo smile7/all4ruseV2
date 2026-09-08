@@ -94,7 +94,8 @@ export function parseLocalDate(dateStr: string): Date {
   return new Date(y!, m! - 1, d!);
 }
 
-function getIntlLocale(locale: string): string {
+/** Route locale slug → Intl locale ("ua" is not a valid Intl tag; "uk-UA" is). */
+export function getIntlLocale(locale: string): string {
   return localeMap[locale] ?? "bg-BG";
 }
 
@@ -319,18 +320,20 @@ function parseClockOnLocalDate(dateStr: string, timeStr: string): Date {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-    hour12: false,
+    hourCycle: "h23",
   }).formatToParts(probe);
 
   const get = (type: Intl.DateTimeFormatPartTypes) =>
     Number(sofiaParts.find((p) => p.type === type)?.value ?? 0);
+
+  const hour = get("hour") === 24 ? 0 : get("hour");
 
   // Reconstruct what Sofia's wall clock reads for this UTC instant as if it were UTC.
   const sofiaAsUtcMs = Date.UTC(
     get("year"),
     get("month") - 1,
     get("day"),
-    get("hour"),
+    hour,
     get("minute"),
     get("second"),
   );

@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 
-import {
-  checkFacebookEventVisibility,
-  FB_EVENT_URL_RE,
-} from "~/lib/smart-fill/facebook-public-check";
+import { checkFacebookEventVisibility } from "~/lib/smart-fill/facebook-public-check";
+import { resolveFacebookEventUrl } from "~/lib/smart-fill/facebook-url";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -28,15 +26,20 @@ export async function POST(request: Request) {
       ? String((body as { url: unknown }).url ?? "").trim()
       : "";
 
-  if (!FB_EVENT_URL_RE.test(url)) {
+  const eventUrl = await resolveFacebookEventUrl(url);
+
+  if (!eventUrl) {
     return NextResponse.json(
-      { error: "Please provide a valid facebook.com/events/... URL" },
+      {
+        error:
+          "Please provide a valid facebook.com/events/... or fb.me/e/... URL",
+      },
       { status: 422 },
     );
   }
 
   try {
-    const result = await checkFacebookEventVisibility(url);
+    const result = await checkFacebookEventVisibility(eventUrl);
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

@@ -18,6 +18,7 @@ import {
   LogOut,
   Megaphone,
   MoreHorizontal,
+  Newspaper,
   Plus,
   Scale,
   ScrollText,
@@ -43,6 +44,7 @@ import {
 } from "~/components/ui/drawer";
 import { Separator } from "~/components/ui/separator";
 import {
+  ADVERTISE_CONTACT_HREF,
   FACEBOOK_BRAND_COLOR,
   FACEBOOK_URL,
   INSTAGRAM_BRAND_COLOR,
@@ -401,6 +403,14 @@ export function MobileBottomNav({ initialUsername }: Props) {
               <span>{t("menuPastEvents")}</span>
             </Link>
             <Link
+              href="/more-from-ruse"
+              onClick={handleRouteStart("/more-from-ruse", { closeMore: true })}
+              className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
+            >
+              <Newspaper className="text-muted-foreground size-4 shrink-0" />
+              <span>{t("menuMoreFromRuse")}</span>
+            </Link>
+            <Link
               href="/why-all4ruse"
               onClick={handleRouteStart("/why-all4ruse", { closeMore: true })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
@@ -412,7 +422,7 @@ export function MobileBottomNav({ initialUsername }: Props) {
             <Separator className="my-3" />
 
             <Link
-              href="/advertise"
+              href={ADVERTISE_CONTACT_HREF}
               onClick={handleRouteStart("/advertise", { closeMore: true })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >

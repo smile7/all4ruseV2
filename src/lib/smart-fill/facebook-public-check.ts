@@ -1,4 +1,4 @@
-export const FB_EVENT_URL_RE = /facebook\.com\/events\/\d+/;
+import { FB_CRAWLER_UA } from "~/lib/smart-fill/facebook-url";
 
 export type FacebookEventVisibility = "public" | "private" | "unknown";
 
@@ -6,9 +6,6 @@ export type FacebookEventVisibilityResult = {
   visibility: FacebookEventVisibility;
   title?: string;
 };
-
-const GOOGLEBOT_UA =
-  "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
 
 const UNAVAILABLE_BODY_PATTERNS = [
   /content isn't available/i,
@@ -92,7 +89,7 @@ export async function checkFacebookEventVisibility(
 ): Promise<FacebookEventVisibilityResult> {
   const res = await fetch(facebookUrl, {
     headers: {
-      "User-Agent": GOOGLEBOT_UA,
+      "User-Agent": FB_CRAWLER_UA,
       Accept: "text/html",
     },
     redirect: "follow",

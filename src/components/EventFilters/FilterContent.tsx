@@ -1,151 +1,53 @@
 "use client";
 
-import { startTransition, useEffect, useRef, useState } from "react";
 import { useMessages, useTranslations } from "next-intl";
 
-import { addDays, format } from "date-fns";
 import { Search, X } from "lucide-react";
 
 import { EventTag } from "~/components/EventTag";
 import { DatePopoverRange } from "~/components/layout/DatePopoverRange";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Switch } from "~/components/ui/switch";
-import { DEBOUNCE_MS } from "~/constants";
 import { useTags } from "~/hooks/query/tags";
-import { useDebounce } from "~/hooks/useDebounce";
 import { useFilters } from "~/hooks/useFilters";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { HIDDEN_TAG_KEYS, normalizeEventTagKey } from "~/lib/event-tag-styles";
-import { cn } from "~/lib/utils";
 
-// ─── Date range helpers ────────────────────────────────────────────────────────
+import { ClearableInput } from "./ClearableInput";
+import { thisWeekRange, todayIso, weekendRange } from "./date-ranges";
+import { QuickDateButton } from "./QuickDateButton";
+import { useDebouncedFilterField } from "./useDebouncedFilterField";
 
-function todayIso() {
-  return format(new Date(), "yyyy-MM-dd");
-}
-
-function tomorrowIso() {
-  return format(addDays(new Date(), 1), "yyyy-MM-dd");
-}
-
-function weekendRange(): { from: string; to: string } {
-  const now = new Date();
-  const day = now.getDay(); // 0=Sun, 1=Mon, …, 5=Fri, 6=Sat
-
-  let friday: Date;
-  if (day === 5) friday = now;
-  else if (day === 6) friday = addDays(now, -1);
-  else if (day === 0) friday = addDays(now, -2);
-  else friday = addDays(now, 5 - day); // Mon–Thu → next Fri
-
-  return {
-    from: format(friday, "yyyy-MM-dd"),
-    to: format(addDays(friday, 2), "yyyy-MM-dd"),
-  };
-}
-
-function thisWeekRange(): { from: string; to: string } {
-  const now = new Date();
-  const day = now.getDay();
-  const daysToSunday = day === 0 ? 0 : 7 - day;
-  return {
-    from: todayIso(),
-    to: format(addDays(now, daysToSunday), "yyyy-MM-dd"),
-  };
-}
-
-// ─── Quick date button ─────────────────────────────────────────────────────────
-
-type QuickDateButtonProps = {
-  label: string;
-  from: string;
-  to: string;
-  activeFrom: string;
-  activeTo: string;
-  onSelect: (from: string, to: string) => void;
+type Props = {
+  /** Hide today / weekend / this-week / free — those stay on the homepage shortcut row. */
+  hideQuickFilters?: boolean;
 };
 
-function QuickDateButton({
+function ClearFiltersButton({
+  onClear,
+  disabled,
   label,
-  from,
-  to,
-  activeFrom,
-  activeTo,
-  onSelect,
-}: QuickDateButtonProps) {
-  const isActive = activeFrom === from && activeTo === to;
+}: {
+  onClear: () => void;
+  disabled: boolean;
+  label: string;
+}) {
   return (
     <Button
-      type="button"
       size="sm"
-      variant="ghost"
-      className={cn(
-        "border-input bg-secondary hover:bg-secondary/60 cursor-pointer border text-xs",
-        // Mobile: fill grid cell; desktop chip uses span for nowrap vs wrap
-        "h-auto min-h-9 w-full p-2 text-center",
-        // Desktop: single-line chip, natural width
-        "md:h-9 md:w-auto md:shrink-0 md:px-3 md:py-0",
-        isActive && "border-primary text-primary",
-      )}
-      onClick={() => onSelect(isActive ? "" : from, isActive ? "" : to)}
+      variant="outline"
+      className="cursor-pointer gap-1 text-xs"
+      onClick={onClear}
+      disabled={disabled}
     >
-      <span className="block w-full text-center leading-tight text-balance whitespace-normal md:inline md:w-auto md:whitespace-nowrap">
-        {label}
-      </span>
+      <X className="size-3.5" />
+      {label}
     </Button>
   );
 }
 
-// ─── Text input with clear button ─────────────────────────────────────────────
-
-type ClearableInputProps = {
-  placeholder: string;
-  value: string;
-  onChange: (v: string) => void;
-  onClear: () => void;
-  icon?: React.ReactNode;
-};
-
-function ClearableInput({
-  placeholder,
-  value,
-  onChange,
-  onClear,
-  icon,
-}: ClearableInputProps) {
-  return (
-    <div className="relative w-full">
-      {icon && (
-        <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2">
-          {icon}
-        </span>
-      )}
-      <Input
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn("bg-secondary h-9 w-full", icon ? "pl-8" : "")}
-      />
-      {value && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="absolute top-1/2 right-1 h-6 w-6 -translate-y-1/2 cursor-pointer opacity-40 hover:opacity-80 [&_svg]:size-3.5"
-          onClick={onClear}
-        >
-          <X />
-        </Button>
-      )}
-    </div>
-  );
-}
-
-// ─── FilterContent ─────────────────────────────────────────────────────────────
-
-export function FilterContent() {
+export function FilterContent({ hideQuickFilters = false }: Props) {
   const t = useTranslations("HomePage");
   const messages = useMessages() as { EventTags?: Record<string, string> };
   const eventTagLabels = messages.EventTags;
@@ -159,125 +61,54 @@ export function FilterContent() {
   } = useFilters();
   const { data: tags = [], isLoading: isLoadingTags } = useTags();
 
-  const [localSearch, setLocalSearch] = useState(filters.search);
-  const [localHost, setLocalHost] = useState(filters.host);
-  const [localPlace, setLocalPlace] = useState(filters.place);
-
-  // Tracks the last value *we* pushed to the URL, so the sync-back effects
-  // below can tell "URL changed because our own debounced write landed"
-  // (ignore, local state may have moved on already) apart from "URL changed
-  // externally" (e.g. browser back/forward — sync local state to match).
-  const pushedSearchRef = useRef(filters.search);
-  const pushedHostRef = useRef(filters.host);
-  const pushedPlaceRef = useRef(filters.place);
-
-  useEffect(() => {
-    if (filters.search !== pushedSearchRef.current) {
-      pushedSearchRef.current = filters.search;
-      startTransition(() => setLocalSearch(filters.search));
-    }
-  }, [filters.search]);
-  useEffect(() => {
-    if (filters.host !== pushedHostRef.current) {
-      pushedHostRef.current = filters.host;
-      startTransition(() => setLocalHost(filters.host));
-    }
-  }, [filters.host]);
-  useEffect(() => {
-    if (filters.place !== pushedPlaceRef.current) {
-      pushedPlaceRef.current = filters.place;
-      startTransition(() => setLocalPlace(filters.place));
-    }
-  }, [filters.place]);
-
-  const debouncedSearch = useDebounce(localSearch, DEBOUNCE_MS);
-  const debouncedHost = useDebounce(localHost, DEBOUNCE_MS);
-  const debouncedPlace = useDebounce(localPlace, DEBOUNCE_MS);
-
-  // Write to URL only when the debounced value actually differs from current URL.
-  // Record what we're pushing *before* calling setFilters so the sync-back
-  // effect above recognizes the resulting URL change as our own echo.
-
-  useEffect(() => {
-    if (debouncedSearch !== filters.search) {
-      pushedSearchRef.current = debouncedSearch;
-      setFilters({ search: debouncedSearch });
-    }
-  }, [debouncedSearch]);
-
-  useEffect(() => {
-    if (debouncedHost !== filters.host) {
-      pushedHostRef.current = debouncedHost;
-      setFilters({ host: debouncedHost });
-    }
-  }, [debouncedHost]);
-
-  useEffect(() => {
-    if (debouncedPlace !== filters.place) {
-      pushedPlaceRef.current = debouncedPlace;
-      setFilters({ place: debouncedPlace });
-    }
-  }, [debouncedPlace]);
+  const search = useDebouncedFilterField("search");
+  const host = useDebouncedFilterField("host");
+  const place = useDebouncedFilterField("place");
 
   const todayStr = todayIso();
-  const tomorrowStr = tomorrowIso();
   const weekend = weekendRange();
   const thisWeek = thisWeekRange();
 
   return (
     <div className="flex flex-col gap-4">
-      {/* ━━ Row 1 (desktop) / stacked (mobile): Search · Host · Place ━━ */}
-      <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-        {/* Title search */}
-        <div className="flex-1">
-          <ClearableInput
-            placeholder={t("searchTitle")}
-            value={localSearch}
-            onChange={setLocalSearch}
-            onClear={() => {
-              setLocalSearch("");
-              pushedSearchRef.current = "";
-              setFilters({ search: "" });
-            }}
-            icon={<Search className="size-4" />}
-          />
-        </div>
+      {/* Title · Host · Place · Date — one row from lg when there is room */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        {!hideQuickFilters && (
+          <div className="min-w-0 flex-1">
+            <ClearableInput
+              placeholder={t("searchTitle")}
+              aria-label={t("searchTitle")}
+              value={search.value}
+              onChange={search.setValue}
+              onClear={search.clear}
+              icon={<Search className="size-4" />}
+            />
+          </div>
+        )}
 
-        {/* Host */}
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <ClearableInput
             placeholder={t("hostFilter")}
-            value={localHost}
-            onChange={setLocalHost}
-            onClear={() => {
-              setLocalHost("");
-              pushedHostRef.current = "";
-              setFilters({ host: "" });
-            }}
+            aria-label={t("hostFilter")}
+            value={host.value}
+            onChange={host.setValue}
+            onClear={host.clear}
             icon={<Search className="size-4" />}
           />
         </div>
 
-        {/* Place */}
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <ClearableInput
             placeholder={t("placeFilter")}
-            value={localPlace}
-            onChange={setLocalPlace}
-            onClear={() => {
-              setLocalPlace("");
-              pushedPlaceRef.current = "";
-              setFilters({ place: "" });
-            }}
+            aria-label={t("placeFilter")}
+            value={place.value}
+            onChange={place.setValue}
+            onClear={place.clear}
             icon={<Search className="size-4" />}
           />
         </div>
-      </div>
 
-      {/* ━━ Row 2 (desktop): Date + quick buttons + free + clear ━━ */}
-      {/* ━━ Mobile: date on its own row, quick buttons + free on one row ━━ */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div className="w-full md:max-w-[260px] md:flex-1">
+        <div className="w-full min-w-0 lg:max-w-65 lg:flex-1">
           <DatePopoverRange
             from={filters.from}
             to={filters.to}
@@ -285,64 +116,66 @@ export function FilterContent() {
             onClear={() => setDateRange("", "")}
           />
         </div>
-        <div className="grid w-full grid-cols-4 gap-2 md:flex md:flex-1 md:flex-wrap md:items-center md:justify-start md:overflow-visible md:pb-0">
-          <QuickDateButton
-            label={t("today")}
-            from={todayStr}
-            to={todayStr}
-            activeFrom={filters.from}
-            activeTo={filters.to}
-            onSelect={setDateRange}
-          />
-          <QuickDateButton
-            label={t("tomorrow")}
-            from={tomorrowStr}
-            to={tomorrowStr}
-            activeFrom={filters.from}
-            activeTo={filters.to}
-            onSelect={setDateRange}
-          />
-          <QuickDateButton
-            label={t("thisWeekend")}
-            from={weekend.from}
-            to={weekend.to}
-            activeFrom={filters.from}
-            activeTo={filters.to}
-            onSelect={setDateRange}
-          />
-          <QuickDateButton
-            label={t("thisWeek")}
-            from={thisWeek.from}
-            to={thisWeek.to}
-            activeFrom={filters.from}
-            activeTo={filters.to}
-            onSelect={setDateRange}
-          />
-        </div>
-        <div className="flex w-full flex-row items-center justify-between gap-2 md:w-auto">
-          <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5">
-            <Switch
-              checked={filters.isFree}
-              onCheckedChange={(v) => setFilters({ isFree: v })}
-            />
-            <span className="text-sm font-medium whitespace-nowrap">
-              {t("freeFilter")}
-            </span>
-          </label>
-          <Button
-            size="sm"
-            variant="outline"
-            className="cursor-pointer gap-1 text-xs"
-            onClick={clearFilters}
+
+        {hideQuickFilters && (
+          <ClearFiltersButton
+            onClear={clearFilters}
             disabled={!hasActiveFilters}
-          >
-            <X className="size-3.5" />
-            {t("clearFilters")}
-          </Button>
-        </div>
+            label={t("clearFilters")}
+          />
+        )}
       </div>
 
-      {/* ━━ Row 3: Tags sorted by usage, each with its own color ━━ */}
+      {!hideQuickFilters && (
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div className="grid w-full grid-cols-3 gap-2 md:flex md:flex-1 md:flex-wrap md:items-center md:justify-start">
+            <QuickDateButton
+              label={t("today")}
+              from={todayStr}
+              to={todayStr}
+              activeFrom={filters.from}
+              activeTo={filters.to}
+              onSelect={setDateRange}
+              className="bg-background"
+            />
+            <QuickDateButton
+              label={t("thisWeekend")}
+              from={weekend.from}
+              to={weekend.to}
+              activeFrom={filters.from}
+              activeTo={filters.to}
+              onSelect={setDateRange}
+              className="bg-background"
+            />
+            <QuickDateButton
+              label={t("thisWeek")}
+              from={thisWeek.from}
+              to={thisWeek.to}
+              activeFrom={filters.from}
+              activeTo={filters.to}
+              onSelect={setDateRange}
+              className="bg-background"
+            />
+          </div>
+          <div className="flex w-full flex-row items-center justify-between gap-2 md:w-auto">
+            <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5">
+              <Switch
+                checked={filters.isFree}
+                onCheckedChange={(v) => setFilters({ isFree: v })}
+              />
+              <span className="text-sm font-medium whitespace-nowrap">
+                {t("freeFilter")}
+              </span>
+            </label>
+            <ClearFiltersButton
+              onClear={clearFilters}
+              disabled={!hasActiveFilters}
+              label={t("clearFilters")}
+            />
+          </div>
+        </div>
+      )}
+
       {isLoadingTags ? (
         <div className="flex flex-wrap gap-2">
           {Array.from({ length: 10 }).map((_, i) => (

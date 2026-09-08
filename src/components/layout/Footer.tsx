@@ -10,6 +10,7 @@ import {
   History,
   Info,
   Megaphone,
+  Newspaper,
   Scale,
   ScrollText,
   Settings2,
@@ -32,6 +33,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Separator } from "~/components/ui/separator";
 import {
+  ADVERTISE_CONTACT_HREF,
   FACEBOOK_BRAND_COLOR,
   FACEBOOK_URL,
   INSTAGRAM_BRAND_COLOR,
@@ -72,7 +74,9 @@ export function Footer() {
                 <span className="bg-muted flex size-8 items-center justify-center rounded-full">
                   <FacebookIcon size={14} />
                 </span>
-                <span className="text-muted-foreground text-[10px]">Facebook</span>
+                <span className="text-muted-foreground text-[10px]">
+                  Facebook
+                </span>
               </a>
               <a
                 href={INSTAGRAM_URL}
@@ -85,7 +89,9 @@ export function Footer() {
                 <span className="bg-muted flex size-8 items-center justify-center rounded-full">
                   <InstagramIcon size={14} />
                 </span>
-                <span className="text-muted-foreground text-[10px]">Instagram</span>
+                <span className="text-muted-foreground text-[10px]">
+                  Instagram
+                </span>
               </a>
               <a
                 href={TIKTOK_URL}
@@ -97,7 +103,9 @@ export function Footer() {
                 <span className="bg-muted flex size-8 items-center justify-center rounded-full">
                   <TikTokIcon size={14} />
                 </span>
-                <span className="text-muted-foreground text-[10px]">TikTok</span>
+                <span className="text-muted-foreground text-[10px]">
+                  TikTok
+                </span>
               </a>
             </div>
 
@@ -132,6 +140,15 @@ export function Footer() {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link
+                href="/more-from-ruse"
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+              >
+                <Newspaper className="text-muted-foreground size-4 shrink-0" />
+                {t("menuMoreFromRuse")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
                 href="/why-all4ruse"
                 className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
               >
@@ -142,7 +159,7 @@ export function Footer() {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link
-                href="/advertise"
+                href={ADVERTISE_CONTACT_HREF}
                 className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
               >
                 <Megaphone className="text-muted-foreground size-4 shrink-0" />

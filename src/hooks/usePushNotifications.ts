@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
+import {
+  reportPushEnableFailure,
+  urlBase64ToUint8Array,
+  VAPID_PUBLIC_KEY,
+} from "~/lib/push-client";
+
 const SW_LOOKUP_MS = 5000;
 const SW_POLL_MS = 250;
 
@@ -24,17 +29,22 @@ type UsePushNotificationsReturn = PushState & {
   refresh: () => Promise<void>;
 };
 
-function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
+/**
+ * Asks the server whether this endpoint is stored for the signed-in user.
+ * Returns null when the answer is unknown (offline, server error) so callers
+ * can keep the browser-derived state instead of flipping the UI on a blip.
+ */
+async function isEndpointRegistered(endpoint: string): Promise<boolean | null> {
+  try {
+    const res = await fetch(
+      `/api/push/subscribe?endpoint=${encodeURIComponent(endpoint)}`,
+    );
+    if (!res.ok) return null;
+    const json = (await res.json()) as { registered?: boolean };
+    return json.registered === true;
+  } catch {
+    return null;
   }
-  return outputArray.buffer;
 }
 
 async function findRegistration(): Promise<ServiceWorkerRegistration | null> {
@@ -85,11 +95,20 @@ async function readPushState(): Promise<
   const reg = await waitForRegistration();
   const sub = reg ? await reg.pushManager.getSubscription() : null;
 
+  // The browser keeps its subscription across sign-out and endpoint rotation,
+  // so its presence alone does not mean reminders will be delivered. The stored
+  // row is the source of truth for whether the cron can reach this device.
+  let isSubscribed = sub !== null;
+  if (sub) {
+    const registered = await isEndpointRegistered(sub.endpoint);
+    if (registered !== null) isSubscribed = registered;
+  }
+
   return {
     isPushCapable: true,
     hasServiceWorker: reg !== null,
     permission,
-    isSubscribed: sub !== null,
+    isSubscribed,
   };
 }
 
@@ -105,7 +124,11 @@ export async function isEligibleForReminderPrompt(): Promise<boolean> {
   const reg = await findRegistration();
   if (reg) {
     const sub = await reg.pushManager.getSubscription();
-    if (sub) return false;
+    // A local subscription the server doesn't know about delivers nothing, so
+    // those users should still be offered the prompt.
+    if (sub && (await isEndpointRegistered(sub.endpoint)) !== false) {
+      return false;
+    }
   }
 
   return true;
@@ -119,11 +142,13 @@ export type EnablePushResult =
 export async function enablePushNotifications(): Promise<EnablePushResult> {
   try {
     if (!VAPID_PUBLIC_KEY) {
+      await reportPushEnableFailure("no_vapid_key");
       return { status: "error", message: "VAPID key not configured." };
     }
 
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
+      await reportPushEnableFailure("permission_denied");
       return {
         status: "denied",
         permission: permission as PermissionState,
@@ -132,6 +157,7 @@ export async function enablePushNotifications(): Promise<EnablePushResult> {
 
     const reg = await waitForRegistration();
     if (!reg) {
+      await reportPushEnableFailure("no_service_worker");
       return { status: "error", message: "Service worker not available." };
     }
 
@@ -144,6 +170,7 @@ export async function enablePushNotifications(): Promise<EnablePushResult> {
     const p256dh = json.keys?.p256dh;
     const auth = json.keys?.auth;
     if (!p256dh || !auth) {
+      await reportPushEnableFailure("missing_keys");
       return { status: "error", message: "Push subscription missing keys." };
     }
 
@@ -154,15 +181,15 @@ export async function enablePushNotifications(): Promise<EnablePushResult> {
     });
     if (!res.ok) {
       await sub.unsubscribe();
+      await reportPushEnableFailure("save_rejected", `HTTP ${res.status}`);
       return { status: "error", message: "Failed to save subscription." };
     }
 
     return { status: "subscribed" };
   } catch (err) {
-    return {
-      status: "error",
-      message: err instanceof Error ? err.message : "Unknown error",
-    };
+    const message = err instanceof Error ? err.message : "Unknown error";
+    await reportPushEnableFailure("subscribe_threw", message);
+    return { status: "error", message };
   }
 }
 

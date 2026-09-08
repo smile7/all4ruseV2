@@ -7,7 +7,13 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 // Private paths that should never be indexed — one entry per locale prefix
 // because routes are locale-prefixed (/bg/auth/...) and a bare /auth/ disallow
 // does not match /bg/auth/ in standard robots.txt parsing.
-const PRIVATE_PATHS = ["/auth/", "/profile", "/my-events", "/create-event"];
+const PRIVATE_PATHS = [
+  "/auth/",
+  "/profile",
+  "/my-events",
+  "/create-event",
+  "/create-article",
+];
 const privateDisallows = LOCALES.flatMap((locale) =>
   PRIVATE_PATHS.map((path) => `/${locale}${path}`),
 );

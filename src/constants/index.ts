@@ -1,6 +1,16 @@
 export const EVENTS_BUCKET = "event-images";
 export const AVATARS_BUCKET = "avatars";
+export const ARTICLES_BUCKET = "article-images";
 export const EVENTS_PAGE_SIZE = 12;
+export const ARTICLES_PAGE_SIZE = 12;
+export const ARTICLES_TEASER_COUNT = 3;
+export const ARTICLES_RELATED_COUNT = 3;
+
+/** Article byline. A person's name is identical in every locale, so it never goes through next-intl. */
+export const DEFAULT_ARTICLE_AUTHOR = "Силвена Митева";
+
+/** Author profile links, emitted as JSON-LD `sameAs`. Empty = the key is omitted. */
+export const ARTICLE_AUTHOR_LINKS: string[] = [];
 export const PAST_EVENTS_WINDOW_DAYS = 15;
 export const THEME_STORE_KEY = "theme";
 export const FALLBACK_IMAGE = "/no_image_available.jpg";
@@ -16,6 +26,10 @@ export const INSTAGRAM_URL = "https://www.instagram.com/all4ruse";
 export const TIKTOK_URL = "https://www.tiktok.com/@all4ruse";
 export const FACEBOOK_BRAND_COLOR = "#1877F2";
 export const INSTAGRAM_BRAND_COLOR = "#E4405F";
+
+/** Hash target for the advertising contact form on `/advertise`. */
+export const ADVERTISE_CONTACT_HASH = "contact";
+export const ADVERTISE_CONTACT_HREF = `/advertise#${ADVERTISE_CONTACT_HASH}`;
 
 export const LOCALES = ["bg", "en", "ua", "ro"] as const;
 export type Locale = (typeof LOCALES)[number];

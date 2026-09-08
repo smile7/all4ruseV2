@@ -1,8 +1,11 @@
 import { z } from "zod";
 
+import { LOCALES } from "~/constants";
 import {
-  plainTextFromHtml,
-} from "~/lib/event-description-html";
+  ARTICLE_SLUG_PATTERN,
+  isReservedArticleSlug,
+} from "~/lib/article-slug";
+import { plainTextFromHtml } from "~/lib/event-description-html";
 import {
   USERNAME_PATTERN,
   USERNAME_VALIDATION_MESSAGE,
@@ -30,6 +33,13 @@ export type Event = Tables<"events"> & {
 // Direct alias so it stays in sync with generated types
 export type Profile = Tables<"profiles">;
 export type EventTag = Tables<"event_tags">;
+export type Article = Tables<"articles">;
+
+/** A published translation of the same article, used to build hreflang. */
+export type ArticleSibling = {
+  locale: string;
+  slug: string;
+};
 
 // ─── Zod schemas ──────────────────────────────────────────────────────────────
 
@@ -55,10 +65,9 @@ export const createEventSchema = z.object({
   title: z.string().min(3, "Заглавието е задължително"),
   description: z
     .string()
-    .refine(
-      (html) => plainTextFromHtml(html).length >= 10,
-      { message: "Описанието е задължително" },
-    ),
+    .refine((html) => plainTextFromHtml(html).length >= 10, {
+      message: "Описанието е задължително",
+    }),
   startDate: z.string().min(1, "Начална дата е задължителна"),
   endDate: z.string().min(1, "Крайна дата е задължителна"),
   startTime: z.string().min(1, "Начален час е задължителен"),
@@ -117,6 +126,159 @@ export const updateProfileSchema = z.object({
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+// ─── Articles („Още от Русе") ─────────────────────────────────────────────────
+
+/**
+ * Stored as stable keys — display names come from the `MoreFromRuse` messages,
+ * so the vocabulary is never duplicated across the four locales.
+ */
+export const ARTICLE_CATEGORIES = [
+  "landmarks",
+  "food-drink",
+  "things-to-do",
+  "history-culture",
+  "nature-walks",
+  "practical",
+] as const;
+
+export type ArticleCategory = (typeof ARTICLE_CATEGORIES)[number];
+
+export const ARTICLE_STATUSES = ["draft", "published"] as const;
+export type ArticleStatus = (typeof ARTICLE_STATUSES)[number];
+
+/**
+ * Fields required only to publish are enforced in `superRefine` against
+ * `status`, so a half-written draft can still be saved.
+ */
+export const articleSchema = z
+  .object({
+    locale: z.enum(LOCALES),
+    group_id: z.string().uuid().optional().or(z.literal("")),
+    title: z
+      .string()
+      .trim()
+      .min(10, "Заглавието трябва да е поне 10 символа")
+      // 110 is the practical `headline` limit for Google's Article rich results.
+      .max(110, "Заглавието трябва да е под 110 символа"),
+    slug: z
+      .string()
+      .trim()
+      .min(1, "URL адресът е задължителен")
+      .max(80, "URL адресът трябва да е под 80 символа")
+      .regex(ARTICLE_SLUG_PATTERN, "Само малки латински букви, цифри и тирета")
+      .refine((slug) => !isReservedArticleSlug(slug), {
+        message: "Този URL адрес е запазен",
+      }),
+    excerpt: z.string().trim().max(300, "Резюмето трябва да е под 300 символа"),
+    meta_description: z
+      .string()
+      .trim()
+      .max(160, "Мета описанието трябва да е под 160 символа")
+      .optional()
+      .or(z.literal("")),
+    body_html: z.string(),
+    hero_image: z.string().optional().or(z.literal("")),
+    hero_image_alt: z
+      .string()
+      .trim()
+      .max(160, "Alt текстът трябва да е под 160 символа")
+      .optional()
+      .or(z.literal("")),
+    category: z.enum(ARTICLE_CATEGORIES).optional().or(z.literal("")),
+    author_name: z
+      .string()
+      .trim()
+      .max(100, "Името на автора трябва да е под 100 символа")
+      .optional()
+      .or(z.literal("")),
+    is_sponsored: z.boolean(),
+    sponsor_name: z
+      .string()
+      .trim()
+      .max(100, "Името на спонсора трябва да е под 100 символа")
+      .optional()
+      .or(z.literal("")),
+    sponsor_url: z
+      .string()
+      .optional()
+      .or(z.literal(""))
+      .refine((val) => isOptionalWebUrl(val), { message: "Невалиден линк" }),
+    status: z.enum(ARTICLE_STATUSES),
+  })
+  .superRefine((values, ctx) => {
+    // A hero image without alt text is both an a11y failure and a lost
+    // image-search signal, so it blocks saving regardless of status.
+    if (values.hero_image && !values.hero_image_alt) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["hero_image_alt"],
+        message: "Alt текстът е задължителен при качено изображение",
+      });
+    }
+
+    if (values.is_sponsored && !values.sponsor_name) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["sponsor_name"],
+        message: "Името на спонсора е задължително",
+      });
+    }
+
+    if (values.status !== "published") return;
+
+    if (values.excerpt.length < 60) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["excerpt"],
+        message: "Резюмето трябва да е поне 60 символа за публикуване",
+      });
+    }
+
+    if (plainTextFromHtml(values.body_html).length < 200) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["body_html"],
+        message: "Текстът е твърде кратък за публикуване",
+      });
+    }
+
+    if (!values.author_name) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["author_name"],
+        message: "Авторът е задължителен за публикуване",
+      });
+    }
+  });
+
+export type ArticleFormValues = z.infer<typeof articleSchema>;
+
+// ─── Advertise contact form ───────────────────────────────────────────────────
+
+export const ADVERTISE_INQUIRY_LIMITS = {
+  name: 100,
+  email: 254,
+  businessName: 150,
+  message: 4000,
+} as const;
+
+/** Server-side payload. User-facing messages live in the form schema factory. */
+export const advertiseInquiryApiSchema = z.object({
+  name: z.string().trim().min(1).max(ADVERTISE_INQUIRY_LIMITS.name),
+  email: z.email().max(ADVERTISE_INQUIRY_LIMITS.email),
+  businessName: z
+    .string()
+    .trim()
+    .min(1)
+    .max(ADVERTISE_INQUIRY_LIMITS.businessName),
+  message: z.string().trim().min(1).max(ADVERTISE_INQUIRY_LIMITS.message),
+  /** Honeypot — real users leave this empty. */
+  website: z.string().max(200).optional(),
+  locale: z.enum(LOCALES).optional(),
+});
+
+export type AdvertiseInquiryInput = z.infer<typeof advertiseInquiryApiSchema>;
 
 // ─── Smart Fill ───────────────────────────────────────────────────────────────
 

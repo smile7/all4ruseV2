@@ -5,7 +5,11 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "~/components/ThemeProvider";
 import { Button } from "~/components/ui/button";
 
-export function ThemeToggle() {
+type Props = {
+  variant?: "ghost" | "outline";
+};
+
+export function ThemeToggle({ variant = "ghost" }: Props) {
   const { resolvedTheme, setTheme } = useTheme();
 
   function toggle() {
@@ -14,7 +18,7 @@ export function ThemeToggle() {
 
   return (
     <Button
-      variant="ghost"
+      variant={variant}
       size="icon"
       className="size-9"
       onClick={toggle}

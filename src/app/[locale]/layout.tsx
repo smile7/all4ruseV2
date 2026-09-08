@@ -9,7 +9,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import {
   AppSerwistProvider,
   CookieConsentProvider,
-  FiltersMobileDrawer,
   Footer,
   Header,
   MobileBottomNav,
@@ -22,6 +21,7 @@ import { AuthProvider } from "~/contexts/AuthContext";
 import { routing } from "~/i18n/routing";
 import { profilesApi } from "~/lib/api";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
+import { THEME_INIT_SCRIPT } from "~/lib/theme-script";
 
 import "../globals.css";
 
@@ -86,6 +86,9 @@ export default async function LocaleLayout({ children, params }: Props) {
       className={comfortaa.variable}
       suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-screen antialiased" suppressHydrationWarning>
         <ThemeProvider defaultTheme="system" enableSystem>
           <NextIntlClientProvider messages={messages}>
@@ -94,8 +97,6 @@ export default async function LocaleLayout({ children, params }: Props) {
                 <AuthProvider userId={user?.id ?? null}>
                   <CookieConsentProvider>
                     <Header />
-                    {/* Mobile filter drawer — portal-renders to body, trigger is in Header */}
-                    <FiltersMobileDrawer />
                     {/*
                       main-layout — responsive bottom padding that clears the mobile nav
                       bar (including iOS home indicator safe area) on mobile, and the

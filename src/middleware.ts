@@ -14,7 +14,12 @@ import type { Database } from "~/types/database";
 const intlMiddleware = createIntlMiddleware(routing);
 
 // Routes that require the user to be authenticated
-const AUTH_REQUIRED = ["/create-event", "/my-events", "/profile"];
+const AUTH_REQUIRED = [
+  "/create-article",
+  "/create-event",
+  "/my-events",
+  "/profile",
+];
 
 // Sub-paths under AUTH_REQUIRED that are publicly accessible
 const AUTH_EXCLUDED = ["/profile/saved-events"];

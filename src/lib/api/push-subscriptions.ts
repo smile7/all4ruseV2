@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import type { PushEnableFailureStage } from "~/lib/push-client";
 import type { Database } from "~/types/database";
 
 type Client = SupabaseClient<Database>;
@@ -146,6 +147,32 @@ async function hasPushSubscription(
   return data !== null;
 }
 
+type PushEnableFailureInput = {
+  stage: PushEnableFailureStage;
+  message: string | null;
+  permission: string | null;
+  userAgent: string | null;
+};
+
+/** Requires an admin client — the table is readable only via the service role. */
+async function logPushEnableFailure(
+  client: Client,
+  userId: string | null,
+  input: PushEnableFailureInput,
+): Promise<void> {
+  const { error } = await client.from("push_enable_failures").insert({
+    user_id: userId,
+    stage: input.stage,
+    message: input.message,
+    permission: input.permission,
+    user_agent: input.userAgent,
+  });
+  if (error) throw error;
+}
+
+/** Whether the event a reminder refers to happens today or tomorrow. */
+export type ReminderKind = "today" | "tomorrow";
+
 export type ReminderSubscription = {
   endpoint: string;
   p256dh: string;
@@ -153,47 +180,91 @@ export type ReminderSubscription = {
   eventTitle: string;
   eventSlug: string;
   eventDate: string;
+  kind: ReminderKind;
+};
+
+export type ReminderDebugCounts = {
+  todayBg: string;
+  tomorrowBg: string;
+  reminderTime: string;
+  eventsToday: number;
+  eventsTomorrow: number;
+  savedMatches: number;
+  pushSubscriptions: number;
+  profilesAtReminderTimeAndEnabled: number;
+  eligibleSubscriptions: number;
+};
+
+export type DueReminders = {
+  subscriptions: ReminderSubscription[];
+  debug: ReminderDebugCounts;
 };
 
 /**
  * Fetches all (push_subscription, event) pairs where:
- * - The event starts today (in Bulgaria time)
+ * - The event starts today or tomorrow (in Bulgaria time)
  * - The user's profile reminder_time matches the given hour (e.g. "09")
  * - The user's profile has push_notifications_enabled = true
  * - The event is active and not cancelled
  *
+ * Debug counts come from the same queries so the cron endpoint can report what
+ * it saw without running the whole thing twice.
+ *
  * Intended for use with an admin client from the cron endpoint only.
  */
-async function getSubscriptionsForTodayReminders(
+async function getDueReminders(
   client: Client,
   currentHour: string, // zero-padded "HH", e.g. "09"
-): Promise<ReminderSubscription[]> {
+): Promise<DueReminders> {
   const todayBg = getTodayInBulgaria();
+  const tomorrowBg = getTomorrowInBulgaria();
   const reminderTime = `${currentHour}:00`;
 
-  // Step 1: find events starting today.
-  const { data: todayEvents, error: eventsError } = await client
+  const debug: ReminderDebugCounts = {
+    todayBg,
+    tomorrowBg,
+    reminderTime,
+    eventsToday: 0,
+    eventsTomorrow: 0,
+    savedMatches: 0,
+    pushSubscriptions: 0,
+    profilesAtReminderTimeAndEnabled: 0,
+    eligibleSubscriptions: 0,
+  };
+
+  // Step 1: find events starting today or tomorrow.
+  const { data: dueEvents, error: eventsError } = await client
     .from("events")
     .select("id, title, slug, startDate")
-    .eq("startDate", todayBg)
+    .in("startDate", [todayBg, tomorrowBg])
     .eq("isEventActive", true)
     .or("isEventCancelled.is.null,isEventCancelled.eq.false");
 
   if (eventsError) throw eventsError;
-  if (!todayEvents || todayEvents.length === 0) return [];
 
-  const eventIds = todayEvents.map((e) => e.id);
+  const events = dueEvents ?? [];
+  debug.eventsToday = events.filter((e) => e.startDate === todayBg).length;
+  debug.eventsTomorrow = events.filter(
+    (e) => e.startDate === tomorrowBg,
+  ).length;
+  if (events.length === 0) return { subscriptions: [], debug };
 
   // Step 2: find users who saved any of those events.
   const { data: savedRows, error: savedError } = await client
     .from("saved_events")
     .select("user_id, event_id")
-    .in("event_id", eventIds);
+    .in(
+      "event_id",
+      events.map((e) => e.id),
+    );
 
   if (savedError) throw savedError;
-  if (!savedRows || savedRows.length === 0) return [];
 
-  const userIds = [...new Set(savedRows.map((r) => r.user_id))];
+  const saves = savedRows ?? [];
+  debug.savedMatches = saves.length;
+  if (saves.length === 0) return { subscriptions: [], debug };
+
+  const userIds = [...new Set(saves.map((r) => r.user_id))];
 
   // Step 3: push subscriptions + profile reminder times (separate queries —
   // push_subscriptions.user_id FK points to auth.users, not profiles).
@@ -207,7 +278,7 @@ async function getSubscriptionsForTodayReminders(
       .in("user_id", userIds),
     client
       .from("profiles")
-      .select("id, reminder_time")
+      .select("id")
       .in("id", userIds)
       .eq("push_notifications_enabled", true)
       .eq("reminder_time", reminderTime),
@@ -215,34 +286,44 @@ async function getSubscriptionsForTodayReminders(
 
   if (subsError) throw subsError;
   if (profilesError) throw profilesError;
-  if (!subs || subs.length === 0) return [];
-  if (!profiles || profiles.length === 0) return [];
 
-  const eligibleUserIds = new Set(profiles.map((p) => p.id));
-  const eligibleSubs = subs.filter((sub) => eligibleUserIds.has(sub.user_id));
-  if (eligibleSubs.length === 0) return [];
+  const userSubs = subs ?? [];
+  const dueProfiles = profiles ?? [];
+  debug.pushSubscriptions = userSubs.length;
+  debug.profilesAtReminderTimeAndEnabled = dueProfiles.length;
+
+  const dueUserIds = new Set(dueProfiles.map((p) => p.id));
+  const eligibleSubs = userSubs.filter((sub) => dueUserIds.has(sub.user_id));
+  debug.eligibleSubscriptions = eligibleSubs.length;
+  if (eligibleSubs.length === 0) return { subscriptions: [], debug };
 
   // Step 4: build result — one notification per (subscription, event) pair.
-  const eventMap = new Map(todayEvents.map((e) => [e.id, e]));
+  const eventMap = new Map(events.map((e) => [e.id, e]));
+  const eventIdsByUser = new Map<string, number[]>();
+  for (const save of saves) {
+    const saved = eventIdsByUser.get(save.user_id) ?? [];
+    saved.push(save.event_id);
+    eventIdsByUser.set(save.user_id, saved);
+  }
 
-  const results: ReminderSubscription[] = [];
+  const subscriptions: ReminderSubscription[] = [];
   for (const sub of eligibleSubs) {
-    const userSaves = savedRows.filter((r) => r.user_id === sub.user_id);
-    for (const save of userSaves) {
-      const event = eventMap.get(save.event_id);
+    for (const eventId of eventIdsByUser.get(sub.user_id) ?? []) {
+      const event = eventMap.get(eventId);
       if (!event) continue;
-      results.push({
+      subscriptions.push({
         endpoint: sub.endpoint,
         p256dh: sub.p256dh,
         auth: sub.auth,
         eventTitle: event.title ?? "",
         eventSlug: event.slug ?? String(event.id),
         eventDate: event.startDate ?? todayBg,
+        kind: event.startDate === tomorrowBg ? "tomorrow" : "today",
       });
     }
   }
 
-  return results;
+  return { subscriptions, debug };
 }
 
 const BG_TIMEZONE = "Europe/Sofia";
@@ -254,7 +335,7 @@ function getBulgariaDateParts(): { date: string; hour: string } {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
-    hour12: false,
+    hourCycle: "h23",
   });
   const parts = formatter.formatToParts(new Date());
   const get = (type: Intl.DateTimeFormatPartTypes) =>
@@ -277,82 +358,17 @@ export function getTodayInBulgaria(): string {
   return getBulgariaDateParts().date;
 }
 
+/** Tomorrow's date as YYYY-MM-DD in Bulgaria. Advances the calendar date
+ *  rather than adding 24 hours, so DST changeovers stay correct. */
+export function getTomorrowInBulgaria(): string {
+  const next = new Date(`${getTodayInBulgaria()}T00:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  return next.toISOString().slice(0, 10);
+}
+
 /** Current hour in Bulgaria as zero-padded "HH". */
 export function getCurrentHourInBulgaria(): string {
   return getBulgariaDateParts().hour;
-}
-
-export type ReminderDebugCounts = {
-  todayBg: string;
-  reminderTime: string;
-  eventsToday: number;
-  savedMatches: number;
-  pushSubscriptions: number;
-  profilesAtReminderTimeAndEnabled: number;
-  eligibleSubscriptions: number;
-};
-
-/** Same filters as getSubscriptionsForTodayReminders, but returns counts for debugging. */
-async function getReminderDebugCounts(
-  client: Client,
-  currentHour: string,
-): Promise<ReminderDebugCounts> {
-  const todayBg = getTodayInBulgaria();
-  const reminderTime = `${currentHour}:00`;
-
-  const { data: todayEvents } = await client
-    .from("events")
-    .select("id")
-    .eq("startDate", todayBg)
-    .eq("isEventActive", true)
-    .or("isEventCancelled.is.null,isEventCancelled.eq.false");
-
-  const eventIds = (todayEvents ?? []).map((e) => e.id);
-
-  const { data: savedRows } =
-    eventIds.length > 0
-      ? await client
-          .from("saved_events")
-          .select("user_id, event_id")
-          .in("event_id", eventIds)
-      : { data: [] as { user_id: string; event_id: number }[] };
-
-  const userIds = [...new Set((savedRows ?? []).map((r) => r.user_id))];
-
-  let subs: { user_id: string }[] = [];
-  let profiles: { id: string }[] = [];
-
-  if (userIds.length > 0) {
-    const [subsResult, profilesResult] = await Promise.all([
-      client
-        .from("push_subscriptions")
-        .select("user_id")
-        .in("user_id", userIds),
-      client
-        .from("profiles")
-        .select("id")
-        .in("id", userIds)
-        .eq("push_notifications_enabled", true)
-        .eq("reminder_time", reminderTime),
-    ]);
-    subs = subsResult.data ?? [];
-    profiles = profilesResult.data ?? [];
-  }
-
-  const eligibleUserIds = new Set(profiles.map((p) => p.id));
-  const eligibleSubscriptions = subs.filter((sub) =>
-    eligibleUserIds.has(sub.user_id),
-  ).length;
-
-  return {
-    todayBg,
-    reminderTime,
-    eventsToday: eventIds.length,
-    savedMatches: savedRows?.length ?? 0,
-    pushSubscriptions: subs.length,
-    profilesAtReminderTimeAndEnabled: profiles.length,
-    eligibleSubscriptions,
-  };
 }
 
 export const pushSubscriptionsApi = {
@@ -360,6 +376,6 @@ export const pushSubscriptionsApi = {
   deletePushSubscription,
   deletePushSubscriptionsByEndpoints,
   hasPushSubscription,
-  getSubscriptionsForTodayReminders,
-  getReminderDebugCounts,
+  logPushEnableFailure,
+  getDueReminders,
 };

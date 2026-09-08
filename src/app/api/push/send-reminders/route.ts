@@ -24,13 +24,10 @@ async function handleSendReminders(request: Request) {
 
   const supabase = createSupabaseAdminClient();
 
-  const [subscriptions, debug] = await Promise.all([
-    pushSubscriptionsApi.getSubscriptionsForTodayReminders(
-      supabase,
-      currentHour,
-    ),
-    pushSubscriptionsApi.getReminderDebugCounts(supabase, currentHour),
-  ]);
+  const { subscriptions, debug } = await pushSubscriptionsApi.getDueReminders(
+    supabase,
+    currentHour,
+  );
 
   if (subscriptions.length === 0) {
     return NextResponse.json({ sent: 0, debug });
@@ -47,6 +44,7 @@ async function handleSendReminders(request: Request) {
         sub.eventTitle,
         sub.eventSlug,
         baseUrl,
+        sub.kind,
       );
       const result = await pushNotificationsLib.sendPushNotification(
         sub,
