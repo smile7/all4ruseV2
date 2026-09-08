@@ -8,6 +8,12 @@ import {
   StaleWhileRevalidate,
 } from "serwist";
 
+import {
+  reportPushEnableFailure,
+  urlBase64ToUint8Array,
+  VAPID_PUBLIC_KEY,
+} from "~/lib/push-client";
+
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
     __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
@@ -72,6 +78,7 @@ self.addEventListener("push", (event: PushEvent) => {
     body: string;
     url: string;
     icon?: string;
+    tag?: string;
   };
 
   let payload: PushPayload;
@@ -87,7 +94,9 @@ self.addEventListener("push", (event: PushEvent) => {
       icon: payload.icon ?? "/android-chrome-192x192.png",
       badge: "/android-chrome-192x192.png",
       data: { url: payload.url },
-      tag: payload.url, // deduplicate: same event won't stack
+      // Deduplicate resends of the same reminder. The sender varies the tag per
+      // reminder kind so the day-of notice doesn't quietly replace the day-before.
+      tag: payload.tag ?? payload.url,
     }),
   );
 });
@@ -106,4 +115,58 @@ self.addEventListener("notificationclick", (event: NotificationEvent) => {
         return self.clients.openWindow(url);
       }),
   );
+});
+
+/**
+ * Browsers rotate push subscriptions on their own. Without re-registering, the
+ * old endpoint starts returning 410, the reminder cron deletes the row, and the
+ * user silently stops receiving notifications. Same-origin fetch carries the
+ * auth cookie, so this works with no page open.
+ */
+async function reregisterRotatedSubscription(
+  event: PushSubscriptionChangeEvent,
+): Promise<void> {
+  const oldEndpoint = event.oldSubscription?.endpoint;
+
+  try {
+    const sub =
+      event.newSubscription ??
+      (await self.registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      }));
+
+    const keys = sub.toJSON().keys;
+    if (!keys?.p256dh || !keys.auth) {
+      throw new Error("Rotated subscription is missing keys.");
+    }
+
+    const res = await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        endpoint: sub.endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    if (oldEndpoint && oldEndpoint !== sub.endpoint) {
+      await fetch("/api/push/subscribe", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: oldEndpoint }),
+      });
+    }
+  } catch (err) {
+    await reportPushEnableFailure(
+      "sw_resubscribe_failed",
+      err instanceof Error ? err.message : "Unknown error",
+    );
+  }
+}
+
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(reregisterRotatedSubscription(event));
 });

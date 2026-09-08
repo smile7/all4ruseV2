@@ -327,6 +327,371 @@
   }
 }
 
+/* ── Article body — section titles + schedule lists ─────────────────────────
+   Outside @layer so these win over Tailwind Typography's :where() rules.
+   `.article-body` is on the public article and the admin editor surface. */
+.article-body h2,
+.article-body h3,
+.article-body h4 {
+  scroll-margin-top: 7.5rem;
+  text-wrap: balance;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+@media (min-width: 768px) {
+  .article-body h2,
+  .article-body h3,
+  .article-body h4 {
+    scroll-margin-top: 5.5rem;
+  }
+}
+
+.article-body h2 {
+  position: relative;
+  margin-top: 2.75rem;
+  margin-bottom: 1.15rem;
+  padding-bottom: 0.85rem;
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.article-body h2:first-child {
+  margin-top: 0;
+}
+
+.article-body h2:not(:first-child) {
+  margin-top: 3.5rem;
+  padding-top: 2.5rem;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--primary) 50%, var(--border)) 50%,
+    transparent 100%
+  );
+  background-repeat: no-repeat;
+  background-position: top 0.85rem center;
+  background-size: min(12rem, 55%) 1px;
+}
+
+.article-body h2::before {
+  content: "";
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-right: 0.7rem;
+  margin-bottom: 0.12rem;
+  background: var(--primary);
+  border-radius: 0.15rem;
+  transform: rotate(45deg);
+  vertical-align: middle;
+}
+
+.article-body h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 3.25rem;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--primary);
+}
+
+.article-body h3,
+.article-body p.article-section-kicker {
+  position: relative;
+  margin-top: 2.35rem;
+  margin-bottom: 1.75rem;
+  border: 0;
+  padding-left: 0;
+  font-size: 1.22rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.article-body h3:first-child,
+.article-body p.article-section-kicker:first-child {
+  margin-top: 0;
+}
+
+.article-body h3:not(:first-child),
+.article-body p.article-section-kicker:not(:first-child) {
+  margin-top: 3.5rem;
+  padding-top: 2.5rem;
+}
+
+.article-body h3:not(:first-child)::before,
+.article-body p.article-section-kicker:not(:first-child)::before {
+  content: "";
+  position: absolute;
+  top: 0.85rem;
+  left: 50%;
+  width: min(12rem, 55%);
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--primary) 50%, var(--border)) 50%,
+    transparent 100%
+  );
+}
+
+.article-body h3:not(:first-child)::after,
+.article-body p.article-section-kicker:not(:first-child)::after {
+  content: "";
+  position: absolute;
+  top: calc(0.85rem - 3.5px);
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  transform: translateX(-50%) rotate(45deg);
+  border-radius: 1px;
+  background: var(--primary);
+}
+
+.article-body p.article-schedule-item + h2,
+.article-body p.article-schedule-item + h3,
+.article-body p.article-schedule-item + p.article-section-kicker,
+.article-body ul + h2,
+.article-body ul + h3,
+.article-body ul + p.article-section-kicker,
+.article-body ol + h2,
+.article-body ol + h3,
+.article-body ol + p.article-section-kicker {
+  margin-top: 3.75rem;
+}
+
+.article-body hr {
+  position: relative;
+  width: min(12rem, 55%);
+  height: 0;
+  margin: 3rem auto;
+  overflow: visible;
+  border: 0;
+  background: none;
+}
+
+.article-body hr::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--primary) 50%, var(--border)) 50%,
+    transparent 100%
+  );
+}
+
+.article-body hr::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border-radius: 1px;
+  background: var(--primary);
+}
+
+.article-body h4 {
+  margin-top: 1.6rem;
+  margin-bottom: 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.article-body ul,
+.article-body ol {
+  list-style: none;
+  margin: 1.75rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.article-body ul > li,
+.article-body ol > li,
+.article-body p.article-schedule-item {
+  position: relative;
+  margin: 0;
+  padding: 1.05rem 1.2rem 1.05rem 1.35rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, var(--border) 70%, var(--primary) 30%);
+  border-radius: 1rem;
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in oklch, var(--primary) 14%, transparent) 0%,
+      color-mix(in oklch, var(--primary) 4%, var(--card)) 42%,
+      var(--card) 100%
+    );
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  font-size: 1.08rem;
+  line-height: 1.45;
+}
+
+.article-body p.article-schedule-item {
+  margin: 0.65rem 0;
+}
+
+.article-body p.article-section-kicker + p.article-schedule-item {
+  margin-top: 1.25rem;
+}
+
+.article-body ul > li::before,
+.article-body p.article-schedule-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.7rem;
+  bottom: 0.7rem;
+  width: 3.5px;
+  border-radius: 999px;
+  background: var(--primary);
+}
+
+.article-body ol {
+  counter-reset: article-ol;
+}
+
+.article-body ol > li {
+  counter-increment: article-ol;
+  padding-left: 3.5rem;
+}
+
+.article-body ol > li::before {
+  content: counter(article-ol);
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  display: grid;
+  width: 1.9rem;
+  height: 1.9rem;
+  place-items: center;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.article-body li > p {
+  margin: 0;
+}
+
+.article-body li > p + p {
+  margin-top: 0.4rem;
+}
+
+.article-body .article-schedule-lead {
+  display: block;
+  color: var(--primary);
+  font-size: 1.22rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.article-body .article-schedule-text {
+  display: block;
+  margin-top: 0.28rem;
+  font-size: 1.02rem;
+  line-height: 1.45;
+  color: var(--foreground);
+}
+
+.article-body .article-schedule-linked {
+  padding-right: 2.6rem;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.article-body .article-schedule-linked:hover,
+.article-body .article-schedule-linked:focus-within {
+  border-color: color-mix(in oklch, var(--primary) 70%, var(--border));
+  box-shadow: 0 6px 18px color-mix(in oklch, var(--primary) 16%, transparent);
+}
+
+.article-body .article-schedule-linked > a,
+.article-body .article-schedule-linked a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.article-body .article-schedule-linked > a {
+  display: block;
+}
+
+.article-body .article-schedule-linked:hover .article-schedule-text,
+.article-body .article-schedule-linked:focus-within .article-schedule-text {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.article-body .article-schedule-linked::after {
+  content: "→";
+  position: absolute;
+  right: 0.95rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary);
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.article-body .article-schedule-linked:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.article-body li ul,
+.article-body li ol {
+  margin: 0.65rem 0 0;
+  gap: 0.45rem;
+}
+
+.article-body li ul > li,
+.article-body li ol > li {
+  padding: 0.55rem 0.85rem 0.55rem 1rem;
+  font-size: 0.95rem;
+  box-shadow: none;
+}
+
+.article-body li ol > li {
+  padding-left: 2.85rem;
+}
+
+.article-body li ol > li::before {
+  width: 1.5rem;
+  height: 1.5rem;
+  left: 0.65rem;
+  font-size: 0.72rem;
+}
+
+.article-body a.article-lightbox {
+  cursor: zoom-in;
+  display: inline-block;
+  max-width: 100%;
+  text-decoration: none;
+}
+
 /* Home indicator is 34px. iOS 26+ Safari/PWA can report a much larger
    safe-area-inset-bottom (browser chrome stacked on the inset), which
    leaves a tall empty band under the tab bar. Cap to the real inset. */

@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 
+import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +28,11 @@ const LOCALE_LABEL: Record<Locale, string> = {
   ro: "Română",
 };
 
-export function LocaleSwitcher() {
+type Props = {
+  variant?: "ghost" | "outline";
+};
+
+export function LocaleSwitcher({ variant = "ghost" }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
@@ -43,18 +48,22 @@ export function LocaleSwitcher() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        disabled={isPending}
-        className="hover:bg-accent flex h-9 w-9 items-center justify-center rounded-md transition-colors focus-visible:outline-none disabled:opacity-50"
-        aria-label="Change language"
-      >
-        <Image
-          src={`/flags/${FLAG_FILE[currentLocale]}`}
-          alt={LOCALE_LABEL[currentLocale]}
-          width={20}
-          height={20}
-          className="rounded-sm object-cover"
-        />
+      <DropdownMenuTrigger asChild disabled={isPending}>
+        <Button
+          type="button"
+          variant={variant}
+          size="icon"
+          className="size-9"
+          aria-label="Change language"
+        >
+          <Image
+            src={`/flags/${FLAG_FILE[currentLocale]}`}
+            alt={LOCALE_LABEL[currentLocale]}
+            width={20}
+            height={20}
+            className="rounded-sm object-cover"
+          />
+        </Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end">

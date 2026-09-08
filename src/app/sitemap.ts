@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 
 import { LOCALES } from "~/constants";
-import { eventsApi, profilesApi } from "~/lib/api";
+import { articlesApi, eventsApi, profilesApi } from "~/lib/api";
+import { ARTICLES_PATH } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
@@ -56,9 +57,10 @@ const STATIC_PATHS = [
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const client = createSupabasePublicServerClient();
-  const [slugsWithDates, usernames] = await Promise.all([
+  const [slugsWithDates, usernames, articleEntries] = await Promise.all([
     eventsApi.getAllSlugsWithDates(client),
     profilesApi.getAllPublicUsernames(client),
+    articlesApi.getArticleSitemapEntries(client),
   ]);
 
   const now = new Date();
@@ -102,9 +104,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   );
 
+  // One entry per translation that actually exists — never per locale, since an
+  // untranslated article 404s in the other three.
+  const articleDetailEntries: MetadataRoute.Sitemap = articleEntries.map(
+    ({ locale, slug, updatedAt }) => ({
+      url: `${siteUrl}/${locale}${ARTICLES_PATH}/${slug}`,
+      lastModified: new Date(updatedAt),
+      changeFrequency: "monthly" as const,
+      // Above events (0.55): evergreen content deserves more crawl attention
+      // than a page that decays two weeks after it is published.
+      priority: 0.7,
+    }),
+  );
+
+  // The section index only exists meaningfully where it has content; empty
+  // locales render a noindex empty state and must stay out of the sitemap.
+  const localesWithArticles = new Set(
+    articleEntries.map((entry) => entry.locale),
+  );
+  const articleIndexEntries: MetadataRoute.Sitemap = LOCALES.filter((locale) =>
+    localesWithArticles.has(locale),
+  ).map((locale) => ({
+    url: `${siteUrl}/${locale}${ARTICLES_PATH}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
+  }));
+
   return [
     ...dynamicEntries,
     ...staticEntries,
+    ...articleIndexEntries,
+    ...articleDetailEntries,
     ...eventEntries,
     ...profileEntries,
   ];

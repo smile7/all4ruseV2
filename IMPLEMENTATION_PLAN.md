@@ -1015,13 +1015,26 @@ Everything a visitor reads is a Server Component. TanStack Query is not used any
 | Structured data | `Article` + `BreadcrumbList` on detail; `CollectionPage` + `ItemList` on the index. | `Article` is broader and safer than `BlogPosting` while being equally rich-result eligible. Breadcrumbs are a visible SERP win and the site has none today. |
 | Slug | Clean transliterated keyword slug with **no id suffix** (unlike events, which append `-{id}`). **Locked once published.** | The slug is the single strongest on-page keyword signal, so it must be readable. Locking it after publish avoids needing a redirect table — renaming a live URL silently destroys its accumulated ranking, and a redirect table is scope we do not need yet. |
 | Rendering | `export const revalidate = 300` on both pages (same as `user/[username]`), plus `revalidatePath` from the admin write routes so edits appear immediately. | ISR gives a static-fast TTFB for content that changes a few times a week. |
-| Categories | A nullable `category` column now; **no category archive pages** until there are enough articles to justify them. | An archive page with two entries is a thin page that competes with the index. Revisit at ~15–20 articles. |
+| Categories | Six confirmed categories, stored as stable English keys and displayed through i18n; **no category archive pages** until there are enough articles to justify them. | An archive page with two entries is a thin page that competes with the index. Revisit at ~15–20 articles. |
 | Taxonomy source | A dedicated article category vocabulary, **not** the events `tags` table. | Event tags („Концерт", „Театър") describe event formats and do not map onto editorial topics. |
+| Author | **Силвена Митева**, stored per article in `author_name` and emitted as a `Person` in JSON-LD, with a visible byline. `DEFAULT_ARTICLE_AUTHOR` prefills the form. | A real, consistent human byline is a stronger E-E-A-T signal on evergreen city guides than a faceless brand. A column rather than a constant so a guest author costs no migration. The name is never translated — it is identical in all four locales. |
+| Sponsored articles | `is_sponsored` + `sponsor_name` from day one: a visible disclosure label above the title, and `rel="sponsored noopener"` forced on external links in the body. | Undisclosed paid links are the most common cause of a Google manual action. Retrofitting disclosure onto already-published articles is far more awkward than carrying two columns now. |
 | Pagination | `?page=n`, 12 per page, self-referencing canonical on every page, only page 1 in the sitemap. | Self-canonical (not canonical-to-page-1) is what Google asks for on paginated archives. |
 
-**Open question to settle before implementing:** the **category vocabulary**. Until the owner confirms the list, ship `category` as a nullable column with no DB check constraint and the allowed values enforced only in the zod schema, so the list can change without a migration.
+**Category vocabulary (confirmed).** Six values, stored as stable keys so the display name is translated rather than duplicated per locale:
 
-**Not selected for navigation.** The only entry point chosen was the homepage teaser (16.11). Worth reconsidering at implementation time: 80% of traffic is mobile, and with no link in the mobile "More" drawer or the desktop footer, the section is reachable only by scrolling the homepage. Adding both links is a two-line change in `MobileBottomNav.tsx` and `Footer.tsx` and materially reduces crawl depth. Event ↔ article cross-linking was also not selected.
+| Stored key | bg |
+| --- | --- |
+| `landmarks` | Забележителности |
+| `food-drink` | Храна и напитки |
+| `things-to-do` | Какво да правя |
+| `history-culture` | История и култура |
+| `nature-walks` | Природа и разходки |
+| `practical` | Практично |
+
+The column stays nullable with no DB check constraint; allowed values are enforced in the zod schema only, so the list can grow without a migration.
+
+**Translations.** All four locales are written by hand. Because `status` and `published_at` live on each row, a Bulgarian article goes live immediately and its translations publish independently as they are finished — nothing waits for a complete set, and hreflang grows as rows appear.
 
 ### 16.2 Data model
 
@@ -1042,6 +1055,10 @@ create table public.articles (
   hero_image       text,
   hero_image_alt   text,
   category         text,
+  author_name      text,
+  is_sponsored     boolean not null default false,
+  sponsor_name     text,
+  sponsor_url      text,
   status           text not null default 'draft' check (status in ('draft', 'published')),
   reading_minutes  integer,
   published_at     timestamptz,
@@ -1064,6 +1081,11 @@ create index articles_group_idx on public.articles (group_id);
 alter table public.articles
   add constraint articles_published_at_check
   check (status = 'draft' or published_at is not null);
+
+-- A sponsored article must name its sponsor: the disclosure label is built from it.
+alter table public.articles
+  add constraint articles_sponsor_name_check
+  check (is_sponsored = false or sponsor_name is not null);
 
 alter table public.articles enable row level security;
 
@@ -1105,7 +1127,7 @@ create trigger articles_set_updated_at
 In `src/types/index.ts`, following the existing conventions:
 
 - `export type Article = Tables<"articles">;`
-- `ARTICLE_CATEGORIES` as a `const` tuple + `ArticleCategory` union (values pending the open question in 16.1).
+- `ARTICLE_CATEGORIES` as a `const` tuple + `ArticleCategory` union: `["landmarks", "food-drink", "things-to-do", "history-culture", "nature-walks", "practical"]`. Display names come from the `MoreFromRuse` namespace, never from the stored value.
 - `articleSchema` (zod), with the SEO-relevant constraints encoded rather than left to discipline:
   - `title` — 10–110 chars. The 110 cap is the practical `headline` limit for Google's `Article` rich results.
   - `slug` — `/^[a-z0-9]+(?:-[a-z0-9]+)*$/`, max 80, and **rejected** if it matches a reserved word (`new`, `edit`, `page`, `rss`).
@@ -1113,7 +1135,9 @@ In `src/types/index.ts`, following the existing conventions:
   - `meta_description` — optional, max 160. An override for when the card teaser makes a poor SERP snippet.
   - `body_html` — required, non-empty after sanitizing.
   - `hero_image_alt` — required **whenever** `hero_image` is set. A missing alt is both an a11y failure and a lost image-search signal, so the form must block publishing without it.
-  - `status`, `locale`, `category`, `group_id`.
+  - `author_name` — required to publish, defaulting to `DEFAULT_ARTICLE_AUTHOR` in the form. An `Article` without an author is a rich-result warning and a weak trust signal.
+  - `sponsor_name` — required **whenever** `is_sponsored` is true, mirroring the DB constraint; `sponsor_url` optional.
+- `status`, `locale`, `category`, `group_id`.
 - `ArticleFormValues = z.infer<typeof articleSchema>`.
 
 ### 16.5 Data layer — `src/lib/api/articles.ts`
@@ -1132,9 +1156,9 @@ Same shape as `eventsApi`: plain async functions, Supabase client as the first a
 
 A separate module from `event-description-html.ts`. Do not widen the event allowlist — event descriptions are written by arbitrary authenticated users, article bodies only by the admin, so they warrant different rules.
 
-- `sanitizeArticleHtml(html)` — `sanitize-html` with `p, br, strong, b, em, i, u, s, h2, h3, h4, ul, ol, li, blockquote, a, img, figure, figcaption, hr, span, div`.
+- `sanitizeArticleHtml(html, { sponsored })` — `sanitize-html` with `p, br, strong, b, em, i, u, s, h2, h3, h4, ul, ol, li, blockquote, a, img, figure, figcaption, hr, span, div`.
   - Strip `h1` entirely. The page's `<h1>` is the article title; a second one muddies the document outline.
-  - `a` — allow `href`, `title`; force `rel="noopener"` on external links (`noreferrer` is deliberately omitted site-wide, see Phase 8.6) and keep internal links relative.
+  - `a` — allow `href`, `title`; force `rel="noopener"` on external links (`noreferrer` is deliberately omitted site-wide, see Phase 8.6) and keep internal links relative. When `sponsored` is true, force `rel="sponsored noopener"` instead — passing PageRank to a paying advertiser is exactly what earns a link-spam manual action.
   - `img` — allow `src`, `alt`, `width`, `height`; force `loading="lazy"` and `decoding="async"`. **Drop any `img` whose host is not our Supabase storage domain** — hotlinked images break layout, leak visitor IPs to third parties, and tank LCP.
   - Same `text-align` style allowlist as events.
 - `addHeadingIds(html)` — assigns transliterated `id` attributes to `h2` / `h3` at save time, so the table of contents and deep links work without client JS.
@@ -1154,7 +1178,7 @@ Note the difference from `buildAlternates`, which blindly emits all four locales
 
 **`src/lib/article-jsonld.ts`**:
 
-- `buildArticleJsonLd({ article, url, imageUrl })` → `@type: "Article"` with `headline` (hard-trimmed to 110 chars), `description`, `image` as an array, `datePublished`, `dateModified`, `inLanguage` (BCP 47), `articleSection`, `author` and `publisher` as the All4Ruse `Organization` with a `logo` `ImageObject` (`/android-chrome-512x512.png`, 512×512), `mainEntityOfPage`, and `isAccessibleForFree: true`.
+- `buildArticleJsonLd({ article, url, imageUrl })` → `@type: "Article"` with `headline` (hard-trimmed to 110 chars), `description`, `image` as an array, `datePublished`, `dateModified`, `inLanguage` (BCP 47), `articleSection`, `author` as a `Person` built from `author_name` plus the localized bio as `description` and `sameAs` when author profile links exist (omit `sameAs` entirely rather than emitting an empty array), `publisher` as the All4Ruse `Organization` with a `logo` `ImageObject` (`/android-chrome-512x512.png`, 512×512), `mainEntityOfPage`, and `isAccessibleForFree: true`. A sponsored article gets no special schema type — Google has none; the disclosure is visible copy plus `rel="sponsored"`.
 - `buildBreadcrumbJsonLd(items)` → `BreadcrumbList`. Written generically because it is worth backporting to event detail and public profiles afterwards (tracked separately, not in this phase).
 - `buildArticleListJsonLd({ url, articles })` → `CollectionPage` whose `mainEntity` is an `ItemList` of `ListItem` entries with `url` and `name`.
 - Serialize with the existing `.replace(/</g, "\\u003c")` guard used on the event page.
@@ -1184,10 +1208,12 @@ Server Component, `export const revalidate = 300`.
   - `twitter` — `summary_large_image`.
 - Page body:
   - Visible breadcrumb `<nav aria-label="Breadcrumb">`: Home → Още от Русе → article title.
-  - `<article>` with a single `<h1>`, then a byline row: `<time dateTime={published_at}>`, reading time, category.
+  - `<article>` with a single `<h1>`, then a byline row: author name, `<time dateTime={published_at}>`, reading time, category.
+  - When `is_sponsored`, a disclosure line **above** the title — „Спонсорирано съдържание от {sponsor_name}" — visually distinct and never collapsed behind an interaction. It must be readable before the article body, which is what both the EU rules and Google's guidance actually ask for.
   - Hero image in a fixed-aspect-ratio `<figure>` — `next/image` with `priority`, explicit `sizes`, and the wrapper reserving space so there is no CLS. `<figcaption>` when a caption exists.
   - A server-rendered table of contents (a plain `<nav>` list of `h2` anchors) when the body has three or more `h2`s. Helps both readers and SERP jump links; costs zero client JS.
   - Body via `dangerouslySetInnerHTML` with `ARTICLE_BODY_CLASSES`. Sanitized on write **and** on read — cheap, and it means a row edited directly in the Dashboard can't inject anything.
+  - **Author block** at the end of the article, before „Още статии": avatar, name, and a one-sentence bio. The name comes from `author_name` (never translated); the bio is a `MoreFromRuse.authorBio` message so it reads naturally in each of the four locales. The avatar is a static file under `public/authors/`, falling back to initials when absent — the block must never render a broken image.
   - „Още статии" block: up to three other published articles in the same locale, linking back to the index. Internal linking, and it keeps the reader on-site.
   - When the current locale has no translation but siblings exist, the 404 is correct — but on the index, optionally surface a „Достъпно на български" chip.
 - `Article` + `BreadcrumbList` JSON-LD.
@@ -1204,6 +1230,8 @@ Server Component, `export const revalidate = 300`.
 - Locale select, and a "translation of" picker that attaches this row to an existing article's `group_id` (listing existing articles by their Bulgarian title). Leaving it empty starts a new `group_id`.
 - Title, with slug auto-derived via `buildArticleSlugFromTitle`, editable, debounced availability check against `articlesApi.isSlugAvailable`. **Disabled once `status === 'published'`** — with an inline explanation, so the lock reads as intentional rather than broken.
 - Category select, excerpt textarea with a live character counter and the 120–160 guidance, optional `meta_description` with its own counter and a SERP-snippet preview.
+- Author name, prefilled from `DEFAULT_ARTICLE_AUTHOR` („Силвена Митева") and editable for guest posts.
+- A "sponsored" switch that reveals `sponsor_name` (required) and `sponsor_url` (optional), with a note that it adds the visible disclosure and `rel="sponsored"`.
 - Hero image upload (react-dropzone, same constraints as `EventImageUpload`) with a **required** alt-text field directly beneath it.
 - `src/components/ArticleForm/ArticleBodyEditor.tsx` — the TipTap setup from `EventDescriptionEditor` plus `Link` and `Image` extensions and an `h4` level. Build it as its own component; do not add article-only features to the event editor.
 - Draft / Publish actions, and a "Preview" link that opens the detail route (visible to the author through the `created_by` select policy).
@@ -1217,7 +1245,36 @@ Server Component, `export const revalidate = 300`.
 - `POST /image` — upload to `article-images` with type/size validation mirroring `smart-fill/photo`.
 - All mutating routes call `revalidatePath` for the affected article path and the index in that locale, so an edit is live immediately instead of waiting out the 300 s ISR window.
 
-### 16.11 Homepage teaser
+### 16.11 Entry points, navigation, and homepage teaser
+
+Four entry points, confirmed:
+
+1. **Mobile "More" drawer** (`MobileBottomNav.tsx`) — a link alongside `why-all4ruse` and `advertise`.
+2. **Desktop "More" dropdown** (`Footer.tsx`) — the same link in the existing dropdown, which is the desktop equivalent of the mobile drawer.
+3. **Header** — the desktop header's centre slot currently holds `HeaderDesktopFiltersPanel`, and the mobile header's second row holds `HeaderSearchButton`. The filters move out of the header (see below) and a „Още от Русе" button takes that place.
+4. **Homepage teaser** — the three latest articles, below the events list.
+
+**Filters move from the header onto the homepage.** They relocate to the space between the „Създай събитие" button and the events-count summary in `EventsList`. `FilterContent` itself does not need rewriting — only its container and trigger change.
+
+| Inline | Behind the expandable „Филтри" title |
+| --- | --- |
+| Title search | Full date range (`DatePopoverRange`) — same row as title / host / place from `lg` |
+| „Днес" chip | Tags |
+| „Уикенд" chip | Host |
+| „Тази седмица" chip | Free-text place |
+| Free-events switch | |
+
+**The venue chip must use `Доходно` as its `place` value, not `Доходно Здание`.** The `place` filter is an `ilike '%value%'` substring match, and the column holds seven different spellings of this venue across 56 events — „Доходно Здание" (36), „Камерна Сцена на Доходно Здание" (13), „пред Доходно здание" (3), „Доходно здание", „ДОХОДНО ЗДАНИЕ", „пред Доходното здание", „Пред Доходното". Matching on the full phrase silently drops the „Доходното" variants; matching on `Доходно` catches all of them. The chip's visible label stays „Доходно здание" — only the query value is the shorter stem.
+
+This is a symptom worth noting separately: `place` is free text, so venue chips are only as reliable as the spelling discipline of whoever entered the event. If venue chips become a real navigation feature rather than one hardcoded button, the right fix is a normalized `venues` table, not more substring matching.
+
+Three things to be deliberate about here, because this touches the site's primary page:
+
+- **The header is global, the filters are not.** Filters only make sense on the events listing, so moving them onto that page is defensible on its own merits. But a header entry point is the most valuable placement on the site and it appears on every page, so pointing it at a section that currently has no content wastes it. **Do not ship the header button until at least three Bulgarian articles are published** — otherwise every page on the site links prominently to an empty, `noindex` page.
+- **Filtering is the main interaction on the homepage.** Anything that adds a click before a visitor can narrow events is a real cost. Keep the highest-traffic controls inline (search and the quick date chips at minimum) rather than hiding everything behind the „Още филтри" button.
+- **Do not regress the mobile header.** `HeaderSearchButton` is currently a full-width row on mobile; whatever replaces it must not make search harder to reach on the device where 80% of traffic is.
+
+### 16.11.1 Homepage teaser
 
 `src/components/ArticlesTeaser/ArticlesTeaser.tsx` — Server Component rendering the three latest published articles for the current locale.
 
@@ -1238,8 +1295,8 @@ Server Component, `export const revalidate = 300`.
 
 - New `MoreFromRuse` namespace in `bg.json` (source), then `en.json`, `ua.json`, `ro.json`: section title, intro paragraph, index metadata title/description, empty state, „Още статии", reading-time format (`{minutes} мин четене`), breadcrumb labels, table-of-contents heading, pagination labels, „Достъпно на български" chip.
 - New `Articles` keys for the admin form (labels, character-counter hints, slug-locked explanation, validation messages) — or fold them into `MoreFromRuse` to avoid a namespace for a single admin screen.
-- `HomePage.moreFromRuseTitle` and `HomePage.moreFromRuseSeeAll` for the teaser.
-- Category display names, once the vocabulary is settled.
+- `HomePage.moreFromRuseTitle` and `HomePage.moreFromRuseSeeAll` for the teaser, plus `HomePage.moreFilters` for the relocated filter trigger and a header/nav label for the section link.
+- Category display names for all six keys in all four locales, plus the byline („от {author}") and sponsored disclosure („Спонсорирано съдържание от {sponsor}") strings.
 
 ### 16.14 Performance and accessibility
 
@@ -1264,6 +1321,8 @@ Server Component, `export const revalidate = 300`.
 - A guest and a non-admin logged-in user both get 404 on `/create-article`, and direct calls to every `/api/articles/*` route return 403.
 - An `<img>` pointing outside our Supabase storage domain is stripped from the body on save.
 - Publishing is blocked when a hero image has no alt text.
+- The byline shows the author name and the `Article` JSON-LD emits `author` as a `Person`.
+- A sponsored article shows the disclosure above the title, and every external link in its body carries `rel="sponsored"`. Publishing is blocked when `is_sponsored` is set without a `sponsor_name`.
 - Editing a published article makes the change visible immediately (`revalidatePath`), and `dateModified` updates while `datePublished` does not.
 - The homepage teaser shows the three latest articles, disappears entirely when there are none, and does not become the LCP element.
 - Pagination: page 2 has a self-referencing canonical (not one pointing at page 1) and is absent from the sitemap; an out-of-range page returns 404.

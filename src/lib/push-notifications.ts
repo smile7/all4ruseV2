@@ -1,6 +1,9 @@
 import webpush from "web-push";
 
-import type { ReminderSubscription } from "~/lib/api/push-subscriptions";
+import type {
+  ReminderKind,
+  ReminderSubscription,
+} from "~/lib/api/push-subscriptions";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY ?? "";
@@ -40,6 +43,9 @@ type PushPayload = {
   body: string;
   url: string;
   icon?: string;
+  /** Groups notifications in the tray. Distinct per reminder kind so the
+   *  day-of notification alerts instead of silently replacing the day-before. */
+  tag?: string;
 };
 
 type SendPushResult =
@@ -66,12 +72,18 @@ async function sendPushNotification(
     );
     return { ok: true };
   } catch (err: unknown) {
-    // 410 Gone = subscription expired/revoked; caller should delete it.
+    // 410 Gone = subscription expired/revoked. FCM returns 404 for registration
+    // IDs it no longer knows. Both are permanent; the caller should delete them
+    // rather than retrying the endpoint every hour forever.
     const statusCode =
       typeof err === "object" && err !== null && "statusCode" in err
         ? (err as { statusCode: number }).statusCode
         : 0;
-    return { ok: false, gone: statusCode === 410, invalid: false };
+    return {
+      ok: false,
+      gone: statusCode === 404 || statusCode === 410,
+      invalid: false,
+    };
   }
 }
 
@@ -83,12 +95,17 @@ function buildReminderPayload(
   eventTitle: string,
   eventSlug: string,
   baseUrl: string,
+  kind: ReminderKind,
 ): PushPayload {
   return {
     title: "Напомняне за събитие",
-    body: `Събитието „${eventTitle}" е днес!`,
+    body:
+      kind === "tomorrow"
+        ? `Събитието „${eventTitle}" е утре!`
+        : `Събитието „${eventTitle}" е днес!`,
     url: `${baseUrl}/bg/${eventSlug}`,
     icon: "/android-chrome-192x192.png",
+    tag: `${eventSlug}:${kind}`,
   };
 }
 

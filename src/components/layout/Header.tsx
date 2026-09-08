@@ -2,12 +2,12 @@ import { profilesApi } from "~/lib/api";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 import { HeaderAuthButton } from "./HeaderAuthButton";
-import { HeaderDesktopFiltersPanel } from "./HeaderDesktopFiltersPanel";
 import { HeaderInnerContainer } from "./HeaderInnerContainer";
-import { HeaderSearchButton } from "./HeaderSearchButton";
+import { HeaderMoreFromRuseLink } from "./HeaderMoreFromRuseLink";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { Logo } from "./Logo";
 import { MobileBackButton } from "./MobileBackButton";
+import { MobileCreateEventButton } from "./MobileCreateEventButton";
 import { ThemeToggle } from "./ThemeToggle";
 
 export async function Header() {
@@ -25,22 +25,23 @@ export async function Header() {
     <header className="border-border/60 bg-secondary/85 sticky top-0 z-50 w-full backdrop-blur-md">
       {/* ── Mobile (<md) ──────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 px-3 py-2 md:hidden">
-        {/* Row 1: back (left) | Logo (center) | language + theme (right) */}
+        {/* Row 1: back + create (left) | Logo (center) | language + theme (right) */}
         <div className="grid grid-cols-3 items-center border-b pb-4">
-          <div className="flex items-center justify-start">
+          <div className="flex items-center justify-start gap-1.5">
             <MobileBackButton />
+            <MobileCreateEventButton />
           </div>
           <div className="flex items-center justify-center">
             <Logo />
           </div>
           <div className="flex items-center justify-end gap-1">
-            <LocaleSwitcher />
-            <ThemeToggle />
+            <LocaleSwitcher variant="outline" />
+            <ThemeToggle variant="outline" />
           </div>
         </div>
 
-        {/* Row 2: full-width filter trigger */}
-        <HeaderSearchButton variant="mobile" />
+        {/* Row 2: full-width link to the articles section */}
+        <HeaderMoreFromRuseLink variant="mobile" />
       </div>
 
       {/* ── Desktop (md+) — 3-column grid: left | center | right ──────── */}
@@ -50,9 +51,9 @@ export async function Header() {
           <Logo />
         </div>
 
-        {/* Center — filter entry point, exactly centered */}
+        {/* Center — articles entry point, exactly centered */}
         <div className="flex items-center justify-center">
-          <HeaderDesktopFiltersPanel />
+          <HeaderMoreFromRuseLink />
         </div>
 
         {/* Right — controls */}

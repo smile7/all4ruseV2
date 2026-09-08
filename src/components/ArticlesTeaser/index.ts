@@ -1,0 +1,1 @@
+export { ArticlesTeaser } from "./ArticlesTeaser";

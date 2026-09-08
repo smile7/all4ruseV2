@@ -94,8 +94,8 @@ export function DatePopoverRange({ from, to, onChange, onClear, id }: Props) {
             type="button"
             variant="ghost"
             className={cn(
-              "border-input bg-secondary h-9 w-full justify-start gap-2 rounded-md border px-3 text-sm font-normal shadow-sm transition-colors",
-              "hover:bg-secondary/60 focus-visible:ring-ring focus-visible:ring-1",
+              "border-input bg-background h-9 w-full justify-start gap-2 rounded-md border px-3 text-sm font-normal shadow-sm transition-colors",
+              "hover:bg-background/60 focus-visible:ring-ring focus-visible:ring-1",
               !from ? "text-muted-foreground" : "text-foreground",
             )}
           >

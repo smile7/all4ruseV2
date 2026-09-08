@@ -10,6 +10,7 @@ import {
   History,
   Info,
   Megaphone,
+  Newspaper,
   Scale,
   ScrollText,
   Settings2,
@@ -72,7 +73,9 @@ export function Footer() {
                 <span className="bg-muted flex size-8 items-center justify-center rounded-full">
                   <FacebookIcon size={14} />
                 </span>
-                <span className="text-muted-foreground text-[10px]">Facebook</span>
+                <span className="text-muted-foreground text-[10px]">
+                  Facebook
+                </span>
               </a>
               <a
                 href={INSTAGRAM_URL}
@@ -85,7 +88,9 @@ export function Footer() {
                 <span className="bg-muted flex size-8 items-center justify-center rounded-full">
                   <InstagramIcon size={14} />
                 </span>
-                <span className="text-muted-foreground text-[10px]">Instagram</span>
+                <span className="text-muted-foreground text-[10px]">
+                  Instagram
+                </span>
               </a>
               <a
                 href={TIKTOK_URL}
@@ -97,7 +102,9 @@ export function Footer() {
                 <span className="bg-muted flex size-8 items-center justify-center rounded-full">
                   <TikTokIcon size={14} />
                 </span>
-                <span className="text-muted-foreground text-[10px]">TikTok</span>
+                <span className="text-muted-foreground text-[10px]">
+                  TikTok
+                </span>
               </a>
             </div>
 
@@ -128,6 +135,15 @@ export function Footer() {
               >
                 <History className="text-muted-foreground size-4 shrink-0" />
                 {t("menuPastEvents")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                href="/more-from-ruse"
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+              >
+                <Newspaper className="text-muted-foreground size-4 shrink-0" />
+                {t("menuMoreFromRuse")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

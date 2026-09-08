@@ -40,6 +40,9 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ["sanitize-html"],
   images: {
+    // 75 is the Next default; 90 is used for the logo, where JPEG/WebP
+    // artifacts around thin lettering are visible at small sizes.
+    qualities: [75, 90],
     remotePatterns: [
       {
         protocol: "https",

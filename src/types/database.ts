@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      articles: {
+        Row: {
+          author_name: string | null
+          body_html: string
+          category: string | null
+          created_at: string
+          created_by: string | null
+          excerpt: string
+          group_id: string
+          hero_image: string | null
+          hero_image_alt: string | null
+          id: string
+          is_sponsored: boolean
+          locale: string
+          meta_description: string | null
+          published_at: string | null
+          reading_minutes: number | null
+          slug: string
+          sponsor_name: string | null
+          sponsor_url: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string | null
+          body_html: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          excerpt: string
+          group_id?: string
+          hero_image?: string | null
+          hero_image_alt?: string | null
+          id?: string
+          is_sponsored?: boolean
+          locale: string
+          meta_description?: string | null
+          published_at?: string | null
+          reading_minutes?: number | null
+          slug: string
+          sponsor_name?: string | null
+          sponsor_url?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string | null
+          body_html?: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string
+          group_id?: string
+          hero_image?: string | null
+          hero_image_alt?: string | null
+          id?: string
+          is_sponsored?: boolean
+          locale?: string
+          meta_description?: string | null
+          published_at?: string | null
+          reading_minutes?: number | null
+          slug?: string
+          sponsor_name?: string | null
+          sponsor_url?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_claims: {
         Row: {
           claimant_full_name: string | null
@@ -329,6 +401,36 @@ export type Database = {
         }
         Relationships: []
       }
+      push_enable_failures: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          permission: string | null
+          stage: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          permission?: string | null
+          stage: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          permission?: string | null
+          stage?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -354,15 +456,7 @@ export type Database = {
           p256dh?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "push_subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       saved_events: {
         Row: {
@@ -474,14 +568,8 @@ export type Database = {
             }[]
           }
       is_valid_push_endpoint: { Args: { endpoint: string }; Returns: boolean }
-      try_lock_geocode_upcoming: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      unlock_geocode_upcoming: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      try_lock_geocode_upcoming: { Args: never; Returns: boolean }
+      unlock_geocode_upcoming: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

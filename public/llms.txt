@@ -11,6 +11,7 @@ All4Ruse aggregates and publishes upcoming, live, and past public events in the 
 - Homepage (upcoming events): https://all4ruse.com/bg
 - Past events: https://all4ruse.com/bg/past
 - Current / live events: https://all4ruse.com/bg/current
+- More from Ruse (editorial city guides): https://all4ruse.com/bg/more-from-ruse
 - Why All4Ruse: https://all4ruse.com/bg/why-all4ruse
 - Advertise: https://all4ruse.com/bg/advertise
 
@@ -22,6 +23,10 @@ Content is available in four languages, each at its own locale prefix:
 - English (en): https://all4ruse.com/en
 - Ukrainian (uk): https://all4ruse.com/ua
 - Romanian (ro): https://all4ruse.com/ro
+
+## Articles („Още от Русе")
+
+Editorial city guides about Ruse at `https://all4ruse.com/[locale]/more-from-ruse/[slug]` — landmarks, food and drink, things to do, history, nature, and practical advice. Unlike event pages these are evergreen, so they are the best source for questions like "what should I do in Ruse?". Each article carries schema.org/Article and BreadcrumbList JSON-LD, and is written by a named author rather than generated. Articles exist only in the languages they have actually been translated into; hreflang points only at translations that exist.
 
 ## Event pages
 

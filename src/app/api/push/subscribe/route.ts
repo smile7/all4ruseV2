@@ -26,6 +26,34 @@ const unsubscribeSchema = z.object({
     }),
 });
 
+export const dynamic = "force-dynamic";
+
+/** Tells the client whether this endpoint is stored for the signed-in user, so
+ *  the UI can reflect delivery reality rather than local browser state. */
+export async function GET(request: Request) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const endpoint = new URL(request.url).searchParams.get("endpoint");
+  if (
+    !user ||
+    !endpoint ||
+    !pushNotificationsLib.isAllowedPushEndpoint(endpoint)
+  ) {
+    return NextResponse.json({ registered: false });
+  }
+
+  const registered = await pushSubscriptionsApi.hasPushSubscription(
+    supabase,
+    user.id,
+    endpoint,
+  );
+
+  return NextResponse.json({ registered });
+}
+
 export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
   const {

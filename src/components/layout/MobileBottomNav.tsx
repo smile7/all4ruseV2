@@ -18,6 +18,7 @@ import {
   LogOut,
   Megaphone,
   MoreHorizontal,
+  Newspaper,
   Plus,
   Scale,
   ScrollText,
@@ -399,6 +400,14 @@ export function MobileBottomNav({ initialUsername }: Props) {
             >
               <History className="text-muted-foreground size-4 shrink-0" />
               <span>{t("menuPastEvents")}</span>
+            </Link>
+            <Link
+              href="/more-from-ruse"
+              onClick={handleRouteStart("/more-from-ruse", { closeMore: true })}
+              className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
+            >
+              <Newspaper className="text-muted-foreground size-4 shrink-0" />
+              <span>{t("menuMoreFromRuse")}</span>
             </Link>
             <Link
               href="/why-all4ruse"
