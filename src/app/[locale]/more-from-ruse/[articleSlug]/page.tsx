@@ -1,6 +1,6 @@
 import { cache } from "react";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { ArticleCard } from "~/components/ArticleCard";
@@ -13,6 +13,7 @@ import {
   buildBreadcrumbJsonLd,
   serializeJsonLd,
 } from "~/lib/article-jsonld";
+import { articleSlugRedirectPath } from "~/lib/article-redirects";
 import {
   ARTICLES_PATH,
   buildArticleAlternates,
@@ -55,6 +56,9 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, articleSlug } = await params;
+  const redirected = articleSlugRedirectPath(articleSlug);
+  if (redirected) permanentRedirect(redirected);
+
   const t = await getTranslations({ locale, namespace: "MoreFromRuse" });
 
   const article = await getArticleCached(locale, articleSlug);
@@ -108,6 +112,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ArticleDetailPage({ params }: Props) {
   const { locale, articleSlug } = await params;
+  const redirected = articleSlugRedirectPath(articleSlug);
+  if (redirected) permanentRedirect(redirected);
+
   const t = await getTranslations({ locale, namespace: "MoreFromRuse" });
 
   const article = await getArticleCached(locale, articleSlug);

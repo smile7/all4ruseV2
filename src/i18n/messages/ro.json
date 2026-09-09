@@ -793,9 +793,6 @@
     "pageIndicator": "Pagina {page} din {total}",
     "notFound": "Articolul nu a fost găsit",
     "siteLinks": {
-      "whyTitle": "Despre all4ruse",
-      "whyDescription": "Cine stă în spatele site-ului și de ce adunăm viața din Ruse într-un singur loc.",
-      "whyImageAlt": "Creatoarea all4ruse",
       "advertiseTitle": "Promovează-te aici",
       "advertiseDescription": "Arată-ți afacerea sau evenimentul oamenilor care caută ce să facă în Ruse."
     },

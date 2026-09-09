@@ -793,9 +793,6 @@
     "pageIndicator": "Сторінка {page} з {total}",
     "notFound": "Статтю не знайдено",
     "siteLinks": {
-      "whyTitle": "Про all4ruse",
-      "whyDescription": "Хто стоїть за сайтом і чому ми збираємо життя Русе в одному місці.",
-      "whyImageAlt": "Творчиня all4ruse",
       "advertiseTitle": "Рекламуйся тут",
       "advertiseDescription": "Покажи свій бізнес або подію людям, які шукають, чим зайнятися в Русе."
     },

@@ -793,9 +793,6 @@
     "pageIndicator": "Page {page} of {total}",
     "notFound": "Article not found",
     "siteLinks": {
-      "whyTitle": "About all4ruse",
-      "whyDescription": "Meet the person behind the site and why we gather Ruse in one place.",
-      "whyImageAlt": "Creator of all4ruse",
       "advertiseTitle": "Advertise here",
       "advertiseDescription": "Put your business or event in front of people looking for things to do in Ruse."
     },

@@ -3,6 +3,8 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 import withSerwistInit from "@serwist/next";
 
+import { nextConfigArticleRedirects } from "./src/lib/article-redirects";
+
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const withSerwist = withSerwistInit({
@@ -34,6 +36,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
+  },
+  async redirects() {
+    return nextConfigArticleRedirects();
   },
   experimental: {
     viewTransition: true,
