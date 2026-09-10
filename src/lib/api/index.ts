@@ -1,5 +1,6 @@
 export type { AdvertiseInquiry } from "./advertise-inquiries";
 export { advertiseInquiriesApi } from "./advertise-inquiries";
+export { clickCountsApi } from "./click-counts";
 export type {
   AdminArticleListItem,
   ArticleGroupOption,

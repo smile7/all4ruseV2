@@ -12,6 +12,7 @@ import { Switch } from "~/components/ui/switch";
 import { useTags } from "~/hooks/query/tags";
 import { useFilters } from "~/hooks/useFilters";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
+import { trackClick } from "~/lib/analytics/track-click";
 import { HIDDEN_TAG_KEYS, normalizeEventTagKey } from "~/lib/event-tag-styles";
 
 import { ClearableInput } from "./ClearableInput";
@@ -137,6 +138,7 @@ export function FilterContent({ hideQuickFilters = false }: Props) {
               activeTo={filters.to}
               onSelect={setDateRange}
               className="bg-background"
+              trackKey="filter.today"
             />
             <QuickDateButton
               label={t("thisWeekend")}
@@ -146,6 +148,7 @@ export function FilterContent({ hideQuickFilters = false }: Props) {
               activeTo={filters.to}
               onSelect={setDateRange}
               className="bg-background"
+              trackKey="filter.this_weekend"
             />
             <QuickDateButton
               label={t("thisWeek")}
@@ -155,13 +158,17 @@ export function FilterContent({ hideQuickFilters = false }: Props) {
               activeTo={filters.to}
               onSelect={setDateRange}
               className="bg-background"
+              trackKey="filter.this_week"
             />
           </div>
           <div className="flex w-full flex-row items-center justify-between gap-2 md:w-auto">
             <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5">
               <Switch
                 checked={filters.isFree}
-                onCheckedChange={(v) => setFilters({ isFree: v })}
+                onCheckedChange={(v) => {
+                  setFilters({ isFree: v });
+                  if (v) trackClick("filter.free");
+                }}
               />
               <span className="text-sm font-medium whitespace-nowrap">
                 {t("freeFilter")}

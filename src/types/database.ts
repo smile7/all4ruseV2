@@ -116,6 +116,24 @@ export type Database = {
         }
         Relationships: []
       }
+      click_counts: {
+        Row: {
+          click_count: number
+          counted_on: string
+          event_key: string
+        }
+        Insert: {
+          click_count?: number
+          counted_on: string
+          event_key: string
+        }
+        Update: {
+          click_count?: number
+          counted_on?: string
+          event_key?: string
+        }
+        Relationships: []
+      }
       event_claims: {
         Row: {
           claimant_full_name: string | null
@@ -597,6 +615,7 @@ export type Database = {
               used: number
             }[]
           }
+      increment_click_count: { Args: { p_event_key: string }; Returns: undefined }
       is_valid_push_endpoint: { Args: { endpoint: string }; Returns: boolean }
       try_lock_geocode_upcoming: { Args: never; Returns: boolean }
       unlock_geocode_upcoming: { Args: never; Returns: boolean }

@@ -25,6 +25,7 @@ import {
 
 import { AdvertiseContactForm } from "~/components/AdvertiseContactForm";
 import { Typography } from "~/components/layout";
+import { TrackedLink } from "~/components/TrackedLink";
 import {
   Accordion,
   AccordionContent,
@@ -35,7 +36,6 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { ADVERTISE_CONTACT_HASH } from "~/constants";
-import { Link } from "~/i18n/navigation";
 import { eventsApi } from "~/lib/api";
 import { buildAlternates } from "~/lib/seo";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
@@ -319,13 +319,21 @@ export default async function AdvertisePage() {
 
                 <div className="why-fade-in why-fade-delay-400 mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                   <Button asChild size="lg">
-                    <a href={contactHref}>
+                    <TrackedLink
+                      eventKey="advertise.cta.discuss_partnership"
+                      href={contactHref}
+                    >
                       <Handshake className="size-4" aria-hidden />
                       {t("ctaDiscussPartnership")}
-                    </a>
+                    </TrackedLink>
                   </Button>
                   <Button asChild variant="outline" size="lg">
-                    <a href="#opportunities">{t("heroCtaSecondary")}</a>
+                    <TrackedLink
+                      eventKey="advertise.cta.see_opportunities"
+                      href="#opportunities"
+                    >
+                      {t("heroCtaSecondary")}
+                    </TrackedLink>
                   </Button>
                 </div>
 
@@ -535,10 +543,13 @@ export default async function AdvertisePage() {
                 </Typography.Small>
                 <div className="mt-4 flex justify-center sm:justify-start">
                   <Button asChild variant="secondary">
-                    <Link href="/create-event">
+                    <TrackedLink
+                      eventKey="advertise.cta.add_event"
+                      href="/create-event"
+                    >
                       <CalendarDays className="size-4" aria-hidden />
                       {t("premiumCta")}
-                    </Link>
+                    </TrackedLink>
                   </Button>
                 </div>
               </div>

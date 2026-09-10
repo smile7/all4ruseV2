@@ -1,6 +1,8 @@
 "use client";
 
 import { Button } from "~/components/ui/button";
+import { trackClick } from "~/lib/analytics/track-click";
+import type { TrackedEventKey } from "~/lib/analytics/tracked-events";
 import { cn } from "~/lib/utils";
 
 type Props = {
@@ -11,6 +13,8 @@ type Props = {
   activeTo: string;
   onSelect: (from: string, to: string) => void;
   className?: string;
+  /** Counted when the range is applied, not when it is cleared. */
+  trackKey?: TrackedEventKey;
 };
 
 /** Toggles a preset date range — clicking the active range clears it. */
@@ -22,6 +26,7 @@ export function QuickDateButton({
   activeTo,
   onSelect,
   className,
+  trackKey,
 }: Props) {
   const isActive = activeFrom === from && activeTo === to;
   return (
@@ -39,7 +44,14 @@ export function QuickDateButton({
         isActive && "border-primary text-primary",
         className,
       )}
-      onClick={() => onSelect(isActive ? "" : from, isActive ? "" : to)}
+      onClick={() => {
+        if (isActive) {
+          onSelect("", "");
+          return;
+        }
+        if (trackKey) trackClick(trackKey);
+        onSelect(from, to);
+      }}
     >
       <span className="block w-full text-center leading-tight text-balance whitespace-normal md:inline md:w-auto md:whitespace-nowrap">
         {label}

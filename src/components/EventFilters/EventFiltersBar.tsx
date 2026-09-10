@@ -7,6 +7,7 @@ import { ChevronDown, Search } from "lucide-react";
 
 import { Switch } from "~/components/ui/switch";
 import { useFilters } from "~/hooks/useFilters";
+import { trackClick } from "~/lib/analytics/track-click";
 import { cn } from "~/lib/utils";
 
 import { ClearableInput } from "./ClearableInput";
@@ -34,7 +35,7 @@ export function EventFiltersBar() {
 
   return (
     <section
-      className="bg-muted mt-4 rounded-xl border border-border/60 px-3 py-3 text-left sm:px-4"
+      className="bg-muted border-border/60 mt-4 rounded-xl border px-3 py-3 text-left sm:px-4"
       aria-label={t("filters")}
     >
       <button
@@ -83,6 +84,7 @@ export function EventFiltersBar() {
             activeTo={filters.to}
             onSelect={setDateRange}
             className={shortcutChipClass}
+            trackKey="filter.today"
           />
           <QuickDateButton
             label={t("thisWeekend")}
@@ -92,6 +94,7 @@ export function EventFiltersBar() {
             activeTo={filters.to}
             onSelect={setDateRange}
             className={shortcutChipClass}
+            trackKey="filter.this_weekend"
           />
           <QuickDateButton
             label={t("thisWeek")}
@@ -101,6 +104,7 @@ export function EventFiltersBar() {
             activeTo={filters.to}
             onSelect={setDateRange}
             className={shortcutChipClass}
+            trackKey="filter.this_week"
           />
           <label
             className={cn(
@@ -113,7 +117,10 @@ export function EventFiltersBar() {
           >
             <Switch
               checked={filters.isFree}
-              onCheckedChange={(v) => setFilters({ isFree: v })}
+              onCheckedChange={(v) => {
+                setFilters({ isFree: v });
+                if (v) trackClick("filter.free");
+              }}
               aria-label={t("freeFilter")}
             />
             <span className="font-medium whitespace-nowrap">
