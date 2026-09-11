@@ -25,16 +25,28 @@ import {
 } from "~/components/layout";
 import { RelatedEventsRow } from "~/components/layout/RelatedEventsRow";
 import { PartnerNearby } from "~/components/PartnerNearby";
+import { TheatreArticlePromo } from "~/components/TheatreArticlePromo";
 import { Card, CardContent } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
-import type { Locale } from "~/constants";
+import {
+  type Locale,
+  THEATRE_PROMO_ARTICLE_LOCALE,
+  THEATRE_PROMO_ARTICLE_SLUG,
+} from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
-import { claimsApi, eventsApi, profilesApi, reportsApi } from "~/lib/api";
+import {
+  articlesApi,
+  claimsApi,
+  eventsApi,
+  profilesApi,
+  reportsApi,
+} from "~/lib/api";
 import {
   EVENT_DESCRIPTION_BODY_CLASSES,
   plainTextFromHtml,
   sanitizeEventDescription,
 } from "~/lib/event-description-html";
+import { normalizeEventTagKey } from "~/lib/event-tag-styles";
 import {
   buildGCalUrl,
   formatEventTitle,
@@ -177,31 +189,49 @@ export default async function EventDetailPage({ params }: Props) {
   const showReportButton =
     Boolean(user) && !isEventCreator && user?.id !== adminUserId;
 
+  const hasTheatreTag = (event.tags ?? []).some(
+    (tag) => normalizeEventTagKey(tag.title) === "THEATRE",
+  );
+
   // Run all remaining independent fetches in parallel.
-  const [hostProfileResult, relatedEvents, existingClaim, existingReport] =
-    await Promise.all([
-      event.createdBy && event.createdBy !== adminUserId
-        ? profilesApi
-            .getProfile(publicClient, event.createdBy)
-            .then((r) => r.data)
-        : Promise.resolve(null),
-      eventsApi.getRelatedEvents(
-        publicClient,
-        event.id,
-        (event.tags ?? []).map((tag) => tag.id),
-        event.title,
-      ),
-      showClaimButton && user
-        ? claimsApi
-            .getMyClaimForEvent(authClient, event.id, user.id)
-            .catch(() => null)
-        : Promise.resolve(null),
-      showReportButton && user
-        ? reportsApi
-            .getMyReportForEvent(authClient, event.id, user.id)
-            .catch(() => null)
-        : Promise.resolve(null),
-    ]);
+  const [
+    hostProfileResult,
+    relatedEvents,
+    existingClaim,
+    existingReport,
+    theatrePromoArticle,
+  ] = await Promise.all([
+    event.createdBy && event.createdBy !== adminUserId
+      ? profilesApi
+          .getProfile(publicClient, event.createdBy)
+          .then((r) => r.data)
+      : Promise.resolve(null),
+    eventsApi.getRelatedEvents(
+      publicClient,
+      event.id,
+      (event.tags ?? []).map((tag) => tag.id),
+      event.title,
+    ),
+    showClaimButton && user
+      ? claimsApi
+          .getMyClaimForEvent(authClient, event.id, user.id)
+          .catch(() => null)
+      : Promise.resolve(null),
+    showReportButton && user
+      ? reportsApi
+          .getMyReportForEvent(authClient, event.id, user.id)
+          .catch(() => null)
+      : Promise.resolve(null),
+    hasTheatreTag
+      ? articlesApi
+          .getPublishedArticleBySlug(
+            publicClient,
+            THEATRE_PROMO_ARTICLE_LOCALE,
+            THEATRE_PROMO_ARTICLE_SLUG,
+          )
+          .catch(() => null)
+      : Promise.resolve(null),
+  ]);
 
   const hostProfile = hostProfileResult;
 
@@ -531,6 +561,16 @@ export default async function EventDetailPage({ params }: Props) {
                   </div>
                 </CardContent>
               </Card>
+
+              {theatrePromoArticle && (
+                <div className="lg:hidden">
+                  <TheatreArticlePromo
+                    article={theatrePromoArticle}
+                    locale={locale}
+                  />
+                </div>
+              )}
+
               <div className="flex flex-col gap-3 lg:hidden">
                 <EventActionButtons
                   locale={locale}
@@ -615,6 +655,12 @@ export default async function EventDetailPage({ params }: Props) {
 
             {/* ── Desktop sidebar (hidden on mobile) ──────────────────── */}
             <div className="hidden lg:sticky lg:top-20 lg:flex lg:w-52 lg:shrink-0 lg:flex-col lg:gap-3">
+              {theatrePromoArticle && (
+                <TheatreArticlePromo
+                  article={theatrePromoArticle}
+                  locale={locale}
+                />
+              )}
               <EventActionButtons
                 locale={locale}
                 eventId={event.id}

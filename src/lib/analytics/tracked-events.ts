@@ -15,6 +15,7 @@ export const TRACKED_EVENT_KEYS = [
   "advertise.cta.discuss_partnership",
   "advertise.cta.see_opportunities",
   "advertise.cta.add_event",
+  "event.promo.theatre_article",
 ] as const;
 
 export type TrackedEventKey = (typeof TRACKED_EVENT_KEYS)[number];

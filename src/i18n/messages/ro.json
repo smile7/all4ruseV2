@@ -294,7 +294,10 @@
     "reportEventAlreadyReported": "Ai raportat deja acest eveniment.",
     "reportEventError": "A apărut o eroare. Te rugăm să încerci din nou.",
     "reportEventReported": "Eveniment raportat",
-    "adminEventSourceDisclaimer": "Informațiile despre acest eveniment au fost preluate din surse publice disponibile și sunt publicate în scop informativ. Dacă este necesară o corectare, actualizare sau eliminare, vă rugăm să folosiți butonul \"Raportează evenimentul\"."
+    "adminEventSourceDisclaimer": "Informațiile despre acest eveniment au fost preluate din surse publice disponibile și sunt publicate în scop informativ. Dacă este necesară o corectare, actualizare sau eliminare, vă rugăm să folosiți butonul \"Raportează evenimentul\".",
+    "theatreArticlePromo": {
+      "heading": "Vezi toate teatrele în turneu și show-urile de stand-up din Ruse în articolul nostru"
+    }
   },
   "CurrentEvents": {
     "createEvent": "Creează un eveniment",

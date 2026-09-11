@@ -294,7 +294,10 @@
     "reportEventAlreadyReported": "You have already reported this event.",
     "reportEventError": "An error occurred. Please try again.",
     "reportEventReported": "Event reported",
-    "adminEventSourceDisclaimer": "The information about this event was taken from publicly available sources and is published for informational purposes. If a correction, update, or removal is needed, please use the \"Report event\" button."
+    "adminEventSourceDisclaimer": "The information about this event was taken from publicly available sources and is published for informational purposes. If a correction, update, or removal is needed, please use the \"Report event\" button.",
+    "theatreArticlePromo": {
+      "heading": "See all visiting theatres and stand-up shows in Ruse in our article"
+    }
   },
   "CurrentEvents": {
     "createEvent": "Create an Event",

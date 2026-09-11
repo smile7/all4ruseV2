@@ -6,6 +6,11 @@ export const ARTICLES_PAGE_SIZE = 12;
 export const ARTICLES_TEASER_COUNT = 3;
 export const ARTICLES_RELATED_COUNT = 3;
 
+/** Comedy-autumn article shown on THEATRE-tagged event pages. Bulgarian only. */
+export const THEATRE_PROMO_ARTICLE_SLUG =
+  "komediyna-esen-v-ruse-nikolaos-kapitana-vergov";
+export const THEATRE_PROMO_ARTICLE_LOCALE = "bg" as const;
+
 /** Article byline. A person's name is identical in every locale, so it never goes through next-intl. */
 export const DEFAULT_ARTICLE_AUTHOR = "Силвена Митева";
 
