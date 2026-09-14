@@ -245,6 +245,15 @@ export function formatTime(timeStr: string | null | undefined): string | null {
   return timeStr.slice(0, 5);
 }
 
+/** Calendar date without relative "today/tomorrow" — safe for meta descriptions. */
+export function formatCalendarDate(dateStr: string, locale: string): string {
+  return new Intl.DateTimeFormat(getIntlLocale(locale), {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(parseLocalDate(dateStr));
+}
+
 /**
  * Appends the date range to a multi-day event title for calendar display.
  * Single-day events are returned unchanged.
@@ -340,6 +349,67 @@ function parseClockOnLocalDate(dateStr: string, timeStr: string): Date {
 
   // offset = naiveUtcMs − sofiaAsUtcMs (e.g. −10 800 000 ms for UTC+3 in summer).
   return new Date(naiveUtcMs + (naiveUtcMs - sofiaAsUtcMs));
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function sofiaOffsetMinutes(instant: Date): number {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: APP_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(instant);
+
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value ?? 0);
+
+  const hour = get("hour") === 24 ? 0 : get("hour");
+  const sofiaAsUtcMs = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    hour,
+    get("minute"),
+    get("second"),
+  );
+  return Math.round((sofiaAsUtcMs - instant.getTime()) / 60000);
+}
+
+function formatUtcOffset(totalMinutes: number): string {
+  const sign = totalMinutes >= 0 ? "+" : "-";
+  const abs = Math.abs(totalMinutes);
+  return `${sign}${pad2(Math.floor(abs / 60))}:${pad2(abs % 60)}`;
+}
+
+/**
+ * ISO-8601 datetime in Europe/Sofia with an explicit UTC offset.
+ * Google Event rich results (the SERP "in 1 day" prefix) need this; a
+ * timezone-less `2026-09-15T19:00` is valid HTML but weaker for eligibility.
+ */
+export function toSofiaIsoDateTime(
+  date: string,
+  time: string | null | undefined,
+): string {
+  const raw = time?.trim();
+  if (!raw) return date;
+
+  const clean = raw.replace(/[+-]\d{2}(:\d{2})?$/, "");
+  const hhmm = clean.slice(0, 5);
+  if (!/^\d{2}:\d{2}$/.test(hhmm)) return date;
+
+  try {
+    const instant = parseClockOnLocalDate(date, clean);
+    return `${date}T${hhmm}:00${formatUtcOffset(sofiaOffsetMinutes(instant))}`;
+  } catch {
+    return `${date}T${hhmm}`;
+  }
 }
 
 /** Start instant in local time (defaults to midnight if `startTime` is empty). */

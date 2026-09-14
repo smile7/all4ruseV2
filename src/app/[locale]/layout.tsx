@@ -21,6 +21,9 @@ import type { Locale } from "~/constants";
 import { AuthProvider } from "~/contexts/AuthContext";
 import { routing } from "~/i18n/routing";
 import { profilesApi } from "~/lib/api";
+import { serializeJsonLd } from "~/lib/article-jsonld";
+import { LOCALE_TO_HREFLANG } from "~/lib/seo";
+import { buildSiteJsonLd } from "~/lib/site-jsonld";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import { THEME_INIT_SCRIPT } from "~/lib/theme-script";
 
@@ -83,12 +86,16 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <html
-      lang={locale}
+      lang={LOCALE_TO_HREFLANG[locale] ?? locale}
       className={comfortaa.variable}
       suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildSiteJsonLd()) }}
+        />
       </head>
       <body className="min-h-screen antialiased" suppressHydrationWarning>
         <ThemeProvider defaultTheme="system" enableSystem>

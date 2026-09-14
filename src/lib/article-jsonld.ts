@@ -1,5 +1,6 @@
 import { ARTICLE_AUTHOR_LINKS } from "~/constants";
 import { truncateForMeta } from "~/lib/seo";
+import { SITE_ORGANIZATION_ID } from "~/lib/site-jsonld";
 import type { Article } from "~/types";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
@@ -17,6 +18,7 @@ const MAX_HEADLINE_LENGTH = 110;
 
 const publisher = {
   "@type": "Organization",
+  "@id": SITE_ORGANIZATION_ID,
   name: "All4Ruse",
   url: SITE_URL,
   logo: {

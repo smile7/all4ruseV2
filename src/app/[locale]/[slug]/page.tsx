@@ -29,6 +29,7 @@ import { TheatreArticlePromo } from "~/components/TheatreArticlePromo";
 import { Card, CardContent } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import {
+  DEFAULT_LOCALE,
   type Locale,
   THEATRE_PROMO_ARTICLE_LOCALE,
   THEATRE_PROMO_ARTICLE_SLUG,
@@ -42,10 +43,15 @@ import {
   reportsApi,
 } from "~/lib/api";
 import {
+  buildBreadcrumbJsonLd,
+  serializeJsonLd,
+} from "~/lib/article-jsonld";
+import {
   EVENT_DESCRIPTION_BODY_CLASSES,
   plainTextFromHtml,
   sanitizeEventDescription,
 } from "~/lib/event-description-html";
+import { buildEventJsonLd } from "~/lib/event-jsonld";
 import { normalizeEventTagKey } from "~/lib/event-tag-styles";
 import {
   buildGCalUrl,
@@ -54,9 +60,10 @@ import {
   formatTime,
   getEventImageUrl,
   isLiveNow,
+  toSofiaIsoDateTime,
 } from "~/lib/event-utils";
 import { isUsernameInvalid } from "~/lib/profile-username";
-import { buildEventAlternates } from "~/lib/seo";
+import { buildEventAlternates, buildEventMetaDescription } from "~/lib/seo";
 import {
   createSupabasePublicServerClient,
   createSupabaseServerClient,
@@ -88,16 +95,6 @@ function buildEventUrl(locale: string, slug: string) {
   return `${siteUrl}${buildEventPath(locale, slug)}`;
 }
 
-function normalizeTime(time: string | null | undefined) {
-  if (!time) return null;
-  return time.slice(0, 5);
-}
-
-function buildIsoDateTime(date: string, time: string | null | undefined) {
-  const normalizedTime = normalizeTime(time);
-  return normalizedTime ? `${date}T${normalizedTime}` : date;
-}
-
 type Props = {
   params: Promise<{ slug: string; locale: string }>;
 };
@@ -116,9 +113,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       sanitizeEventDescription(event.description ?? ""),
     );
     const description =
-      (rawDescription.length > 160
-        ? rawDescription.slice(0, 160).replace(/\s+\S*$/, "")
-        : rawDescription) || formattedTitle;
+      buildEventMetaDescription({
+        description: rawDescription,
+        startDate: event.startDate,
+        startTime: event.startTime,
+        place: event.place,
+        town: event.town,
+        locale,
+      }) || formattedTitle;
     const imageUrl = getEventImageUrl(event.image);
     const absoluteImageUrl = imageUrl.startsWith("/")
       ? `${siteUrl}${imageUrl}`
@@ -282,6 +284,7 @@ export default async function EventDetailPage({ params }: Props) {
     : [];
 
   const eventUrl = buildEventUrl(locale, slug);
+  const canonicalUrl = buildEventUrl(DEFAULT_LOCALE, slug);
   const gcalUrl = buildGCalUrl(event);
   const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(eventUrl)}`;
   const descriptionText =
@@ -289,78 +292,32 @@ export default async function EventDetailPage({ params }: Props) {
       0,
       300,
     ) || formattedTitle;
-  const eventJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Event",
+  const eventJsonLd = buildEventJsonLd({
     name: formattedTitle,
     description: descriptionText,
-    url: eventUrl,
-    image: imageUrl ? [imageUrl] : undefined,
-    startDate: buildIsoDateTime(event.startDate, event.startTime),
-    endDate: buildIsoDateTime(event.endDate, event.endTime ?? event.startTime),
-    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-    eventStatus: event.isEventCancelled
-      ? "https://schema.org/EventCancelled"
-      : "https://schema.org/EventScheduled",
-    inLanguage: locale,
-    location:
-      event.place || event.address || event.town
-        ? {
-            "@type": "Place",
-            name: event.place ?? event.town ?? event.address,
-            address: {
-              "@type": "PostalAddress",
-              streetAddress: event.address || undefined,
-              addressLocality: event.town || undefined,
-              addressCountry: "BG",
-            },
-            ...(event.lat != null && event.lng != null
-              ? {
-                  geo: {
-                    "@type": "GeoCoordinates",
-                    latitude: event.lat,
-                    longitude: event.lng,
-                  },
-                }
-              : {}),
-          }
-        : undefined,
-    organizer: (() => {
-      const namedHosts = hosts
-        .filter((host): host is Required<Pick<Host, "name">> & Host =>
-          Boolean(host.name),
-        )
-        .map((host) => ({
-          "@type": "Organization" as const,
-          name: host.name,
-          url: host.link || undefined,
-        }));
-      if (namedHosts.length > 0) return namedHosts;
-      return {
-        "@type": "Organization" as const,
-        name: "All4Ruse",
-        url: "https://all4ruse.com",
-      };
-    })(),
-    offers:
-      event.price !== null && event.price !== undefined && event.price !== ""
-        ? {
-            "@type": "Offer",
-            url: event.ticketsLink || eventUrl,
-            price:
-              event.price === "0" || event.price === "0.00" ? "0" : event.price,
-            priceCurrency: "EUR",
-            availability: event.isSoldOut
-              ? "https://schema.org/SoldOut"
-              : "https://schema.org/InStock",
-          }
-        : {
-            "@type": "Offer",
-            price: "0",
-            priceCurrency: "BGN",
-            availability: "https://schema.org/InStock",
-          },
-  };
+    url: canonicalUrl,
+    imageUrl,
+    startDate: event.startDate,
+    endDate: event.endDate,
+    startTime: event.startTime,
+    endTime: event.endTime,
+    place: event.place,
+    address: event.address,
+    town: event.town,
+    lat: event.lat,
+    lng: event.lng,
+    locale,
+    isCancelled: event.isEventCancelled ?? false,
+    isSoldOut: event.isSoldOut ?? false,
+    price: event.price,
+    ticketsLink: event.ticketsLink,
+    tags: event.tags,
+    hosts,
+  });
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: t("breadcrumbHome"), url: `${siteUrl}/${DEFAULT_LOCALE}` },
+    { name: formattedTitle, url: canonicalUrl },
+  ]);
 
   const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const mapsQuery =
@@ -376,9 +333,11 @@ export default async function EventDetailPage({ params }: Props) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(eventJsonLd).replace(/</g, "\\u003c"),
-        }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(eventJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
 
       <div className="overflow-x-clip pb-20">
@@ -457,7 +416,7 @@ export default async function EventDetailPage({ params }: Props) {
                         label={t("time")}
                       >
                         <time
-                          dateTime={buildIsoDateTime(
+                          dateTime={toSofiaIsoDateTime(
                             event.startDate,
                             event.startTime,
                           )}
@@ -598,17 +557,6 @@ export default async function EventDetailPage({ params }: Props) {
                           __html: sanitizeEventDescription(event.description),
                         }}
                       />
-                    )}
-                    {isAdminEvent && (
-                      <p
-                        className={
-                          event.description
-                            ? "text-muted-foreground mt-4 border-t py-4 text-xs"
-                            : "text-muted-foreground text-sm"
-                        }
-                      >
-                        {t("adminEventSourceDisclaimer")}
-                      </p>
                     )}
                   </CardContent>
                 </Card>

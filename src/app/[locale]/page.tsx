@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { Plus } from "lucide-react";
@@ -9,24 +10,18 @@ import { EventFiltersBar } from "~/components/EventFilters";
 import { EventsList } from "~/components/EventsList";
 import { Typography } from "~/components/layout";
 import { Button } from "~/components/ui/button";
-import { ARTICLES_TEASER_COUNT } from "~/constants";
+import { ARTICLES_TEASER_COUNT, DEFAULT_LOCALE } from "~/constants";
 import { Link } from "~/i18n/navigation";
 import { articlesApi, eventsApi } from "~/lib/api";
+import { serializeJsonLd } from "~/lib/article-jsonld";
+import { buildEventCollectionJsonLd } from "~/lib/event-jsonld";
+import { formatEventTitle } from "~/lib/event-utils";
 import { buildAlternates } from "~/lib/seo";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import type { Event, GetEventsParams } from "~/types";
 
-export async function generateMetadata() {
-  const [t, locale] = await Promise.all([
-    getTranslations("HomePage"),
-    getLocale(),
-  ]);
-  return {
-    title: t("pageTitle"),
-    description: t("pageDescription"),
-    alternates: buildAlternates(locale),
-  };
-}
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
+const HOME_LIST_JSON_LD_LIMIT = 30;
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -67,6 +62,36 @@ function hasEventFilters(params: Partial<GetEventsParams>): boolean {
   );
 }
 
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}): Promise<Metadata> {
+  const [t, locale, rawParams] = await Promise.all([
+    getTranslations("HomePage"),
+    getLocale(),
+    searchParams,
+  ]);
+  const filtered = hasEventFilters(parseSearchParams(rawParams));
+  const title = t("pageTitle");
+  const description = t("pageDescription");
+  const alternates = buildAlternates(locale);
+
+  return {
+    title,
+    description,
+    alternates,
+    ...(filtered ? { robots: { index: false, follow: true } } : {}),
+    openGraph: {
+      title,
+      description,
+      url: alternates.canonical,
+      siteName: "All4Ruse",
+      type: "website",
+    },
+  };
+}
+
 export default async function HomePage({
   searchParams,
 }: {
@@ -77,6 +102,7 @@ export default async function HomePage({
     getLocale(),
   ]);
   const params = parseSearchParams(await searchParams);
+  const filtered = hasEventFilters(params);
 
   const client = await createSupabaseServerClient();
   let initialData: Event[] = [];
@@ -89,7 +115,7 @@ export default async function HomePage({
     ARTICLES_TEASER_COUNT,
   );
 
-  if (hasEventFilters(params)) {
+  if (filtered) {
     const [filteredEvents, allEvents] = await Promise.all([
       eventsApi.getActiveEvents(client, params),
       eventsApi.getActiveEvents(client),
@@ -102,9 +128,36 @@ export default async function HomePage({
   }
 
   const latestArticles = await articlesPromise;
+  const homeUrl = `${siteUrl}/${locale}`;
+  const collectionJsonLd =
+    !filtered && initialData.length > 0
+      ? buildEventCollectionJsonLd({
+          url: homeUrl,
+          name: t("pageTitle"),
+          description: t("pageDescription"),
+          items: initialData
+            .filter(
+              (event): event is Event & { slug: string } =>
+                typeof event.slug === "string" && event.slug.length > 0,
+            )
+            .slice(0, HOME_LIST_JSON_LD_LIMIT)
+            .map((event) => ({
+              name: formatEventTitle(event.title),
+              url: `${siteUrl}/${DEFAULT_LOCALE}/${event.slug}`,
+            })),
+        })
+      : null;
 
   return (
     <div className="max-w-9xl mx-auto flex w-full flex-col gap-1 px-4 py-6 text-center sm:px-6 lg:px-8">
+      {collectionJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: serializeJsonLd(collectionJsonLd),
+          }}
+        />
+      )}
       <Typography.H1 className="text-center text-3xl">
         {t("pageTitle")}
       </Typography.H1>

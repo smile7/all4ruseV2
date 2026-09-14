@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
 
 // Required root layout — passes through to [locale]/layout.tsx which
-// renders <html lang={locale}> so the lang attribute is always set correctly.
+// renders <html lang> from the BCP 47 tag (ua → uk) so Google sees a
+// valid language, not the URL slug.
 export default function RootLayout({ children }: { children: ReactNode }) {
   return children;
 }

@@ -1,12 +1,13 @@
 import { DEFAULT_LOCALE, LOCALES } from "~/constants";
+import { formatCalendarDate, formatTime } from "~/lib/event-utils";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
 /**
  * Maps route-level locale slugs (used in URLs: /ua/) to valid BCP 47
- * language tags (used in hreflang attributes).
+ * language tags (used in hreflang attributes and `<html lang>`).
  */
-const LOCALE_TO_HREFLANG: Record<string, string> = {
+export const LOCALE_TO_HREFLANG: Record<string, string> = {
   bg: "bg",
   en: "en",
   ua: "uk", // URL slug "ua" → BCP 47 "uk" (Ukrainian)
@@ -102,18 +103,49 @@ export function truncateForMeta(text: string, maxLength = 160): string {
     .trim();
 }
 
-export function buildEventAlternates(locale: string, slug: string) {
-  const languages: Record<string, string> = {};
+/**
+ * Puts the when/where first so the SERP snippet stays useful even when Google
+ * does not (yet) render an Event rich result with the relative date prefix.
+ * Uses a calendar date, not "tomorrow" — meta tags are cached.
+ */
+export function buildEventMetaDescription({
+  description,
+  startDate,
+  startTime,
+  place,
+  town,
+  locale,
+}: {
+  description: string;
+  startDate: string;
+  startTime: string | null | undefined;
+  place: string | null | undefined;
+  town: string | null | undefined;
+  locale: string;
+}): string {
+  const timeLabel = formatTime(startTime);
+  const when = timeLabel
+    ? `${formatCalendarDate(startDate, locale)}, ${timeLabel}`
+    : formatCalendarDate(startDate, locale);
+  const where = [place?.trim(), town?.trim()].filter(Boolean).join(", ");
+  const lead = [when, where].filter(Boolean).join(" · ");
+  const body = description.trim();
+  return truncateForMeta(body ? `${lead} — ${body}` : lead);
+}
 
-  for (const lang of LOCALES) {
-    const hreflang = LOCALE_TO_HREFLANG[lang] ?? lang;
-    languages[hreflang] = `${SITE_URL}/${lang}/${slug}`;
-  }
-
-  languages["x-default"] = `${SITE_URL}/${DEFAULT_LOCALE}/${slug}`;
+export function buildEventAlternates(_locale: string, slug: string) {
+  // Event title/description/venue are not translated. Emitting en/ua/ro as
+  // hreflang alternates tells Google they are language versions — they are
+  // not — and splits ranking across four duplicate URLs. Canonical + hreflang
+  // both point at Bulgarian, matching how article translations already work.
+  const canonical = `${SITE_URL}/${DEFAULT_LOCALE}/${slug}`;
+  const hreflang = LOCALE_TO_HREFLANG[DEFAULT_LOCALE] ?? DEFAULT_LOCALE;
 
   return {
-    canonical: `${SITE_URL}/${locale}/${slug}`,
-    languages,
+    canonical,
+    languages: {
+      [hreflang]: canonical,
+      "x-default": canonical,
+    },
   };
 }

@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { LOCALES } from "~/constants";
+import { DEFAULT_LOCALE, LOCALES } from "~/constants";
 import { articlesApi, eventsApi, profilesApi } from "~/lib/api";
 import { ARTICLES_PATH } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
@@ -85,14 +85,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })),
   );
 
-  const eventEntries: MetadataRoute.Sitemap = slugsWithDates.flatMap(
-    ({ slug, createdAt }) =>
-      LOCALES.map((locale) => ({
-        url: `${siteUrl}/${locale}/${slug}`,
-        lastModified: new Date(createdAt),
-        changeFrequency: "weekly" as const,
-        priority: 0.55,
-      })),
+  const eventEntries: MetadataRoute.Sitemap = slugsWithDates.map(
+    ({ slug, createdAt }) => ({
+      url: `${siteUrl}/${DEFAULT_LOCALE}/${slug}`,
+      lastModified: new Date(createdAt),
+      changeFrequency: "daily" as const,
+      priority: 0.7,
+    }),
   );
 
   const profileEntries: MetadataRoute.Sitemap = usernames.flatMap((username) =>
@@ -111,8 +110,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${siteUrl}/${locale}${ARTICLES_PATH}/${slug}`,
       lastModified: new Date(updatedAt),
       changeFrequency: "monthly" as const,
-      // Above events (0.55): evergreen content deserves more crawl attention
-      // than a page that decays two weeks after it is published.
+      // Upcoming events are the pages Google Event rich results come from.
       priority: 0.7,
     }),
   );

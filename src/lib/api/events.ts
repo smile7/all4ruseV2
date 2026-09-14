@@ -470,7 +470,8 @@ async function getAllSlugs(client: Client): Promise<string[]> {
 }
 
 // Returns slugs with their creation timestamps — used by the sitemap.
-// Events has no updated_at column; created_at is the best available proxy.
+// Only upcoming/active events: ended URLs stay reachable but should not
+// consume crawl budget. Events has no updated_at; created_at is the proxy.
 // Throws on DB error so the sitemap build fails visibly rather than silently
 // omitting all event URLs (which would harm SEO).
 async function getAllSlugsWithDates(
@@ -480,7 +481,8 @@ async function getAllSlugsWithDates(
     .from("events")
     .select("slug, created_at")
     .eq("isEventActive", true)
-    .not("slug", "is", null);
+    .not("slug", "is", null)
+    .gte("endDate", todayStr());
 
   if (error) {
     console.error("[getAllSlugsWithDates]", error);
