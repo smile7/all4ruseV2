@@ -13,7 +13,7 @@ const MAX_EXTRACTION_ATTEMPTS = 1;
 
 const JSON_FIELDS = `{
   "title": "string — event name",
-  "description": "string",
+  "description": "string — 4–6 Bulgarian paragraphs, about 220–320 words, with emoji",
   "startDate": "YYYY-MM-DD — nearest future date if year omitted",
   "endDate": "YYYY-MM-DD — same as startDate for single-day events",
   "startTime": "HH:MM — 24-hour format",
@@ -26,14 +26,34 @@ const JSON_FIELDS = `{
   "fbLink": "string — optional"
 }`;
 
+/**
+ * Public event copy on all4ruse.com. Structured fields stay factual;
+ * the description is a long local announcement, not a caption.
+ */
+const DESCRIPTION_RULES = `
+For "description": write the public announcement in Bulgarian — 4 to 6 short paragraphs, about 220–320 words (never under 180). Separate paragraphs with a blank line. Plain text only, no markdown.
+
+Facts vs flavour:
+- Never invent or change dates, times, venues, street addresses, prices, ticket links, or named performers that are not in the source.
+- You MUST expand far beyond a summary. Use the mood of this event, who it is for in Ruse, what the evening feels like, a question to the reader, and a last-line nudge to come / grab a ticket. If the source is thin, write from the event type (theatre, concert, kids, party…) without adding fake logistics.
+
+Voice — a real person from Ruse posting their own event, not a bot and not a press office:
+- Mix very short sentences with longer ones. Uneven paragraph lengths. Occasional aside ("и да, ще има…", "иначе казано —", "ако търсиш повод да излезеш…").
+- Spoken Bulgarian: "ела", "ще се видим", "не го изпускай", "за нас в Русе". Second person is fine.
+- Forbidden AI tells: "незабравимо преживяване", "потопете се", "в сърцето на града", "идеална възможност", "независимо дали", "очаква ви магия", "за малки и големи", "пригответе се", "присъединете се", three-item parallel lists, starting every paragraph the same way, stacking adjectives.
+- Do not open with the date. Do not close with "Don't miss it" in English. Do not write a symmetrical 3-paragraph essay.
+- Emoji: 5–9 of them, dropped inside sentences the way people actually type (🎭 🎶 📍 🎟️ 🥂 ✨ and similar, matching the event). Never a row of emoji on their own line. Never one at the start of every paragraph.
+- Every sentence should belong to THIS event. No generic filler about "culture" or "community" that could sit on any page.
+`;
+
 const IMAGE_SYSTEM_PROMPT = `You extract event details from poster/flyer images for a Bulgarian events website in Ruse.
 
 Return ONLY valid JSON — no markdown, no explanation.
 
 Rules:
 - Read text visible on the poster (OCR). Do not invent dates, venues, or prices that are not visible or clearly implied.
-- For "description": transcribe or briefly summarize the poster text in Bulgarian (max 60 words), in a warm, friendly tone — like a local event organizer, not a dry listing. Use 1–2 fitting emoji naturally, never decorative. Plain text only.
-- Omit fields you cannot determine.
+${DESCRIPTION_RULES}
+- Omit fields you cannot determine (except description, which is always required).
 
 Return a JSON object with these optional fields:
 ${JSON_FIELDS}`;
@@ -43,9 +63,10 @@ const TEXT_SYSTEM_PROMPT = `You extract event details from user-provided text fo
 Return ONLY valid JSON — no markdown, no explanation.
 
 Rules:
-- Extract structured fields from the input. Do not invent facts not present in the text.
-- For "description": reformat the user's text into 1–2 short paragraphs in Bulgarian (max 100 words). Keep their facts; light polish only — not a marketing rewrite. Write with warmth, like a local event organizer talking to a friend, and use 1–2 fitting emoji naturally — never decorative or forced.
-- Omit fields you cannot determine.
+- Extract structured fields from the input. Do not invent logistics (dates, venues, prices, names) that are not in the text.
+${DESCRIPTION_RULES}
+- If the user already wrote a long description, keep their facts and voice, then expand and reshape it to the length and style above — do not shrink it.
+- Omit fields you cannot determine (except description, which is always required).
 
 Return a JSON object with these optional fields:
 ${JSON_FIELDS}`;
@@ -108,7 +129,9 @@ function createExtractionModel(
     model: modelName,
     systemInstruction,
     generationConfig: {
-      temperature: 0.1,
+      // Low temp made every description sound like the same template.
+      // 0.75 keeps dates/JSON usable while varying the announcement copy.
+      temperature: 0.75,
       maxOutputTokens,
       responseMimeType: "application/json",
     },
@@ -274,7 +297,7 @@ async function generateDraftFromContent(
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export async function extractDraftFromText(text: string): Promise<EventDraft> {
-  return generateDraftFromContent(text, TEXT_SYSTEM_PROMPT, 768);
+  return generateDraftFromContent(text, TEXT_SYSTEM_PROMPT, 2560);
 }
 
 export async function extractDraftFromImageBytes(
@@ -284,8 +307,8 @@ export async function extractDraftFromImageBytes(
 ): Promise<EventDraft> {
   const trimmedText = additionalText?.trim();
   const instruction = trimmedText
-    ? `Extract visible event details from this poster. The user also provided this additional context — use it to fill in or correct details that aren't clear from the image alone:\n"""${trimmedText}"""\nReturn JSON only.`
-    : "Extract visible event details from this poster. Return JSON only.";
+        ? `Extract visible event details from this poster. The user also provided this additional context — use it to fill in or correct details that aren't clear from the image alone, then write the full public description as specified:\n"""${trimmedText}"""\nReturn JSON only.`
+    : "Extract visible event details from this poster, then write the full public description as specified. Return JSON only.";
 
   return generateDraftFromContent(
     [
@@ -298,6 +321,6 @@ export async function extractDraftFromImageBytes(
       instruction,
     ],
     IMAGE_SYSTEM_PROMPT,
-    512,
+    2560,
   );
 }
