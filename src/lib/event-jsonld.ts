@@ -42,6 +42,7 @@ export type EventJsonLdInput = {
   description: string;
   url: string;
   imageUrl: string | null;
+  galleryUrls?: string[];
   startDate: string;
   endDate: string;
   startTime: string | null;
@@ -104,6 +105,91 @@ function absoluteEventImage(imageUrl: string | null): string | undefined {
   if (!imageUrl || imageUrl === FALLBACK_IMAGE) return undefined;
   if (imageUrl.startsWith("/")) return `${SITE_URL}${imageUrl}`;
   return imageUrl;
+}
+
+/** Google prefers several images per event; it picks the best crop for the SERP. */
+function buildImages(input: EventJsonLdInput): string[] {
+  const all = [input.imageUrl, ...(input.galleryUrls ?? [])]
+    .map((url) => absoluteEventImage(url ?? null))
+    .filter((url): url is string => Boolean(url));
+  return [...new Set(all)].slice(0, 6);
+}
+
+/**
+ * Most imported events have no end time. Emitting `endDate === startDate` tells
+ * Google the event is over the moment it starts, which drops the "in 2 days"
+ * SERP prefix. Mirrors the fallback duration used by the "live now" badge.
+ */
+const FALLBACK_DURATION_MINUTES = 90;
+
+function pad2(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+function addDays(date: string, days: number): string {
+  if (days === 0) return date;
+  const shifted = new Date(`${date}T12:00:00Z`);
+  if (Number.isNaN(shifted.getTime())) return date;
+  shifted.setUTCDate(shifted.getUTCDate() + days);
+  return shifted.toISOString().slice(0, 10);
+}
+
+function buildEndDateTime(input: EventJsonLdInput): string {
+  const endTime = input.endTime?.trim();
+  if (endTime) return toSofiaIsoDateTime(input.endDate, endTime);
+
+  const isMultiDay = input.endDate !== input.startDate;
+  const startTime = input.startTime?.trim();
+  if (isMultiDay || !startTime) {
+    return toSofiaIsoDateTime(input.endDate, "23:59");
+  }
+
+  const [hours, minutes] = startTime.slice(0, 5).split(":").map(Number);
+  if (
+    hours === undefined ||
+    minutes === undefined ||
+    !Number.isFinite(hours) ||
+    !Number.isFinite(minutes)
+  ) {
+    return toSofiaIsoDateTime(input.endDate, "23:59");
+  }
+
+  const total = hours * 60 + minutes + FALLBACK_DURATION_MINUTES;
+  const dayOffset = Math.floor(total / 1440);
+  const inDay = total % 1440;
+  return toSofiaIsoDateTime(
+    addDays(input.endDate, dayOffset),
+    `${pad2(Math.floor(inDay / 60))}:${pad2(inDay % 60)}`,
+  );
+}
+
+/** `performer` is only meaningful on event types where someone performs. */
+const PERFORMER_EVENT_TYPES = new Set<SchemaEventType>([
+  "MusicEvent",
+  "TheaterEvent",
+  "SportsEvent",
+]);
+
+function buildPerformer(hosts: Host[], eventType: SchemaEventType) {
+  if (!PERFORMER_EVENT_TYPES.has(eventType)) return undefined;
+
+  const mapped = hosts
+    .filter((host): host is Host & { name: string } => Boolean(host.name))
+    .map((host) => ({
+      "@type": "PerformingGroup" as const,
+      name: host.name,
+      ...(host.link ? { url: host.link } : {}),
+    }));
+
+  if (mapped.length === 0) return undefined;
+  return mapped.length === 1 ? mapped[0] : mapped;
+}
+
+function buildKeywords(tags: EventJsonLdInput["tags"]): string | undefined {
+  const titles = (tags ?? [])
+    .map((tag) => tag.title?.trim())
+    .filter((title): title is string => Boolean(title));
+  return titles.length > 0 ? [...new Set(titles)].join(", ") : undefined;
 }
 
 function buildLocation(input: EventJsonLdInput) {
@@ -181,22 +267,22 @@ function buildOffers(input: EventJsonLdInput) {
 }
 
 export function buildEventJsonLd(input: EventJsonLdInput) {
-  const image = absoluteEventImage(input.imageUrl);
+  const images = buildImages(input);
   const offers = buildOffers(input);
   const parsedPrice = parseEventOfferPrice(input.price);
+  const eventType = schemaEventType(input.tags);
+  const performer = buildPerformer(input.hosts, eventType);
+  const keywords = buildKeywords(input.tags);
 
   return {
     "@context": "https://schema.org",
-    "@type": schemaEventType(input.tags),
+    "@type": eventType,
     name: input.name,
     description: input.description,
     url: input.url,
-    ...(image ? { image: [image] } : {}),
+    ...(images.length > 0 ? { image: images } : {}),
     startDate: toSofiaIsoDateTime(input.startDate, input.startTime),
-    endDate: toSofiaIsoDateTime(
-      input.endDate,
-      input.endTime ?? input.startTime,
-    ),
+    endDate: buildEndDateTime(input),
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     eventStatus: input.isCancelled
       ? "https://schema.org/EventCancelled"
@@ -204,6 +290,8 @@ export function buildEventJsonLd(input: EventJsonLdInput) {
     inLanguage: LOCALE_TO_BCP47[input.locale] ?? input.locale,
     location: buildLocation(input),
     organizer: buildOrganizer(input.hosts),
+    ...(performer ? { performer } : {}),
+    ...(keywords ? { keywords } : {}),
     ...(offers ? { offers } : {}),
     ...(parsedPrice?.kind === "free" ? { isAccessibleForFree: true } : {}),
     mainEntityOfPage: {

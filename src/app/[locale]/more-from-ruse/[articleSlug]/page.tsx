@@ -1,7 +1,7 @@
 import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ArticleCard } from "~/components/ArticleCard";
 import { ArticleView } from "~/components/ArticleDetail";
@@ -23,6 +23,13 @@ import {
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
 export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const entries = await articlesApi.getArticleSitemapEntries(
+    createSupabasePublicServerClient(),
+  );
+  return entries.map(({ locale, slug }) => ({ locale, articleSlug: slug }));
+}
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
@@ -114,6 +121,8 @@ export default async function ArticleDetailPage({ params }: Props) {
   const { locale, articleSlug } = await params;
   const redirected = articleSlugRedirectPath(articleSlug);
   if (redirected) permanentRedirect(redirected);
+
+  setRequestLocale(locale);
 
   const t = await getTranslations({ locale, namespace: "MoreFromRuse" });
 

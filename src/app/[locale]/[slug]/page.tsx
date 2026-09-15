@@ -1,7 +1,11 @@
 import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getMessages, getTranslations } from "next-intl/server";
+import {
+  getMessages,
+  getTranslations,
+  setRequestLocale,
+} from "next-intl/server";
 
 import {
   Calendar,
@@ -35,23 +39,15 @@ import {
   THEATRE_PROMO_ARTICLE_SLUG,
 } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
-import {
-  articlesApi,
-  claimsApi,
-  eventsApi,
-  profilesApi,
-  reportsApi,
-} from "~/lib/api";
-import {
-  buildBreadcrumbJsonLd,
-  serializeJsonLd,
-} from "~/lib/article-jsonld";
+import { articlesApi, eventsApi, profilesApi } from "~/lib/api";
+import { buildBreadcrumbJsonLd, serializeJsonLd } from "~/lib/article-jsonld";
 import {
   EVENT_DESCRIPTION_BODY_CLASSES,
   plainTextFromHtml,
   sanitizeEventDescription,
 } from "~/lib/event-description-html";
 import { buildEventJsonLd } from "~/lib/event-jsonld";
+import { eventTagSlug } from "~/lib/event-tag-slug";
 import { normalizeEventTagKey } from "~/lib/event-tag-styles";
 import {
   buildGCalUrl,
@@ -64,10 +60,7 @@ import {
 } from "~/lib/event-utils";
 import { isUsernameInvalid } from "~/lib/profile-username";
 import { buildEventAlternates, buildEventMetaDescription } from "~/lib/seo";
-import {
-  createSupabasePublicServerClient,
-  createSupabaseServerClient,
-} from "~/lib/supabase/server";
+import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 import type { Host } from "~/types";
 
 /**
@@ -77,6 +70,15 @@ import type { Host } from "~/types";
 const getEventBySlugCached = cache((slug: string) =>
   eventsApi.getEventBySlug(createSupabasePublicServerClient(), slug),
 );
+
+// Statically rendered + revalidated. Nothing on this page may read cookies:
+// the signed-in-only actions are gated client-side in ~/components/EventUserActions.
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const slugs = await eventsApi.getAllSlugs(createSupabasePublicServerClient());
+  return slugs.map((slug) => ({ locale: DEFAULT_LOCALE, slug }));
+}
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
@@ -137,7 +139,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         url: eventUrl,
         siteName: "All4Ruse",
         images: absoluteImageUrl
-          ? [{ url: absoluteImageUrl, width: 1200, height: 630, alt: formattedTitle }]
+          ? [
+              {
+                url: absoluteImageUrl,
+                width: 1200,
+                height: 630,
+                alt: formattedTitle,
+              },
+            ]
           : [],
         type: "article",
         locale: openGraphLocaleByRouteLocale[safeLocale],
@@ -162,6 +171,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function EventDetailPage({ params }: Props) {
   const { slug, locale } = await params;
   const safeLocale = locale as Locale;
+  setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "SingleEvent" });
   const tHome = await getTranslations({ locale, namespace: "HomePage" });
   const messages = await getMessages({ locale });
@@ -169,71 +179,43 @@ export default async function EventDetailPage({ params }: Props) {
     .EventTags;
 
   const publicClient = createSupabasePublicServerClient();
-  const authClient = await createSupabaseServerClient();
 
-  const [event, { data: { user } }] = await Promise.all([
-    getEventBySlugCached(slug),
-    authClient.auth.getUser(),
-  ]);
+  const event = await getEventBySlugCached(slug);
   if (!event) notFound();
 
   const adminUserId = process.env.NEXT_PUBLIC_ADMIN_USER_ID ?? "";
-  const isEventCreator = Boolean(user && event.createdBy === user.id);
-  const isAdmin = Boolean(user && adminUserId && user.id === adminUserId);
 
-  // Show claim button when the event was imported by the admin (no real owner yet)
-  // and the logged-in user is not the admin themselves.
+  // Imported by the admin, so no real owner has taken it over yet.
   const isAdminEvent = Boolean(adminUserId && event.createdBy === adminUserId);
-  const showClaimButton =
-    Boolean(user) && isAdminEvent && user?.id !== adminUserId;
-
-  // Show report button for authenticated users who are not the event creator.
-  const showReportButton =
-    Boolean(user) && !isEventCreator && user?.id !== adminUserId;
 
   const hasTheatreTag = (event.tags ?? []).some(
     (tag) => normalizeEventTagKey(tag.title) === "THEATRE",
   );
 
   // Run all remaining independent fetches in parallel.
-  const [
-    hostProfileResult,
-    relatedEvents,
-    existingClaim,
-    existingReport,
-    theatrePromoArticle,
-  ] = await Promise.all([
-    event.createdBy && event.createdBy !== adminUserId
-      ? profilesApi
-          .getProfile(publicClient, event.createdBy)
-          .then((r) => r.data)
-      : Promise.resolve(null),
-    eventsApi.getRelatedEvents(
-      publicClient,
-      event.id,
-      (event.tags ?? []).map((tag) => tag.id),
-      event.title,
-    ),
-    showClaimButton && user
-      ? claimsApi
-          .getMyClaimForEvent(authClient, event.id, user.id)
-          .catch(() => null)
-      : Promise.resolve(null),
-    showReportButton && user
-      ? reportsApi
-          .getMyReportForEvent(authClient, event.id, user.id)
-          .catch(() => null)
-      : Promise.resolve(null),
-    hasTheatreTag
-      ? articlesApi
-          .getPublishedArticleBySlug(
-            publicClient,
-            THEATRE_PROMO_ARTICLE_LOCALE,
-            THEATRE_PROMO_ARTICLE_SLUG,
-          )
-          .catch(() => null)
-      : Promise.resolve(null),
-  ]);
+  const [hostProfileResult, relatedEvents, theatrePromoArticle] =
+    await Promise.all([
+      event.createdBy && event.createdBy !== adminUserId
+        ? profilesApi
+            .getProfile(publicClient, event.createdBy)
+            .then((r) => r.data)
+        : Promise.resolve(null),
+      eventsApi.getRelatedEvents(
+        publicClient,
+        event.id,
+        (event.tags ?? []).map((tag) => tag.id),
+        event.title,
+      ),
+      hasTheatreTag
+        ? articlesApi
+            .getPublishedArticleBySlug(
+              publicClient,
+              THEATRE_PROMO_ARTICLE_LOCALE,
+              THEATRE_PROMO_ARTICLE_SLUG,
+            )
+            .catch(() => null)
+        : Promise.resolve(null),
+    ]);
 
   const hostProfile = hostProfileResult;
 
@@ -247,12 +229,6 @@ export default async function EventDetailPage({ params }: Props) {
     if (isUsernameInvalid(u)) return null;
     return u;
   })();
-
-  const initialClaimStatus = existingClaim
-    ? (existingClaim.status as import("~/lib/api").ClaimStatus)
-    : null;
-
-  const alreadyReported = Boolean(existingReport);
 
   const formattedTitle = formatEventTitle(event.title);
   const imageUrl = getEventImageUrl(event.image);
@@ -297,6 +273,7 @@ export default async function EventDetailPage({ params }: Props) {
     description: descriptionText,
     url: canonicalUrl,
     imageUrl,
+    galleryUrls: galleryImages,
     startDate: event.startDate,
     endDate: event.endDate,
     startTime: event.startTime,
@@ -374,6 +351,7 @@ export default async function EventDetailPage({ params }: Props) {
                       eventTagLabels,
                     )}
                     size="md"
+                    href={`/tag/${eventTagSlug(tag.title)}`}
                   />
                 ))}
               </div>
@@ -538,11 +516,8 @@ export default async function EventDetailPage({ params }: Props) {
                   fbLink={event.fbLink}
                   gcalUrl={gcalUrl}
                   fbShareUrl={fbShareUrl}
-                  isEventCreator={isEventCreator}
-                  isAdmin={isAdmin}
+                  createdBy={event.createdBy}
                   hostProfileUsername={hostProfileUsername}
-                  showClaimButton={showClaimButton}
-                  initialClaimStatus={initialClaimStatus}
                 />
               </div>
 
@@ -575,8 +550,7 @@ export default async function EventDetailPage({ params }: Props) {
                   locale={locale}
                   mapsEmbedUrl={mapsEmbedUrl}
                   eventId={event.id}
-                  showReportButton={showReportButton}
-                  alreadyReported={alreadyReported}
+                  createdBy={event.createdBy}
                 />
               </div>
 
@@ -616,18 +590,14 @@ export default async function EventDetailPage({ params }: Props) {
                 fbLink={event.fbLink}
                 gcalUrl={gcalUrl}
                 fbShareUrl={fbShareUrl}
-                isEventCreator={isEventCreator}
-                isAdmin={isAdmin}
+                createdBy={event.createdBy}
                 hostProfileUsername={hostProfileUsername}
-                showClaimButton={showClaimButton}
-                initialClaimStatus={initialClaimStatus}
               />
               <EventMapAndReport
                 locale={locale}
                 mapsEmbedUrl={mapsEmbedUrl}
                 eventId={event.id}
-                showReportButton={showReportButton}
-                alreadyReported={alreadyReported}
+                createdBy={event.createdBy}
                 mapHeight={200}
                 mapRounded="lg"
               />

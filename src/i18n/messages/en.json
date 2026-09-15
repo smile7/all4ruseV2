@@ -45,6 +45,7 @@
     "navCreate": "Add",
     "menuEvents": "Upcoming Events",
     "menuPastEvents": "Past Events",
+    "menuFreeEvents": "Free events",
     "menuCurrentEvents": "Happening now",
     "menuWhyAll4Ruse": "About Us",
     "menuWhyAll4RuseTitle": "About Us",
@@ -673,6 +674,26 @@
     "formBusinessNameRequired": "Enter your business name",
     "formMessageRequired": "Write a message",
     "formPrivacyNote": "By submitting this form, you accept the processing of your data according to the <privacyLink>Privacy Policy</privacyLink>."
+  },
+  "FreeEvents": {
+    "pageTitle": "Free events in Ruse",
+    "pageDescription": "All upcoming free events in Ruse — concerts, exhibitions, kids' activities and outdoor events with free entry.",
+    "intro": "Upcoming events in Ruse with free entry — find out what to do in the city for free.",
+    "empty": "There are no upcoming free events right now.",
+    "browseAll": "All events",
+    "combineFilters": "Combine with other filters",
+    "breadcrumbHome": "Home"
+  },
+  "EventTagPage": {
+    "pageTitle": "{tag} in Ruse",
+    "heading": "{tag} in Ruse",
+    "pageDescription": "All upcoming {tag} events in Ruse — dates, times, venues and prices in one place.",
+    "intro": "Browse all upcoming {tag} events in Ruse.",
+    "empty": "There are no upcoming events in this category right now.",
+    "browseAll": "All events",
+    "combineFilters": "Combine with other filters",
+    "otherTags": "Other categories",
+    "breadcrumbHome": "Home"
   },
   "EventTags": {
     "COMEDY": "Comedy",

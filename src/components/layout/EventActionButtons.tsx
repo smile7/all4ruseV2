@@ -3,16 +3,17 @@ import { getTranslations } from "next-intl/server";
 import {
   CalendarPlus,
   ExternalLink,
-  Pencil,
   Share2,
   Ticket,
   User,
 } from "lucide-react";
 
-import { ClaimEventButton } from "~/components/ClaimEvent/ClaimEventButton";
 import { EventSaveButton } from "~/components/EventCard";
+import {
+  EventClaimAction,
+  EventEditButton,
+} from "~/components/EventUserActions";
 import { Button } from "~/components/ui/button";
-import type { ClaimStatus } from "~/lib/api/claims";
 
 type Props = {
   locale: string;
@@ -21,11 +22,8 @@ type Props = {
   fbLink: string | null;
   gcalUrl: string;
   fbShareUrl: string;
-  isEventCreator: boolean;
-  isAdmin?: boolean;
+  createdBy: string | null;
   hostProfileUsername: string | null | undefined;
-  showClaimButton: boolean;
-  initialClaimStatus: ClaimStatus | null;
 };
 
 export async function EventActionButtons({
@@ -35,28 +33,18 @@ export async function EventActionButtons({
   fbLink,
   gcalUrl,
   fbShareUrl,
-  isEventCreator,
-  isAdmin = false,
+  createdBy,
   hostProfileUsername,
-  showClaimButton,
-  initialClaimStatus,
 }: Props) {
   const t = await getTranslations({ locale, namespace: "SingleEvent" });
 
   return (
     <>
-      {(isEventCreator || isAdmin) && (
-        <Button
-          variant="outline"
-          asChild
-          className="w-full justify-start gap-2"
-        >
-          <a href={`/${locale}/create-event?editId=${eventId}`}>
-            <Pencil className="size-4 shrink-0" />
-            {t("editEvent")}
-          </a>
-        </Button>
-      )}
+      <EventEditButton
+        locale={locale}
+        eventId={eventId}
+        createdBy={createdBy}
+      />
       {ticketsLink && (
         <Button
           variant="secondary"
@@ -110,12 +98,7 @@ export async function EventActionButtons({
           {t("shareOnFacebook")}
         </a>
       </Button>
-      {showClaimButton && (
-        <ClaimEventButton
-          eventId={eventId}
-          initialClaimStatus={initialClaimStatus}
-        />
-      )}
+      <EventClaimAction eventId={eventId} createdBy={createdBy} />
     </>
   );
 }

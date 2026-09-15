@@ -1,7 +1,7 @@
 import localFont from "next/font/local";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getMessages, setRequestLocale } from "next-intl/server";
 
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -20,11 +20,9 @@ import { ThemeProvider } from "~/components/ThemeProvider";
 import type { Locale } from "~/constants";
 import { AuthProvider } from "~/contexts/AuthContext";
 import { routing } from "~/i18n/routing";
-import { profilesApi } from "~/lib/api";
 import { serializeJsonLd } from "~/lib/article-jsonld";
 import { LOCALE_TO_HREFLANG } from "~/lib/seo";
 import { buildSiteJsonLd } from "~/lib/site-jsonld";
-import { createSupabaseServerClient } from "~/lib/supabase/server";
 import { THEME_INIT_SCRIPT } from "~/lib/theme-script";
 
 import "../globals.css";
@@ -66,6 +64,10 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
 export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
 
@@ -73,16 +75,11 @@ export default async function LocaleLayout({ children, params }: Props) {
     notFound();
   }
 
-  const messages = await getMessages({ locale });
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Without this next-intl resolves the locale from headers, which opts every
+  // page in this segment out of static rendering.
+  setRequestLocale(locale);
 
-  const initialUsername = user
-    ? ((await profilesApi.getProfile(supabase, user.id)).data?.username ??
-      undefined)
-    : undefined;
+  const messages = await getMessages({ locale });
 
   return (
     <html
@@ -102,7 +99,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           <NextIntlClientProvider messages={messages}>
             <Providers>
               <AppSerwistProvider>
-                <AuthProvider userId={user?.id ?? null}>
+                <AuthProvider>
                   <CookieConsentProvider>
                     <ScrollToTopOnNavigate />
                     <Header />
@@ -115,7 +112,7 @@ export default async function LocaleLayout({ children, params }: Props) {
                       {children}
                     </main>
                     <Footer />
-                    <MobileBottomNav initialUsername={initialUsername} />
+                    <MobileBottomNav />
                     <TrackingScripts />
                   </CookieConsentProvider>
                 </AuthProvider>

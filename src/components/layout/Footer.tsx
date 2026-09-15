@@ -15,6 +15,7 @@ import {
   ScrollText,
   Settings2,
   ShieldCheck,
+  TicketCheck,
 } from "lucide-react";
 
 import {
@@ -127,6 +128,15 @@ export function Footer() {
               >
                 <CalendarClock className="text-muted-foreground size-4 shrink-0" />
                 {t("menuCurrentEvents")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                href="/free"
+                className="text-foreground/80 hover:text-foreground flex w-full cursor-pointer items-center gap-2"
+              >
+                <TicketCheck className="text-muted-foreground size-4 shrink-0" />
+                {t("menuFreeEvents")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
