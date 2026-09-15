@@ -6,6 +6,13 @@ export const ARTICLES_PAGE_SIZE = 12;
 export const ARTICLES_TEASER_COUNT = 3;
 export const ARTICLES_RELATED_COUNT = 3;
 
+/**
+ * Minimum upcoming events for a tag hub page to be indexable. Below this the
+ * page is too thin to rank and only dilutes crawl budget, so it renders
+ * `noindex, follow` and stays out of the sitemap.
+ */
+export const MIN_INDEXABLE_TAG_EVENTS = 3;
+
 /** Comedy-autumn article shown on THEATRE-tagged event pages. Bulgarian only. */
 export const THEATRE_PROMO_ARTICLE_SLUG =
   "komediyna-esen-v-ruse-nikolaos-kapitana-vergov";

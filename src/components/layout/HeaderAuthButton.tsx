@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { User } from "@supabase/supabase-js";
@@ -22,13 +22,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { Link, usePathname, useRouter } from "~/i18n/navigation";
+import { useAuth } from "~/contexts/AuthContext";
+import { Link, useRouter } from "~/i18n/navigation";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
-
-type Props = {
-  user: User | null;
-  username?: string;
-};
 
 function getAvatarFallback(user: User): string {
   const name =
@@ -36,77 +32,13 @@ function getAvatarFallback(user: User): string {
   return name.charAt(0).toUpperCase();
 }
 
-export function HeaderAuthButton({ user, username }: Props) {
+export function HeaderAuthButton() {
   const t = useTranslations("HomePage");
   const tSaved = useTranslations("SavedEvents");
   const tProfile = useTranslations("Profile");
-  const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const refreshedFromBrowser = useRef(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(user);
-  const [currentUsername, setCurrentUsername] = useState<string | undefined>(
-    username,
-  );
-  const [prevUser, setPrevUser] = useState(user);
-  const [prevUsername, setPrevUsername] = useState(username);
-
-  if (user !== prevUser || username !== prevUsername) {
-    setPrevUser(user);
-    setPrevUsername(username);
-    setCurrentUser(user);
-    setCurrentUsername(username);
-  }
-
-  useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-
-    function refreshIfServerStateIsStale(browserUserId: string | null) {
-      if (refreshedFromBrowser.current) return;
-      if ((user?.id ?? null) === browserUserId) return;
-      // Skip on auth pages — a refresh here races the post-login redirect.
-      if (pathname.startsWith("/auth")) return;
-
-      refreshedFromBrowser.current = true;
-      router.refresh();
-    }
-
-    async function loadUsername(userId: string) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("id", userId)
-        .single();
-
-      setCurrentUsername(profile?.username ?? undefined);
-    }
-
-    supabase.auth.getUser().then(({ data }) => {
-      setCurrentUser(data.user);
-      refreshIfServerStateIsStale(data.user?.id ?? null);
-
-      if (data.user) {
-        void loadUsername(data.user.id);
-      } else {
-        setCurrentUsername(undefined);
-      }
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_, session) => {
-      setCurrentUser(session?.user ?? null);
-      refreshIfServerStateIsStale(session?.user?.id ?? null);
-
-      if (session?.user) {
-        void loadUsername(session.user.id);
-      } else {
-        setCurrentUsername(undefined);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [pathname, router, user?.id]);
+  const { user: currentUser, username: currentUsername } = useAuth();
 
   async function handleLogout() {
     setOpen(false);

@@ -1,6 +1,3 @@
-import { profilesApi } from "~/lib/api";
-import { createSupabaseServerClient } from "~/lib/supabase/server";
-
 import { HeaderAuthButton } from "./HeaderAuthButton";
 import { HeaderInnerContainer } from "./HeaderInnerContainer";
 import { HeaderMoreFromRuseLink } from "./HeaderMoreFromRuseLink";
@@ -10,17 +7,7 @@ import { MobileBackButton } from "./MobileBackButton";
 import { MobileCreateEventButton } from "./MobileCreateEventButton";
 import { ThemeToggle } from "./ThemeToggle";
 
-export async function Header() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const username = user
-    ? ((await profilesApi.getProfile(supabase, user.id)).data?.username ??
-      undefined)
-    : undefined;
-
+export function Header() {
   return (
     <header className="border-border/60 bg-secondary/85 sticky top-0 z-50 w-full backdrop-blur-md">
       {/* ── Mobile (<md) ──────────────────────────────────────────────── */}
@@ -61,7 +48,7 @@ export async function Header() {
           <LocaleSwitcher />
           <ThemeToggle />
           <div className="bg-border mx-1 h-5 w-px" aria-hidden />
-          <HeaderAuthButton user={user} username={username} />
+          <HeaderAuthButton />
         </div>
       </HeaderInnerContainer>
     </header>

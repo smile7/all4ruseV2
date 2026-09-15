@@ -45,6 +45,7 @@
     "navCreate": "Adaugă",
     "menuEvents": "Evenimente viitoare",
     "menuPastEvents": "Evenimente trecute",
+    "menuFreeEvents": "Evenimente gratuite",
     "menuCurrentEvents": "Acum",
     "menuWhyAll4Ruse": "Despre noi",
     "menuWhyAll4RuseTitle": "Despre noi",
@@ -673,6 +674,26 @@
     "formBusinessNameRequired": "Introdu numele afacerii",
     "formMessageRequired": "Scrie un mesaj",
     "formPrivacyNote": "Trimițând formularul, accepți prelucrarea datelor conform <privacyLink>Politicii de confidențialitate</privacyLink>."
+  },
+  "FreeEvents": {
+    "pageTitle": "Evenimente gratuite în Ruse",
+    "pageDescription": "Toate evenimentele gratuite viitoare din Ruse — concerte, expoziții, activități pentru copii și evenimente în aer liber cu intrare liberă.",
+    "intro": "Evenimente viitoare în Ruse cu intrare liberă — descoperă ce poți face gratuit în oraș.",
+    "empty": "Momentan nu există evenimente gratuite viitoare.",
+    "browseAll": "Toate evenimentele",
+    "combineFilters": "Combină cu alte filtre",
+    "breadcrumbHome": "Acasă"
+  },
+  "EventTagPage": {
+    "pageTitle": "{tag} în Ruse",
+    "heading": "{tag} în Ruse",
+    "pageDescription": "Toate evenimentele viitoare din categoria „{tag}” în Ruse — date, ore, locuri și prețuri într-un singur loc.",
+    "intro": "Descoperă toate evenimentele viitoare din categoria „{tag}” în Ruse.",
+    "empty": "Momentan nu există evenimente viitoare în această categorie.",
+    "browseAll": "Toate evenimentele",
+    "combineFilters": "Combină cu alte filtre",
+    "otherTags": "Alte categorii",
+    "breadcrumbHome": "Acasă"
   },
   "EventTags": {
     "COMEDY": "Comedie",

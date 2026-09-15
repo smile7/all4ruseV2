@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
@@ -71,7 +71,7 @@ function getPostLoginPath(next: string | null, locale: string): string {
   return next;
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const t = useTranslations("Profile");
   const params = useParams();
   const searchParams = useSearchParams();
@@ -212,5 +212,15 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// `useSearchParams` reads the `?next=` redirect target; the boundary lets the
+// rest of the route prerender instead of forcing dynamic rendering.
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

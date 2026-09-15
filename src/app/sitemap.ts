@@ -1,17 +1,35 @@
 import type { MetadataRoute } from "next";
 
-import { DEFAULT_LOCALE, LOCALES } from "~/constants";
-import { articlesApi, eventsApi, profilesApi } from "~/lib/api";
-import { ARTICLES_PATH } from "~/lib/seo";
+import { DEFAULT_LOCALE, LOCALES, MIN_INDEXABLE_TAG_EVENTS } from "~/constants";
+import { articlesApi, eventsApi, profilesApi, tagsApi } from "~/lib/api";
+import { eventTagSlug } from "~/lib/event-tag-slug";
+import { ARTICLES_PATH, LOCALE_TO_HREFLANG } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
+
+/**
+ * Emits `<xhtml:link rel="alternate" hreflang="…">` next to each URL. Google
+ * only trusts a hreflang cluster when every version declares the whole set, and
+ * the sitemap is the cheapest place to do that for pages that exist in all four
+ * locales.
+ */
+function localeAlternates(path: string) {
+  const languages: Record<string, string> = {};
+  for (const locale of LOCALES) {
+    languages[LOCALE_TO_HREFLANG[locale] ?? locale] =
+      `${siteUrl}/${locale}${path}`;
+  }
+  languages["x-default"] = `${siteUrl}/${DEFAULT_LOCALE}${path}`;
+  return { languages };
+}
 
 // Dynamic listing pages: content changes daily so lastModified = now is accurate.
 const DYNAMIC_PATHS = [
   { path: "", priority: 1.0, changeFrequency: "daily" as const },
   { path: "/current", priority: 0.85, changeFrequency: "daily" as const },
   { path: "/past", priority: 0.85, changeFrequency: "daily" as const },
+  { path: "/free", priority: 0.9, changeFrequency: "daily" as const },
 ];
 
 // Static/editorial pages: use the date the content was last meaningfully edited.
@@ -57,11 +75,25 @@ const STATIC_PATHS = [
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const client = createSupabasePublicServerClient();
-  const [slugsWithDates, usernames, articleEntries] = await Promise.all([
-    eventsApi.getAllSlugsWithDates(client),
-    profilesApi.getAllPublicUsernames(client),
-    articlesApi.getArticleSitemapEntries(client),
-  ]);
+  const [slugsWithDates, usernames, articleEntries, tags, upcomingEvents] =
+    await Promise.all([
+      eventsApi.getAllSlugsWithDates(client),
+      profilesApi.getAllPublicUsernames(client),
+      articlesApi.getArticleSitemapEntries(client),
+      tagsApi.getTags(client).catch(() => []),
+      eventsApi.getActiveEvents(client).catch(() => []),
+    ]);
+
+  // Mirrors the noindex rule on the tag page itself.
+  const upcomingCountByTagId = new Map<number, number>();
+  for (const event of upcomingEvents) {
+    for (const tag of event.tags ?? []) {
+      upcomingCountByTagId.set(
+        tag.id,
+        (upcomingCountByTagId.get(tag.id) ?? 0) + 1,
+      );
+    }
+  }
 
   const now = new Date();
 
@@ -72,6 +104,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: now,
         changeFrequency,
         priority,
+        alternates: localeAlternates(path),
       })),
   );
 
@@ -82,6 +115,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified,
         changeFrequency,
         priority,
+        alternates: localeAlternates(path),
       })),
   );
 
@@ -100,8 +134,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.6,
+      alternates: localeAlternates(`/user/${username}`),
     })),
   );
+
+  // Tag hubs are the main category landing pages, so they rank above individual
+  // events for generic queries. Thin ones render noindex, so they are skipped.
+  const tagEntries: MetadataRoute.Sitemap = tags.flatMap((tag) => {
+    const slug = eventTagSlug(tag.title);
+    if (!slug) return [];
+    if ((upcomingCountByTagId.get(tag.id) ?? 0) < MIN_INDEXABLE_TAG_EVENTS) {
+      return [];
+    }
+    return LOCALES.map((locale) => ({
+      url: `${siteUrl}/${locale}/tag/${slug}`,
+      lastModified: now,
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+      alternates: localeAlternates(`/tag/${slug}`),
+    }));
+  });
 
   // One entry per translation that actually exists — never per locale, since an
   // untranslated article 404s in the other three.
@@ -110,7 +162,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${siteUrl}/${locale}${ARTICLES_PATH}/${slug}`,
       lastModified: new Date(updatedAt),
       changeFrequency: "monthly" as const,
-      // Upcoming events are the pages Google Event rich results come from.
       priority: 0.7,
     }),
   );
@@ -132,6 +183,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...dynamicEntries,
     ...staticEntries,
+    ...tagEntries,
     ...articleIndexEntries,
     ...articleDetailEntries,
     ...eventEntries,

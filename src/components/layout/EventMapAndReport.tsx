@@ -1,13 +1,12 @@
 import { getTranslations } from "next-intl/server";
 
-import { ReportEventButton } from "~/components/ReportEvent/ReportEventButton";
+import { EventReportAction } from "~/components/EventUserActions";
 
 type Props = {
   locale: string;
   mapsEmbedUrl: string | null;
   eventId: number;
-  showReportButton: boolean;
-  alreadyReported: boolean;
+  createdBy: string | null;
   mapHeight?: number;
   mapRounded?: "xl" | "lg";
 };
@@ -16,15 +15,10 @@ export async function EventMapAndReport({
   locale,
   mapsEmbedUrl,
   eventId,
-  showReportButton,
-  alreadyReported,
+  createdBy,
   mapHeight = 180,
   mapRounded = "xl",
 }: Props) {
-  if (!mapsEmbedUrl && !showReportButton) {
-    return null;
-  }
-
   const t = await getTranslations({ locale, namespace: "SingleEvent" });
   const mapRoundedClass = mapRounded === "lg" ? "rounded-lg" : "rounded-xl";
 
@@ -43,12 +37,7 @@ export async function EventMapAndReport({
           />
         </div>
       )}
-      {showReportButton && (
-        <ReportEventButton
-          eventId={eventId}
-          alreadyReported={alreadyReported}
-        />
-      )}
+      <EventReportAction eventId={eventId} createdBy={createdBy} />
     </>
   );
 }

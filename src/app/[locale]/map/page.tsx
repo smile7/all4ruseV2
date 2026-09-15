@@ -15,7 +15,8 @@ export async function generateMetadata() {
   ]);
   return {
     title: t("mapView"),
-    robots: "noindex, nofollow", // Hidden from search engines
+    // Not a landing page, but it links to every event — let crawlers follow through.
+    robots: "noindex, follow",
     alternates: buildAlternates(locale),
   };
 }
