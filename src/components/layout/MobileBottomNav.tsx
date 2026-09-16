@@ -53,6 +53,8 @@ import {
 } from "~/constants";
 import { useAuth } from "~/contexts/AuthContext";
 import { Link, usePathname, useRouter } from "~/i18n/navigation";
+import { trackClick } from "~/lib/analytics/track-click";
+import type { TrackedEventKey } from "~/lib/analytics/tracked-events";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 
 function getAvatarFallback(user: User): string {
@@ -104,14 +106,21 @@ export function MobileBottomNav() {
 
   function handleRouteStart(
     href: string,
-    options: { closeMore?: boolean; closeProfile?: boolean } = {},
+    options: {
+      closeMore?: boolean;
+      closeProfile?: boolean;
+      eventKey?: TrackedEventKey;
+    } = {},
   ) {
     return (event: MouseEvent<HTMLAnchorElement>) => {
-      if (!shouldShowNavigationPending(event)) return;
       if (pendingHref) {
-        event.preventDefault();
+        if (shouldShowNavigationPending(event)) event.preventDefault();
         return;
       }
+
+      if (options.eventKey) trackClick(options.eventKey);
+
+      if (!shouldShowNavigationPending(event)) return;
 
       if (pathname === href) {
         if (options.closeMore) setMoreOpen(false);
@@ -175,7 +184,7 @@ export function MobileBottomNav() {
           href="/"
           className={`${tabClass(isActive("/"), isEventsPending)} border-border/60 border-r`}
           aria-current={isActive("/") ? "page" : undefined}
-          onClick={handleRouteStart("/")}
+          onClick={handleRouteStart("/", { eventKey: "nav.events" })}
         >
           <span
             aria-hidden="true"
@@ -207,7 +216,9 @@ export function MobileBottomNav() {
           href="/profile/saved-events"
           className={`${tabClass(isActive("/profile/saved-events"), isSavedPending)} border-border/60 border-r`}
           aria-current={isActive("/profile/saved-events") ? "page" : undefined}
-          onClick={handleRouteStart("/profile/saved-events")}
+          onClick={handleRouteStart("/profile/saved-events", {
+            eventKey: "nav.saved",
+          })}
         >
           <span
             aria-hidden="true"
@@ -243,7 +254,10 @@ export function MobileBottomNav() {
         {/* Tab 3 — More */}
         <button
           type="button"
-          onClick={() => setMoreOpen(true)}
+          onClick={() => {
+            trackClick("nav.more");
+            setMoreOpen(true);
+          }}
           className={`${tabClass(false)} border-border/60 border-r`}
           aria-label={t("more")}
           disabled={isRoutePending}
@@ -255,7 +269,10 @@ export function MobileBottomNav() {
         {/* Tab 4 — Profile / Login */}
         <button
           type="button"
-          onClick={() => setProfileOpen(true)}
+          onClick={() => {
+            trackClick("nav.profile");
+            setProfileOpen(true);
+          }}
           className={tabClass(isProfileActive)}
           aria-label={user ? t("account") : t("loginButton")}
           disabled={isRoutePending}
@@ -299,6 +316,7 @@ export function MobileBottomNav() {
                 aria-label="Facebook"
                 className="flex flex-col items-center gap-1 transition-opacity hover:opacity-80"
                 style={{ color: FACEBOOK_BRAND_COLOR }}
+                onClick={() => trackClick("nav.more.facebook")}
               >
                 <span className="bg-muted flex size-10 items-center justify-center rounded-full">
                   <FacebookIcon size={18} />
@@ -312,6 +330,7 @@ export function MobileBottomNav() {
                 aria-label="Instagram"
                 className="flex flex-col items-center gap-1 transition-opacity hover:opacity-80"
                 style={{ color: INSTAGRAM_BRAND_COLOR }}
+                onClick={() => trackClick("nav.more.instagram")}
               >
                 <span className="bg-muted flex size-10 items-center justify-center rounded-full">
                   <InstagramIcon size={18} />
@@ -324,6 +343,7 @@ export function MobileBottomNav() {
                 rel="noopener"
                 aria-label="TikTok"
                 className="flex flex-col items-center gap-1 text-black transition-opacity hover:opacity-80 dark:text-white"
+                onClick={() => trackClick("nav.more.tiktok")}
               >
                 <span className="bg-muted flex size-10 items-center justify-center rounded-full">
                   <TikTokIcon size={18} />
@@ -344,7 +364,10 @@ export function MobileBottomNav() {
             </Link>
             <Link
               href="/current"
-              onClick={handleRouteStart("/current", { closeMore: true })}
+              onClick={handleRouteStart("/current", {
+                closeMore: true,
+                eventKey: "nav.more.current",
+              })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <CalendarClock className="text-muted-foreground size-4 shrink-0" />
@@ -352,7 +375,10 @@ export function MobileBottomNav() {
             </Link>
             <Link
               href="/past"
-              onClick={handleRouteStart("/past", { closeMore: true })}
+              onClick={handleRouteStart("/past", {
+                closeMore: true,
+                eventKey: "nav.more.past",
+              })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <History className="text-muted-foreground size-4 shrink-0" />
@@ -360,7 +386,10 @@ export function MobileBottomNav() {
             </Link>
             <Link
               href="/more-from-ruse"
-              onClick={handleRouteStart("/more-from-ruse", { closeMore: true })}
+              onClick={handleRouteStart("/more-from-ruse", {
+                closeMore: true,
+                eventKey: "nav.more.articles",
+              })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <Newspaper className="text-muted-foreground size-4 shrink-0" />
@@ -368,7 +397,10 @@ export function MobileBottomNav() {
             </Link>
             <Link
               href="/why-all4ruse"
-              onClick={handleRouteStart("/why-all4ruse", { closeMore: true })}
+              onClick={handleRouteStart("/why-all4ruse", {
+                closeMore: true,
+                eventKey: "nav.more.why",
+              })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <Info className="text-muted-foreground size-4 shrink-0" />
@@ -379,7 +411,10 @@ export function MobileBottomNav() {
 
             <Link
               href={ADVERTISE_HREF}
-              onClick={handleRouteStart("/advertise", { closeMore: true })}
+              onClick={handleRouteStart("/advertise", {
+                closeMore: true,
+                eventKey: "nav.more.advertise",
+              })}
               className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
             >
               <Megaphone className="text-muted-foreground size-4 shrink-0" />
@@ -490,6 +525,7 @@ export function MobileBottomNav() {
                       className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
                       onClick={handleRouteStart(`/user/${username}`, {
                         closeProfile: true,
+                        eventKey: "nav.profile.public",
                       })}
                     >
                       <ExternalLink className="text-muted-foreground size-4 shrink-0" />
@@ -504,6 +540,7 @@ export function MobileBottomNav() {
                   className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
                   onClick={handleRouteStart("/create-event", {
                     closeProfile: true,
+                    eventKey: "nav.profile.create_event",
                   })}
                 >
                   <Plus className="text-muted-foreground size-4 shrink-0" />
@@ -514,6 +551,7 @@ export function MobileBottomNav() {
                   href="/my-events"
                   onClick={handleRouteStart("/my-events", {
                     closeProfile: true,
+                    eventKey: "nav.profile.my_events",
                   })}
                   className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
                 >
@@ -527,6 +565,7 @@ export function MobileBottomNav() {
                   href="/profile"
                   onClick={handleRouteStart("/profile", {
                     closeProfile: true,
+                    eventKey: "nav.profile.account",
                   })}
                   className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
                 >
@@ -538,6 +577,7 @@ export function MobileBottomNav() {
                   href="/profile/saved-events"
                   onClick={handleRouteStart("/profile/saved-events", {
                     closeProfile: true,
+                    eventKey: "nav.profile.saved",
                   })}
                   className="text-foreground/80 hover:text-foreground flex items-center gap-3 rounded-lg px-1 py-2.5 text-sm transition-colors"
                 >
@@ -561,7 +601,10 @@ export function MobileBottomNav() {
                 <Button
                   asChild
                   className="w-full"
-                  onClick={() => setProfileOpen(false)}
+                  onClick={() => {
+                    trackClick("nav.auth.login");
+                    setProfileOpen(false);
+                  }}
                 >
                   <Link href="/auth/login">{t("loginButton")}</Link>
                 </Button>
@@ -569,7 +612,10 @@ export function MobileBottomNav() {
                   asChild
                   variant="outline"
                   className="w-full"
-                  onClick={() => setProfileOpen(false)}
+                  onClick={() => {
+                    trackClick("nav.auth.signup");
+                    setProfileOpen(false);
+                  }}
                 >
                   <Link href="/auth/signup">{tProfile("signupButton")}</Link>
                 </Button>

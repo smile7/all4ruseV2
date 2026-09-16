@@ -34,6 +34,7 @@ import {
 import { useFilters } from "~/hooks/useFilters";
 import { useViewPreference } from "~/hooks/useViewPreference";
 import { useRouter } from "~/i18n/navigation";
+import { trackClick } from "~/lib/analytics/track-click";
 import { formatEventMonthHeading, parseLocalDate } from "~/lib/event-utils";
 import type { Event } from "~/types";
 
@@ -313,6 +314,7 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
         value={view}
         onValueChange={(v) => {
           if (v === "grid" || v === "calendar") {
+            if (v === "calendar") trackClick("home.view.calendar");
             setView(v);
           }
         }}

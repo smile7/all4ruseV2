@@ -9,9 +9,9 @@ import { EventsGridSkeleton } from "~/components/EventCard/EventCardSkeleton";
 import { EventFiltersBar } from "~/components/EventFilters";
 import { EventsList } from "~/components/EventsList";
 import { Typography } from "~/components/layout";
+import { TrackedLink } from "~/components/TrackedLink";
 import { Button } from "~/components/ui/button";
 import { ARTICLES_TEASER_COUNT, DEFAULT_LOCALE } from "~/constants";
-import { Link } from "~/i18n/navigation";
 import { articlesApi, eventsApi } from "~/lib/api";
 import { serializeJsonLd } from "~/lib/article-jsonld";
 import { buildEventCollectionJsonLd } from "~/lib/event-jsonld";
@@ -164,10 +164,10 @@ export default async function HomePage({
 
       <div className="mt-2 flex justify-center">
         <Button asChild variant="outline">
-          <Link href="/create-event">
+          <TrackedLink eventKey="home.create_event" href="/create-event">
             <Plus className="size-4" />
             {t("createEvent")}
-          </Link>
+          </TrackedLink>
         </Button>
       </div>
 

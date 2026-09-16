@@ -13,6 +13,7 @@ import {
   EventClaimAction,
   EventEditButton,
 } from "~/components/EventUserActions";
+import { TrackedLink } from "~/components/TrackedLink";
 import { Button } from "~/components/ui/button";
 
 type Props = {
@@ -51,10 +52,15 @@ export async function EventActionButtons({
           asChild
           className="w-full justify-start gap-2"
         >
-          <a href={ticketsLink} target="_blank" rel="noopener">
+          <TrackedLink
+            eventKey="event.buy_tickets"
+            href={ticketsLink}
+            target="_blank"
+            rel="noopener"
+          >
             <Ticket className="size-4 shrink-0" />
             {t("buyTickets")}
-          </a>
+          </TrackedLink>
         </Button>
       )}
       {fbLink && (
@@ -63,10 +69,15 @@ export async function EventActionButtons({
           asChild
           className="w-full justify-start gap-2"
         >
-          <a href={fbLink} target="_blank" rel="noopener">
+          <TrackedLink
+            eventKey="event.facebook"
+            href={fbLink}
+            target="_blank"
+            rel="noopener"
+          >
             <ExternalLink className="size-4 shrink-0" />
             {t("facebook")}
-          </a>
+          </TrackedLink>
         </Button>
       )}
       <EventSaveButton eventId={eventId} variant="button" />
@@ -75,10 +86,15 @@ export async function EventActionButtons({
         asChild
         className="w-full justify-start gap-2"
       >
-        <a href={gcalUrl} target="_blank" rel="noopener">
+        <TrackedLink
+          eventKey="event.add_to_calendar"
+          href={gcalUrl}
+          target="_blank"
+          rel="noopener"
+        >
           <CalendarPlus className="size-4 shrink-0" />
           {t("addToCalendar")}
-        </a>
+        </TrackedLink>
       </Button>
       {hostProfileUsername && (
         <Button
@@ -86,17 +102,25 @@ export async function EventActionButtons({
           asChild
           className="w-full justify-start gap-2"
         >
-          <a href={`/${locale}/user/${hostProfileUsername}`}>
+          <TrackedLink
+            eventKey="event.organizer"
+            href={`/user/${hostProfileUsername}`}
+          >
             <User className="size-4 shrink-0" />
             {t("organizer")}
-          </a>
+          </TrackedLink>
         </Button>
       )}
       <Button asChild className="w-full justify-start gap-2">
-        <a href={fbShareUrl} target="_blank" rel="noopener">
+        <TrackedLink
+          eventKey="event.share_facebook"
+          href={fbShareUrl}
+          target="_blank"
+          rel="noopener"
+        >
           <Share2 className="size-4 shrink-0" />
           {t("shareOnFacebook")}
-        </a>
+        </TrackedLink>
       </Button>
       <EventClaimAction eventId={eventId} createdBy={createdBy} />
     </>
