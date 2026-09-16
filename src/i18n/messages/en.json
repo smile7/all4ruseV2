@@ -799,6 +799,15 @@
     "retry": "Try again",
     "home": "Go to home page"
   },
+  "EmbedEvents": {
+    "iframeTitle": "Events in Ruse — All4Ruse",
+    "heading": "Next 3 days",
+    "seeMore": "See all events",
+    "empty": "No events in the next 3 days.",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "logoAlt": "All4Ruse"
+  },
   "MoreFromRuse": {
     "pageTitle": "More from Ruse",
     "pageDescription": "Guides and ideas for Ruse — what to see, where to eat, what to do on the weekend and practical tips for the city.",
@@ -827,7 +836,8 @@
       "things-to-do": "Things to do",
       "history-culture": "History & culture",
       "nature-walks": "Nature & walks",
-      "practical": "Practical"
+      "practical": "Practical",
+      "curious": "Curious"
     },
     "admin": {
       "createTitle": "New article",

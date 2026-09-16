@@ -799,6 +799,15 @@
     "retry": "Încearcă din nou",
     "home": "Mergi la pagina principală"
   },
+  "EmbedEvents": {
+    "iframeTitle": "Evenimente în Ruse — All4Ruse",
+    "heading": "Următoarele 3 zile",
+    "seeMore": "Vezi toate evenimentele",
+    "empty": "Nu sunt evenimente în următoarele 3 zile.",
+    "today": "Astăzi",
+    "tomorrow": "Mâine",
+    "logoAlt": "All4Ruse"
+  },
   "MoreFromRuse": {
     "pageTitle": "Mai multe din Ruse",
     "pageDescription": "Ghiduri și idei pentru Ruse — ce să vezi, unde să mănânci, ce să faci în weekend și sfaturi practice despre oraș.",
@@ -827,7 +836,8 @@
       "things-to-do": "Ce poți face",
       "history-culture": "Istorie și cultură",
       "nature-walks": "Natură și plimbări",
-      "practical": "Practic"
+      "practical": "Practic",
+      "curious": "Curiozități"
     },
     "admin": {
       "createTitle": "Articol nou",

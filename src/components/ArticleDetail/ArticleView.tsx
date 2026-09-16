@@ -107,7 +107,6 @@ export async function ArticleView({ article, locale }: Props) {
       <ArticleImageLightbox>
         {article.hero_image && (
           <div className="mt-6">
-            {/* Fixed aspect ratio reserves the space so the hero cannot shift layout. */}
             <ArticleHeroGallery
               src={article.hero_image}
               alt={article.hero_image_alt ?? ""}

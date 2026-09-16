@@ -15,9 +15,12 @@ const withSerwist = withSerwistInit({
   disable: process.env.NODE_ENV === "development",
 });
 
-const securityHeaders = [
-  // Prevent the site from being embedded in foreign iframes (clickjacking).
-  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+const framingHeader = {
+  key: "X-Frame-Options",
+  value: "SAMEORIGIN",
+};
+
+const sharedSecurityHeaders = [
   // Stop browsers from MIME-sniffing the declared Content-Type.
   { key: "X-Content-Type-Options", value: "nosniff" },
   // Send full origin on same-origin requests, only the origin on cross-origin.
@@ -32,10 +35,17 @@ const securityHeaders = [
   // URLs that require careful allow-listing before a CSP can be tightened.
 ];
 
+const securityHeaders = [framingHeader, ...sharedSecurityHeaders];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [
+      // Partner widget — must be framable from local websites. Omit
+      // X-Frame-Options here; the catch-all below excludes /embed/.
+      { source: "/embed/:path*", headers: sharedSecurityHeaders },
+      { source: "/((?!embed/).*)", headers: securityHeaders },
+    ];
   },
   async redirects() {
     return nextConfigArticleRedirects();

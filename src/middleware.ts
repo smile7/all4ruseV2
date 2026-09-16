@@ -76,7 +76,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Exclude Next.js internals, static files, API routes, and the Supabase
-  // auth callback route which must stay locale-free.
-  matcher: ["/((?!_next|_vercel|api|auth|.*\\..*).*)"],
+  // Exclude Next.js internals, static files, API routes, the Supabase
+  // auth callback, and the partner embed widget (locale-free + framable).
+  matcher: ["/((?!_next|_vercel|api|auth|embed|.*\\..*).*)"],
 };

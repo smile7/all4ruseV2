@@ -40,7 +40,8 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", ...privateDisallows],
+        // /embed is locale-free (unlike /bg/auth/); one disallow covers the widget.
+        disallow: ["/api/", "/embed", ...privateDisallows],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,

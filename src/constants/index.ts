@@ -24,6 +24,8 @@ export const DEFAULT_ARTICLE_AUTHOR = "Силвена Митева";
 /** Author profile links, emitted as JSON-LD `sameAs`. Empty = the key is omitted. */
 export const ARTICLE_AUTHOR_LINKS: string[] = [];
 export const PAST_EVENTS_WINDOW_DAYS = 15;
+/** Partner iframe: Sofia calendar days from today (today + next 2). */
+export const EMBED_UPCOMING_DAYS = 3;
 export const THEME_STORE_KEY = "theme";
 export const FALLBACK_IMAGE = "/no_image_available.jpg";
 export const DEFAULT_AVATAR = "/cat.png";

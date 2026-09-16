@@ -470,7 +470,8 @@
   position: relative;
   width: min(12rem, 55%);
   height: 0;
-  margin: 3rem auto;
+  margin: 2rem auto;
+  padding-block: 1rem;
   overflow: visible;
   border: 0;
   background: none;
@@ -479,7 +480,7 @@
 .article-body hr::before {
   content: "";
   position: absolute;
-  top: 0;
+  top: 50%;
   right: 0;
   left: 0;
   height: 1px;

@@ -103,71 +103,73 @@ export default async function MoreFromRusePage({
         />
       )}
 
-      <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <header className="mb-8 max-w-3xl">
-          <Typography.H1 className="text-3xl sm:text-4xl">
-            {t("pageTitle")}
-          </Typography.H1>
-          {/* <p className="text-muted-foreground mt-3 leading-7">{t("intro")}</p> */}
-        </header>
+      <div className="xl:-mx-30">
+        <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <header className="mb-8 max-w-3xl">
+            <Typography.H1 className="text-3xl sm:text-4xl">
+              {t("pageTitle")}
+            </Typography.H1>
+            {/* <p className="text-muted-foreground mt-3 leading-7">{t("intro")}</p> */}
+          </header>
 
-        {articles.length === 0 ? (
-          <p className="text-muted-foreground py-12 text-center">
-            {t("empty")}
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {articles.map((article, index) => (
-              <ArticleCard
-                key={article.id}
-                article={article}
-                locale={locale}
-                priority={page === 1 && index === 0}
-              />
-            ))}
-          </div>
-        )}
+          {articles.length === 0 ? (
+            <p className="text-muted-foreground py-12 text-center">
+              {t("empty")}
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {articles.map((article, index) => (
+                <ArticleCard
+                  key={article.id}
+                  article={article}
+                  locale={locale}
+                  priority={page === 1 && index === 0}
+                />
+              ))}
+            </div>
+          )}
 
-        {totalPages > 1 && (
-          <nav
-            aria-label={t("pageIndicator", { page, total: totalPages })}
-            className="mt-10 flex items-center justify-between gap-4"
-          >
-            {page > 1 ? (
-              <Link
-                rel="prev"
-                href={{
-                  pathname: ARTICLES_PATH,
-                  query: page - 1 > 1 ? { page: page - 1 } : {},
-                }}
-                className="text-primary text-sm font-medium hover:underline"
-              >
-                ← {t("previousPage")}
-              </Link>
-            ) : (
-              <span />
-            )}
+          {totalPages > 1 && (
+            <nav
+              aria-label={t("pageIndicator", { page, total: totalPages })}
+              className="mt-10 flex items-center justify-between gap-4"
+            >
+              {page > 1 ? (
+                <Link
+                  rel="prev"
+                  href={{
+                    pathname: ARTICLES_PATH,
+                    query: page - 1 > 1 ? { page: page - 1 } : {},
+                  }}
+                  className="text-primary text-sm font-medium hover:underline"
+                >
+                  ← {t("previousPage")}
+                </Link>
+              ) : (
+                <span />
+              )}
 
-            <span className="text-muted-foreground text-sm">
-              {t("pageIndicator", { page, total: totalPages })}
-            </span>
+              <span className="text-muted-foreground text-sm">
+                {t("pageIndicator", { page, total: totalPages })}
+              </span>
 
-            {page < totalPages ? (
-              <Link
-                rel="next"
-                href={{
-                  pathname: ARTICLES_PATH,
-                  query: { page: page + 1 },
-                }}
-                className="text-primary text-sm font-medium hover:underline"
-              >
-                {t("nextPage")} →
-              </Link>
-            ) : (
-              <span />
-            )}
-          </nav>
-        )}
+              {page < totalPages ? (
+                <Link
+                  rel="next"
+                  href={{
+                    pathname: ARTICLES_PATH,
+                    query: { page: page + 1 },
+                  }}
+                  className="text-primary text-sm font-medium hover:underline"
+                >
+                  {t("nextPage")} →
+                </Link>
+              ) : (
+                <span />
+              )}
+            </nav>
+          )}
+        </div>
       </div>
     </>
   );
