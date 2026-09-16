@@ -21,6 +21,7 @@ import {
   truncateForMeta,
 } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
+import type { ArticleCategory } from "~/types";
 
 export const revalidate = 300;
 
@@ -141,7 +142,7 @@ export default async function ArticleDetailPage({ params }: Props) {
 
   const url = buildArticleUrl(locale, article.slug);
   const categoryLabel = article.category
-    ? t(`categories.${article.category as "landmarks"}`)
+    ? t(`categories.${article.category as ArticleCategory}`)
     : undefined;
 
   const articleJsonLd = buildArticleJsonLd({
@@ -172,27 +173,30 @@ export default async function ArticleDetailPage({ params }: Props) {
       <ArticleView article={article} locale={locale} />
 
       {related.length > 0 && (
-        <section className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
-          <div className="mb-6 flex items-baseline justify-between gap-4">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              {t("relatedTitle")}
-            </h2>
-            <Link
-              href={ARTICLES_PATH}
-              className="text-primary text-sm font-medium hover:underline"
-            >
-              {t("allArticles")}
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {related.map((item) => (
-              <ArticleCard
-                key={item.id}
-                article={item}
-                locale={locale}
-                headingLevel="h3"
-              />
-            ))}
+        // Offset main's xl:px-30 so the heading lines up with the header logo.
+        <section className="xl:-mx-30">
+          <div className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+            <div className="mb-6 flex items-baseline justify-between gap-4">
+              <h2 className="text-2xl font-semibold tracking-tight">
+                {t("relatedTitle")}
+              </h2>
+              <Link
+                href={ARTICLES_PATH}
+                className="text-primary text-sm font-medium hover:underline"
+              >
+                {t("allArticles")}
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {related.map((item) => (
+                <ArticleCard
+                  key={item.id}
+                  article={item}
+                  locale={locale}
+                  headingLevel="h3"
+                />
+              ))}
+            </div>
           </div>
         </section>
       )}

@@ -937,6 +937,14 @@ Four entry points confirmed. The header slot currently held by the filters becom
 - Newsletter integration — belongs with Brevo (Phase 16)
 - `FAQPage` / `HowTo` structured data — only where an article genuinely has that shape; misapplied schema earns manual actions
 
+## Partner embed widget
+
+- [x] Locale-free `/embed/events` iframe (no header/footer/cookie/auth)
+- [x] `eventsApi.getEmbedUpcomingEvents` — Sofia today through today+2, overlap + `isEventEnded` (includes ongoing multi-day events)
+- [x] Compact shortlist: image, date, hour, title; See more + event links open All4Ruse in a new tab
+- [x] Omit `X-Frame-Options` on `/embed/*`; keep `SAMEORIGIN` elsewhere; `noindex` + robots disallow
+- [x] `EmbedEvents` namespace in all 4 locale files; optional `?locale=`
+
 ## Future scope (deferred)
 
 - [ ] Event content auto-translation via Google Translate API

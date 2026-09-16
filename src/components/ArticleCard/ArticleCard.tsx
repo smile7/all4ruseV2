@@ -36,21 +36,31 @@ export async function ArticleCard({
   }).format(new Date(publishedAt));
 
   return (
-    <article className="group border-border/60 bg-card flex h-full flex-col overflow-hidden rounded-xl border transition-shadow hover:shadow-md">
+    <article className="group border-border/60 bg-card relative flex h-full flex-col overflow-hidden rounded-xl border transition-shadow hover:shadow-md">
       <Link
         href={href}
         aria-label={article.title}
-        className="relative block aspect-16/9 overflow-hidden"
-      >
+        className="focus-visible:ring-ring absolute inset-0 z-10 rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+      />
+      <div className="relative aspect-16/9 overflow-hidden">
+        <Image
+          src={article.hero_image ?? FALLBACK_IMAGE}
+          alt=""
+          fill
+          sizes={sizes}
+          aria-hidden
+          tabIndex={-1}
+          className="scale-110 object-cover blur-2xl brightness-75 saturate-150"
+        />
         <Image
           src={article.hero_image ?? FALLBACK_IMAGE}
           alt={article.hero_image_alt ?? ""}
           fill
           sizes={sizes}
           priority={priority}
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          className="object-contain"
         />
-      </Link>
+      </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
@@ -65,10 +75,8 @@ export async function ArticleCard({
           ) : null}
         </div>
 
-        <Heading className="text-lg leading-snug font-semibold text-balance">
-          <Link href={href} className="hover:text-primary transition-colors">
-            {article.title}
-          </Link>
+        <Heading className="text-foreground group-hover:text-primary line-clamp-3 min-h-[4.65rem] text-lg leading-snug font-semibold">
+          {article.title}
         </Heading>
 
         <p className="text-muted-foreground line-clamp-3 text-sm">

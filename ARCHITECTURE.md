@@ -31,7 +31,7 @@ We add dependencies only when there is a clear need. Nothing is pre-installed "j
 
 ## Pages
 
-All pages live inside the `[locale]` segment so next-intl routing works out of the box. Visiting `all4ruse.com` redirects to `all4ruse.com/bg/` (Bulgarian default). The user can switch language from the header.
+All pages live inside the `[locale]` segment so next-intl routing works out of the box, except locale-free routes such as `/auth/callback` and `/embed/events`. Visiting `all4ruse.com` redirects to `all4ruse.com/bg/` (Bulgarian default). The user can switch language from the header.
 
 | URL                                      | Page                           | Notes                                             |
 | ---------------------------------------- | ------------------------------ | ------------------------------------------------- |
@@ -62,8 +62,13 @@ All pages live inside the `[locale]` segment so next-intl routing works out of t
 | `/[locale]/admin/tags`                   | Manage tags                    | Admin role only                                   |
 | `/[locale]/map`                          | Playgrounds & fitness map (V2) | Public read; admin-only add/edit/delete           |
 | `/auth/callback`                         | OAuth callback                 | Outside `[locale]` — Supabase redirects here      |
+| `/embed/events`                          | Partner events iframe          | Locale-free; next 3 Sofia days; `noindex`; framable |
 
 Events are grouped and filtered by **tags** (a separate `tags` table joined via `event_tags`).
+
+### Partner embed
+
+Local websites can iframe `https://all4ruse.com/embed/events` (optional `?locale=en|ua|ro`). The widget lists events overlapping the next 3 Europe/Sofia calendar days (image, date, time, title) and links out to All4Ruse in a new tab. `/embed/*` is excluded from `X-Frame-Options: SAMEORIGIN` and from next-intl locale prefixing; the rest of the site stays unframable.
 
 ---
 
@@ -118,6 +123,10 @@ src/
 │   ├── auth/
 │   │   └── callback/
 │   │       └── route.ts             # Supabase OAuth callback (outside [locale])
+│   ├── embed/
+│   │   ├── layout.tsx               # Chrome-free iframe shell (no header/footer)
+│   │   └── events/
+│   │       └── page.tsx             # Partner widget — next 3 days
 │   ├── layout.tsx                   # Root: fonts, globals
 │   ├── globals.css
 │   └── not-found.tsx
@@ -181,6 +190,7 @@ src/
 | Event detail `[slug]`            | SSR                       | Server Component → Supabase public server client                |
 | Why All4Ruse, legal pages        | Static                    | No data fetching                                                |
 | Advertise                        | SSR                       | Upcoming event count; contact form posts to `/api/advertise/inquiries` |
+| Partner embed `/embed/events`    | ISR (300 s)               | Server Component → `eventsApi.getEmbedUpcomingEvents` (public client) |
 | Profile, my events, create event | SSR                       | Server Component reads session + data                           |
 | Admin pages                      | SSR + client interactions | Server Component for initial load; TanStack Query for mutations |
 | Auth pages                       | Client-only               | Supabase browser client directly                                |

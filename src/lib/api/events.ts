@@ -1,18 +1,20 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { format, subDays } from "date-fns";
+import { addDays, format, subDays } from "date-fns";
 
 import {
+  EMBED_UPCOMING_DAYS,
   EVENTS_PAGE_SIZE,
   PAST_EVENTS_WINDOW_DAYS,
   RELATED_EVENTS_COUNT,
   RELATED_EVENTS_MIN_COUNT,
 } from "~/constants";
-import { buildEventSlugFromTitle } from "~/lib/event-slug";
 import { sanitizeEventDescription } from "~/lib/event-description-html";
+import { buildEventSlugFromTitle } from "~/lib/event-slug";
 import {
   isEventEnded,
   isVisibleOnCurrentEventsList,
   isVisibleOnHomeActiveList,
+  parseLocalDate,
   todayInSofia,
 } from "~/lib/event-utils";
 import type { CoordsSource } from "~/lib/geocode/types";
@@ -219,6 +221,45 @@ async function getActiveEvents(
     .map(mapEvent)
     .filter((e) => isVisibleOnHomeActiveList(e, today, now));
   return filterByHost(visible, params.host);
+}
+
+function compareEmbedEvents(today: string) {
+  return (a: Event, b: Event) => {
+    const aPremium = a.isEventPremium === true ? 1 : 0;
+    const bPremium = b.isEventPremium === true ? 1 : 0;
+    if (aPremium !== bPremium) return bPremium - aPremium;
+
+    const aDate = a.startDate < today ? today : a.startDate;
+    const bDate = b.startDate < today ? today : b.startDate;
+    if (aDate !== bDate) return aDate.localeCompare(bDate);
+
+    return a.startTime.localeCompare(b.startTime);
+  };
+}
+
+/** Events overlapping the next N Sofia calendar days, including ongoing multi-day events. */
+async function getEmbedUpcomingEvents(client: Client): Promise<Event[]> {
+  const from = todayStr();
+  const to = format(
+    addDays(parseLocalDate(from), EMBED_UPCOMING_DAYS - 1),
+    "yyyy-MM-dd",
+  );
+
+  const q = baseQuery(client)
+    .order("isEventPremium", { ascending: false, nullsFirst: false })
+    .order("startDate", { ascending: true })
+    .order("startTime", { ascending: true });
+
+  const query = await applyFilters(client, q, { from, to });
+  if (!query) return [];
+
+  const { data, error } = await executeQuery(query);
+  if (error) throw error;
+  const now = new Date();
+  return (data ?? [])
+    .map(mapEvent)
+    .filter((event) => !isEventEnded(event, now))
+    .sort(compareEmbedEvents(from));
 }
 
 // Ongoing multi-day events after the first calendar day (see `isVisibleOnCurrentEventsList`).
@@ -789,6 +830,7 @@ async function patchEventCoords(
 export const eventsApi = {
   getActiveEvents,
   getCurrentEvents,
+  getEmbedUpcomingEvents,
   getPastEvents,
   getEventsByMonthRange,
   getEventBySlug,
