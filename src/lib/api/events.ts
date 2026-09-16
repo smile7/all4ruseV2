@@ -223,21 +223,15 @@ async function getActiveEvents(
   return filterByHost(visible, params.host);
 }
 
-function compareEmbedEvents(today: string) {
-  return (a: Event, b: Event) => {
-    const aPremium = a.isEventPremium === true ? 1 : 0;
-    const bPremium = b.isEventPremium === true ? 1 : 0;
-    if (aPremium !== bPremium) return bPremium - aPremium;
-
-    const aDate = a.startDate < today ? today : a.startDate;
-    const bDate = b.startDate < today ? today : b.startDate;
-    if (aDate !== bDate) return aDate.localeCompare(bDate);
-
-    return a.startTime.localeCompare(b.startTime);
-  };
+function compareEmbedEvents(a: Event, b: Event) {
+  const aPremium = a.isEventPremium === true ? 1 : 0;
+  const bPremium = b.isEventPremium === true ? 1 : 0;
+  if (aPremium !== bPremium) return bPremium - aPremium;
+  if (a.startDate !== b.startDate) return a.startDate.localeCompare(b.startDate);
+  return a.startTime.localeCompare(b.startTime);
 }
 
-/** Events overlapping the next N Sofia calendar days, including ongoing multi-day events. */
+/** Events whose start date falls in the next N Sofia calendar days (today + next 2). */
 async function getEmbedUpcomingEvents(client: Client): Promise<Event[]> {
   const from = todayStr();
   const to = format(
@@ -245,21 +239,20 @@ async function getEmbedUpcomingEvents(client: Client): Promise<Event[]> {
     "yyyy-MM-dd",
   );
 
-  const q = baseQuery(client)
-    .order("isEventPremium", { ascending: false, nullsFirst: false })
-    .order("startDate", { ascending: true })
-    .order("startTime", { ascending: true });
-
-  const query = await applyFilters(client, q, { from, to });
-  if (!query) return [];
-
-  const { data, error } = await executeQuery(query);
+  const { data, error } = await executeQuery(
+    baseQuery(client)
+      .gte("startDate", from)
+      .lte("startDate", to)
+      .order("isEventPremium", { ascending: false, nullsFirst: false })
+      .order("startDate", { ascending: true })
+      .order("startTime", { ascending: true }),
+  );
   if (error) throw error;
   const now = new Date();
   return (data ?? [])
     .map(mapEvent)
     .filter((event) => !isEventEnded(event, now))
-    .sort(compareEmbedEvents(from));
+    .sort(compareEmbedEvents);
 }
 
 // Ongoing multi-day events after the first calendar day (see `isVisibleOnCurrentEventsList`).
