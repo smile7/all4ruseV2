@@ -42,7 +42,10 @@ export function EventFiltersBar() {
         type="button"
         aria-expanded={isOpen}
         aria-controls={panelId}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => {
+          if (!isOpen) trackClick("filter.open");
+          setIsOpen((open) => !open);
+        }}
         className="hover:bg-background/60 flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-1 py-1 text-left transition-colors"
       >
         <span className="flex items-center gap-2">

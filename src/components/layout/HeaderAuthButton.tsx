@@ -13,6 +13,7 @@ import {
   User as UserIcon,
 } from "lucide-react";
 
+import { TrackedLink } from "~/components/TrackedLink";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -95,13 +96,14 @@ export function HeaderAuthButton() {
           </>
         )}
         <DropdownMenuItem asChild>
-          <Link
+          <TrackedLink
+            eventKey="header.create_event"
             href="/create-event"
             className="flex cursor-pointer items-center gap-2"
           >
             <Plus className="size-4" />
             {t("createEvent")}
-          </Link>
+          </TrackedLink>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link

@@ -212,7 +212,10 @@ export function FilterContent({ hideQuickFilters = false }: Props) {
                   size="md"
                   interactive
                   selected={isActive}
-                  onClick={() => toggleTag(tag.id)}
+                  onClick={() => {
+                    if (!isActive) trackClick("filter.tag");
+                    toggleTag(tag.id);
+                  }}
                 />
               );
             })}

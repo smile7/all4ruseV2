@@ -9,6 +9,7 @@ import {
   enablePushNotifications,
   isEligibleForReminderPrompt,
 } from "~/hooks/usePushNotifications";
+import { trackClick } from "~/lib/analytics/track-click";
 import {
   abortReminderPromptCheck,
   beginReminderPromptCheck,
@@ -55,6 +56,7 @@ export async function promptRemindersOnSave(t: SavedEventsT) {
             size="sm"
             className="bg-background text-foreground hover:bg-background/90"
             onClick={() => {
+              trackClick("reminders.enable");
               toast.dismiss(toastId);
               void enableFromPrompt(t);
             }}

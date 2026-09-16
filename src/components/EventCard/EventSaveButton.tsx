@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
 
+import { TrackedLink } from "~/components/TrackedLink";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -29,7 +30,7 @@ import {
   useSavedEventIds,
   useToggleSavedEvent,
 } from "~/hooks/query";
-import { Link } from "~/i18n/navigation";
+import { trackClick } from "~/lib/analytics/track-click";
 import { cn } from "~/lib/utils";
 
 import { promptRemindersOnSave } from "./promptRemindersOnSave";
@@ -62,10 +63,14 @@ function GuestAuthPrompt({
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" asChild>
-              <Link href="/auth/login">{t("loginCta")}</Link>
+              <TrackedLink eventKey="auth.login.from_save" href="/auth/login">
+                {t("loginCta")}
+              </TrackedLink>
             </Button>
             <Button asChild>
-              <Link href="/auth/signup">{t("signupCta")}</Link>
+              <TrackedLink eventKey="auth.signup.from_save" href="/auth/signup">
+                {t("signupCta")}
+              </TrackedLink>
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -82,10 +87,14 @@ function GuestAuthPrompt({
         </DrawerHeader>
         <DrawerFooter>
           <Button asChild>
-            <Link href="/auth/signup">{t("signupCta")}</Link>
+            <TrackedLink eventKey="auth.signup.from_save" href="/auth/signup">
+              {t("signupCta")}
+            </TrackedLink>
           </Button>
           <Button variant="outline" asChild>
-            <Link href="/auth/login">{t("loginCta")}</Link>
+            <TrackedLink eventKey="auth.login.from_save" href="/auth/login">
+              {t("loginCta")}
+            </TrackedLink>
           </Button>
         </DrawerFooter>
       </DrawerContent>
@@ -114,11 +123,13 @@ export function EventSaveButton({
     event.stopPropagation();
 
     if (!userId) {
+      trackClick("event.save.guest");
       setPromptOpen(true);
       return;
     }
 
     const nextSaved = !isSaved;
+    trackClick(nextSaved ? "event.save" : "event.unsave");
     toggleSaved.mutate(
       { eventId, nextSaved },
       {
