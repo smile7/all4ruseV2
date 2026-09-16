@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
-import { addDays, format } from "date-fns";
 
+import { addDays, format } from "date-fns";
 import { ArrowRight } from "lucide-react";
 
 import { TrackedLink } from "~/components/TrackedLink";
@@ -63,7 +63,7 @@ export async function EmbedEventsList({ events, locale, siteUrl }: Props) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="border-border/60 bg-background flex shrink-0 items-center gap-3 border-b px-3 py-2.5">
+      <header className="border-border/60 bg-background flex shrink-0 items-end gap-7.5 border-b px-3 py-2.5">
         <TrackedLink
           eventKey="embed.see_more"
           href={homeHref}
@@ -82,7 +82,7 @@ export async function EmbedEventsList({ events, locale, siteUrl }: Props) {
             className="h-8 w-auto object-contain"
           />
         </TrackedLink>
-        <h1 className="text-muted-foreground min-w-0 truncate text-sm font-medium">
+        <h1 className="text-muted-foreground min-w-0 truncate text-sm leading-none font-medium">
           {t("heading")}
         </h1>
       </header>
@@ -115,12 +115,13 @@ export async function EmbedEventsList({ events, locale, siteUrl }: Props) {
 
               const content = (
                 <>
-                  <div className="bg-muted relative size-16 shrink-0 overflow-hidden rounded-md">
+                  <div className="bg-muted relative h-24 w-32 shrink-0 overflow-hidden rounded-md">
                     <Image
                       src={imageUrl}
                       alt=""
                       fill
-                      sizes="64px"
+                      sizes="256px"
+                      quality={90}
                       className="object-cover"
                     />
                   </div>
