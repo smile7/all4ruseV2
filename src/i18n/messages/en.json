@@ -801,6 +801,7 @@
   },
   "EmbedEvents": {
     "iframeTitle": "Events in Ruse — All4Ruse",
+    "heading": "Events in Ruse",
     "seeMore": "See all events",
     "empty": "No events in the next 3 days.",
     "today": "Today",

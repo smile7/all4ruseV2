@@ -19,19 +19,26 @@ import {
 import { cn } from "~/lib/utils";
 import type { Event } from "~/types";
 
+import { withEmbedCampaignParams } from "./embed-campaign";
+
 type Props = {
   events: Event[];
   locale: Locale;
   siteUrl: string;
+  partner: string | null;
 };
 
 function eventHref(
   siteUrl: string,
   locale: Locale,
   event: Event,
+  partner: string | null,
 ): string | null {
   if (typeof event.slug !== "string" || event.slug.trim() === "") return null;
-  return `${siteUrl}/${locale}/${event.slug.trim()}`;
+  return withEmbedCampaignParams(
+    `${siteUrl}/${locale}/${event.slug.trim()}`,
+    partner,
+  );
 }
 
 function dateLabel(
@@ -51,9 +58,14 @@ function dateLabel(
   return formatDateBadge(startDate, locale).primary;
 }
 
-export async function EmbedEventsList({ events, locale, siteUrl }: Props) {
+export async function EmbedEventsList({
+  events,
+  locale,
+  siteUrl,
+  partner,
+}: Props) {
   const t = await getTranslations({ locale, namespace: "EmbedEvents" });
-  const homeHref = `${siteUrl}/${locale}`;
+  const homeHref = withEmbedCampaignParams(`${siteUrl}/${locale}`, partner);
   const todayIso = todayInSofia();
   const tomorrowIso = format(
     addDays(parseLocalDate(todayIso), 1),
@@ -63,7 +75,7 @@ export async function EmbedEventsList({ events, locale, siteUrl }: Props) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="border-border/60 bg-background flex shrink-0 items-center justify-center border-b px-3 py-2.5">
+      <header className="border-border/60 bg-background flex shrink-0 flex-col items-center justify-center border-b px-3 py-2.5">
         <TrackedLink
           eventKey="embed.see_more"
           href={homeHref}
@@ -82,6 +94,9 @@ export async function EmbedEventsList({ events, locale, siteUrl }: Props) {
             className="h-8 w-auto object-contain"
           />
         </TrackedLink>
+        <h1 className="text-muted-foreground mt-1 text-sm leading-none font-medium">
+          {t("heading")}
+        </h1>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -92,7 +107,7 @@ export async function EmbedEventsList({ events, locale, siteUrl }: Props) {
         ) : (
           <ul>
             {events.map((event) => {
-              const href = eventHref(siteUrl, locale, event);
+              const href = eventHref(siteUrl, locale, event, partner);
               const title = formatEventTitle(event.title);
               const time = formatTime(event.startTime);
               const date = dateLabel(
