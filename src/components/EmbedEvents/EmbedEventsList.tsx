@@ -63,7 +63,7 @@ export async function EmbedEventsList({ events, locale, siteUrl }: Props) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="border-border/60 bg-background flex shrink-0 items-end gap-7.5 border-b px-3 py-2.5">
+      <header className="border-border/60 bg-background flex shrink-0 items-center gap-7.5 border-b px-3 py-2.5">
         <TrackedLink
           eventKey="embed.see_more"
           href={homeHref}
