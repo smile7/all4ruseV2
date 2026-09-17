@@ -29,6 +29,7 @@ import {
 } from "~/components/layout";
 import { RelatedEventsRow } from "~/components/layout/RelatedEventsRow";
 import { PartnerNearby } from "~/components/PartnerNearby";
+import { PremiumBadge } from "~/components/PremiumBadge";
 import { TheatreArticlePromo } from "~/components/TheatreArticlePromo";
 import { Card, CardContent } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
@@ -340,6 +341,11 @@ export default async function EventDetailPage({ params }: Props) {
             <h1 className="mb-3 text-center text-2xl font-bold tracking-tight wrap-break-word sm:text-3xl">
               {formattedTitle}
             </h1>
+            {event.isEventPremium && (
+              <div className="mb-3 flex justify-center">
+                <PremiumBadge label={t("premium")} />
+              </div>
+            )}
             {(event.tags?.length ?? 0) > 0 && (
               <div className="flex flex-wrap justify-center gap-2">
                 {event.tags!.map((tag) => (
