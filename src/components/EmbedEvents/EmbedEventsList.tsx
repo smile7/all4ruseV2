@@ -63,7 +63,7 @@ export async function EmbedEventsList({ events, locale, siteUrl }: Props) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="border-border/60 bg-background flex shrink-0 items-center gap-7.5 border-b px-3 py-2.5">
+      <header className="border-border/60 bg-background flex shrink-0 items-center justify-center border-b px-3 py-2.5">
         <TrackedLink
           eventKey="embed.see_more"
           href={homeHref}
@@ -82,9 +82,6 @@ export async function EmbedEventsList({ events, locale, siteUrl }: Props) {
             className="h-8 w-auto object-contain"
           />
         </TrackedLink>
-        <h1 className="text-muted-foreground min-w-0 truncate text-sm leading-none font-medium">
-          {t("heading")}
-        </h1>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
