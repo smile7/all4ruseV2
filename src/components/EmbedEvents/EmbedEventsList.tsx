@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { addDays, format } from "date-fns";
 import { ArrowRight } from "lucide-react";
 
+import { PremiumBadge } from "~/components/PremiumBadge";
 import { TrackedLink } from "~/components/TrackedLink";
 import { Button } from "~/components/ui/button";
 import type { Locale } from "~/constants";
@@ -65,6 +66,7 @@ export async function EmbedEventsList({
   partner,
 }: Props) {
   const t = await getTranslations({ locale, namespace: "EmbedEvents" });
+  const tEvent = await getTranslations({ locale, namespace: "SingleEvent" });
   const homeHref = withEmbedCampaignParams(`${siteUrl}/${locale}`, partner);
   const todayIso = todayInSofia();
   const tomorrowIso = format(
@@ -120,14 +122,22 @@ export async function EmbedEventsList({
               const imageUrl = getEventImageUrl(event.image);
               const meta = [date, time].filter(Boolean).join(" · ");
 
+              const isPremium = event.isEventPremium === true;
               const rowClass = cn(
                 "flex items-center gap-3 px-3 py-2.5 transition-colors",
+                isPremium && "bg-amber-500/10",
                 href && "hover:bg-accent/60 focus-visible:bg-accent/60",
+                href && isPremium && "hover:bg-amber-500/15 focus-visible:bg-amber-500/15",
               );
 
               const content = (
                 <>
-                  <div className="bg-muted relative h-24 w-32 shrink-0 overflow-hidden rounded-md">
+                  <div
+                    className={cn(
+                      "bg-muted relative h-24 w-32 shrink-0 overflow-hidden rounded-md",
+                      isPremium && "ring-2 ring-amber-400",
+                    )}
+                  >
                     <Image
                       src={imageUrl}
                       alt=""
@@ -138,9 +148,18 @@ export async function EmbedEventsList({
                     />
                   </div>
                   <div className="min-w-0 flex-1 text-left">
-                    <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                      {meta}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                        {meta}
+                      </p>
+                      {isPremium && (
+                        <PremiumBadge
+                          label={tEvent("premium")}
+                          size="sm"
+                          className="ring-amber-200"
+                        />
+                      )}
+                    </div>
                     <p className="text-foreground mt-0.5 line-clamp-2 text-sm leading-snug font-medium">
                       {title}
                     </p>

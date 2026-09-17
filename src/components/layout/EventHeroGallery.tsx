@@ -6,6 +6,8 @@ import Image from "next/image";
 import lgZoom from "lightgallery/plugins/zoom";
 import LightGallery from "lightgallery/react";
 
+import { PremiumBadge } from "~/components/PremiumBadge";
+
 import "lightgallery/css/lightgallery.css";
 import "lightgallery/css/lg-zoom.css";
 
@@ -86,11 +88,7 @@ export function EventHeroGallery({
                 {cancelledLabel}
               </span>
             )}
-            {premium && (
-              <span className="bg-primary text-primary-foreground rounded-full px-3 py-1.5 text-xs font-semibold shadow">
-                {premiumLabel}
-              </span>
-            )}
+            {premium && <PremiumBadge label={premiumLabel} />}
           </div>
 
           {/* LightGallery — transparent absolute overlay, click opens full zoom */}
