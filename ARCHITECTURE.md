@@ -68,7 +68,7 @@ Events are grouped and filtered by **tags** (a separate `tags` table joined via 
 
 ### Partner embed
 
-Local websites can iframe `https://all4ruse.com/embed/events` (optional `?locale=en|ua|ro`). The widget lists events overlapping the next 3 Europe/Sofia calendar days (image, date, time, title) and links out to All4Ruse in a new tab. `/embed/*` is excluded from `X-Frame-Options: SAMEORIGIN` and from next-intl locale prefixing; the rest of the site stays unframable.
+Local websites can iframe `https://all4ruse.com/embed/events` (optional `?locale=en|ua|ro`, optional `?partner=dunavmost`). The widget lists events overlapping the next 3 Europe/Sofia calendar days (image, date, time, title) and links out to All4Ruse in a new tab. When `partner` is set, every outbound link (logo, event, “see more”) includes `utm_source=<partner>&utm_medium=iframe&utm_campaign=events_widget`. `/embed/*` is excluded from `X-Frame-Options: SAMEORIGIN` and from next-intl locale prefixing; the rest of the site stays unframable.
 
 ---
 

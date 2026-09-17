@@ -8,7 +8,8 @@ import {
 } from "next-intl/server";
 
 import { EmbedEventsList } from "~/components/EmbedEvents";
-import { DEFAULT_LOCALE, type Locale,LOCALES } from "~/constants";
+import { parseEmbedPartner } from "~/components/EmbedEvents/embed-campaign";
+import { DEFAULT_LOCALE, type Locale, LOCALES } from "~/constants";
 import { eventsApi } from "~/lib/api";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
@@ -49,7 +50,9 @@ export default async function EmbedEventsPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const locale = parseEmbedLocale((await searchParams).locale);
+  const params = await searchParams;
+  const locale = parseEmbedLocale(params.locale);
+  const partner = parseEmbedPartner(params.partner);
   setRequestLocale(locale);
 
   const [events, messages] = await Promise.all([
@@ -59,7 +62,12 @@ export default async function EmbedEventsPage({
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <EmbedEventsList events={events} locale={locale} siteUrl={siteUrl} />
+      <EmbedEventsList
+        events={events}
+        locale={locale}
+        siteUrl={siteUrl}
+        partner={partner}
+      />
     </NextIntlClientProvider>
   );
 }
