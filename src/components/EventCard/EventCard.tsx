@@ -14,6 +14,7 @@ import {
   User,
 } from "lucide-react";
 
+import { CancelledStamp } from "~/components/CancelledStamp";
 import { EventTag } from "~/components/EventTag";
 import { PremiumBadge } from "~/components/PremiumBadge";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
@@ -199,10 +200,8 @@ export function EventCard({
 
           {/* Cancelled overlay */}
           {event.isEventCancelled && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
-              <span className="bg-destructive text-destructive-foreground rounded-full px-3 py-1 text-xs font-semibold">
-                {t("cancelled")}
-              </span>
+            <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-black/35">
+              <CancelledStamp label={t("cancelled")} size="sm" />
             </div>
           )}
 

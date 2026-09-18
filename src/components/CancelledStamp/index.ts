@@ -1,0 +1,1 @@
+export { CancelledStamp } from "./CancelledStamp";

@@ -6,6 +6,7 @@ import Image from "next/image";
 import lgZoom from "lightgallery/plugins/zoom";
 import LightGallery from "lightgallery/react";
 
+import { CancelledStamp } from "~/components/CancelledStamp";
 import { PremiumBadge } from "~/components/PremiumBadge";
 
 import "lightgallery/css/lightgallery.css";
@@ -72,6 +73,13 @@ export function EventHeroGallery({
             </div>
           )}
 
+          {/* Cancelled overlay — inclined stamp across the image */}
+          {cancelled && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-black/35">
+              <CancelledStamp label={cancelledLabel} size="lg" />
+            </div>
+          )}
+
           {/* Status badges */}
           <div className="absolute top-3 right-3 z-30 flex flex-col items-end gap-2">
             {live && !cancelled && (
@@ -82,11 +90,6 @@ export function EventHeroGallery({
                 </span>
                 {liveLabel}
               </div>
-            )}
-            {cancelled && (
-              <span className="bg-destructive text-destructive-foreground rounded-full px-3 py-1.5 text-xs font-semibold shadow">
-                {cancelledLabel}
-              </span>
             )}
             {premium && <PremiumBadge label={premiumLabel} />}
           </div>
