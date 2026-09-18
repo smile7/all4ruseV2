@@ -341,6 +341,11 @@ export default async function EventDetailPage({ params }: Props) {
             <h1 className="mb-3 text-center text-2xl font-bold tracking-tight wrap-break-word sm:text-3xl">
               {formattedTitle}
             </h1>
+            {event.isEventCancelled && (
+              <p className="mb-3 text-center text-base font-bold tracking-[0.22em] text-destructive uppercase">
+                {t("cancelled")}
+              </p>
+            )}
             {event.isEventPremium && (
               <div className="mb-3 flex justify-center">
                 <PremiumBadge label={t("premium")} />
