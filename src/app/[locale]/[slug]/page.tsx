@@ -289,6 +289,7 @@ export default async function EventDetailPage({ params }: Props) {
     isSoldOut: event.isSoldOut ?? false,
     price: event.price,
     ticketsLink: event.ticketsLink,
+    createdAt: event.created_at,
     tags: event.tags,
     hosts,
   });

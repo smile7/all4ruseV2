@@ -78,7 +78,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [slugsWithDates, usernames, articleEntries, tags, upcomingEvents] =
     await Promise.all([
       eventsApi.getAllSlugsWithDates(client),
-      profilesApi.getAllPublicUsernames(client),
+      profilesApi.getIndexableUsernames(client),
       articlesApi.getArticleSitemapEntries(client),
       tagsApi.getTags(client).catch(() => []),
       eventsApi.getActiveEvents(client).catch(() => []),
@@ -128,15 +128,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   );
 
-  const profileEntries: MetadataRoute.Sitemap = usernames.flatMap((username) =>
-    LOCALES.map((locale) => ({
-      url: `${siteUrl}/${locale}/user/${username}`,
-      lastModified: now,
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-      alternates: localeAlternates(`/user/${username}`),
-    })),
-  );
+  // Bulgarian only, like event pages: a profile's name, bio and event list are
+  // never translated, so the other three locales are duplicates that
+  // canonicalize back here anyway.
+  const profileEntries: MetadataRoute.Sitemap = usernames.map((username) => ({
+    url: `${siteUrl}/${DEFAULT_LOCALE}/user/${username}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }));
 
   // Tag hubs are the main category landing pages, so they rank above individual
   // events for generic queries. Thin ones render noindex, so they are skipped.

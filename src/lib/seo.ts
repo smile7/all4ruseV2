@@ -40,9 +40,26 @@ export function buildAlternates(locale: string, path: string = "") {
 }
 
 /**
- * Builds absolute hreflang + canonical alternates for event detail pages,
- * which use a slug instead of a fixed path.
+ * Canonical + hreflang for pages whose body content only ever exists in
+ * Bulgarian — event details and public profiles. Titles, descriptions, venues
+ * and bios are never translated, so declaring en/ua/ro as language versions
+ * tells Google they are translations when they are near-identical duplicates,
+ * and splits ranking across four URLs. Canonical and hreflang both point at
+ * Bulgarian, matching how article translations already work.
  */
+export function buildDefaultLocaleAlternates(path: string) {
+  const canonical = `${SITE_URL}/${DEFAULT_LOCALE}${path}`;
+  const hreflang = LOCALE_TO_HREFLANG[DEFAULT_LOCALE] ?? DEFAULT_LOCALE;
+
+  return {
+    canonical,
+    languages: {
+      [hreflang]: canonical,
+      "x-default": canonical,
+    },
+  };
+}
+
 export const ARTICLES_PATH = "/more-from-ruse";
 
 export function buildArticleUrl(locale: string, slug: string) {
@@ -134,18 +151,33 @@ export function buildEventMetaDescription({
 }
 
 export function buildEventAlternates(_locale: string, slug: string) {
-  // Event title/description/venue are not translated. Emitting en/ua/ro as
-  // hreflang alternates tells Google they are language versions — they are
-  // not — and splits ranking across four duplicate URLs. Canonical + hreflang
-  // both point at Bulgarian, matching how article translations already work.
-  const canonical = `${SITE_URL}/${DEFAULT_LOCALE}/${slug}`;
-  const hreflang = LOCALE_TO_HREFLANG[DEFAULT_LOCALE] ?? DEFAULT_LOCALE;
+  return buildDefaultLocaleAlternates(`/${slug}`);
+}
 
-  return {
-    canonical,
-    languages: {
-      [hreflang]: canonical,
-      "x-default": canonical,
-    },
-  };
+export function buildProfileAlternates(username: string) {
+  return buildDefaultLocaleAlternates(`/user/${username}`);
+}
+
+/**
+ * hreflang for the article index. Only locales that actually have a published
+ * article belong in the set: the rest render a noindex empty state, and Google
+ * discards an entire hreflang cluster that points at URLs it was told not to
+ * index.
+ */
+export function buildArticleIndexAlternates(
+  canonical: string,
+  localesWithArticles: string[],
+) {
+  const languages: Record<string, string> = {};
+
+  for (const locale of localesWithArticles) {
+    languages[LOCALE_TO_HREFLANG[locale] ?? locale] =
+      `${SITE_URL}/${locale}${ARTICLES_PATH}`;
+  }
+
+  if (localesWithArticles.includes(DEFAULT_LOCALE)) {
+    languages["x-default"] = `${SITE_URL}/${DEFAULT_LOCALE}${ARTICLES_PATH}`;
+  }
+
+  return { canonical, languages };
 }

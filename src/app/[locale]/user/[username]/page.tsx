@@ -18,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { DEFAULT_PROFILE_COLOR } from "~/constants";
 import { profilesApi } from "~/lib/api";
 import { parseProfileGallery } from "~/lib/profile-gallery";
-import { buildAlternates } from "~/lib/seo";
+import { buildProfileAlternates } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 import type { Profile } from "~/types";
 
@@ -64,9 +64,9 @@ function displayName(profile: Profile): string {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ username: string; locale: string }>;
+  params: Promise<{ username: string }>;
 }): Promise<Metadata> {
-  const { username, locale } = await params;
+  const { username } = await params;
   const { data: rawProfile } = await getPublicProfileCached(username);
   const profile = rawProfile as Profile | null;
 
@@ -80,7 +80,7 @@ export async function generateMetadata({
   return {
     title: `${name} | All4Ruse`,
     description,
-    alternates: buildAlternates(locale, `/user/${username}`),
+    alternates: buildProfileAlternates(username),
     openGraph: {
       title: `${name} | All4Ruse`,
       description,
