@@ -8,7 +8,11 @@ import { ARTICLES_PAGE_SIZE } from "~/constants";
 import { Link } from "~/i18n/navigation";
 import { articlesApi } from "~/lib/api";
 import { buildArticleListJsonLd, serializeJsonLd } from "~/lib/article-jsonld";
-import { ARTICLES_PATH, buildAlternates, buildArticleUrl } from "~/lib/seo";
+import {
+  ARTICLES_PATH,
+  buildArticleIndexAlternates,
+  buildArticleUrl,
+} from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
 export const revalidate = 300;
@@ -39,23 +43,29 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "MoreFromRuse" });
 
   const client = createSupabasePublicServerClient();
-  const { total } = await articlesApi.getPublishedArticles(client, {
-    locale,
-    page: 1,
-    pageSize: 1,
-  });
+  const [{ total }, allEntries] = await Promise.all([
+    articlesApi.getPublishedArticles(client, { locale, page: 1, pageSize: 1 }),
+    articlesApi.getArticleSitemapEntries(client),
+  ]);
 
-  const alternates = buildAlternates(locale, ARTICLES_PATH);
+  const localesWithArticles = [
+    ...new Set(allEntries.map((entry) => entry.locale)),
+  ];
+
+  // Paginated archives must self-canonicalize; pointing page 2 at page 1 hides
+  // its articles from Google entirely. Only page 1 of a locale that has
+  // articles joins the hreflang cluster — page 2 has no counterpart in the
+  // other locales, and an empty locale is noindex.
+  const canonical = indexUrl(locale, page);
+  const alternates =
+    total > 0 && page === 1
+      ? buildArticleIndexAlternates(canonical, localesWithArticles)
+      : { canonical };
 
   return {
     title: t("pageTitle"),
     description: t("pageDescription"),
-    alternates: {
-      ...alternates,
-      // Paginated archives must self-canonicalize; pointing page 2 at page 1
-      // hides its articles from Google entirely.
-      canonical: indexUrl(locale, page),
-    },
+    alternates,
     // Four empty archive pages must not enter the index.
     ...(total === 0 ? { robots: { index: false, follow: true } } : {}),
     openGraph: {

@@ -57,6 +57,8 @@ export type EventJsonLdInput = {
   isSoldOut: boolean;
   price: string | null;
   ticketsLink: string | null;
+  /** When the listing was published — the date the offer became available. */
+  createdAt: string | null;
   tags: { title: string | null }[] | null | undefined;
   hosts: Host[];
 };
@@ -245,6 +247,12 @@ function buildOffers(input: EventJsonLdInput) {
     : "https://schema.org/InStock";
   const url = input.ticketsLink || input.url;
   const priceCurrency = "EUR";
+  // Google reports a missing `validFrom` on every Event offer. There is no
+  // "tickets on sale" field in the data; the listing's creation date is the
+  // honest answer to "since when is this offer available".
+  const validFrom = input.createdAt
+    ? { validFrom: input.createdAt }
+    : undefined;
 
   if (parsed.kind === "range") {
     return {
@@ -254,6 +262,7 @@ function buildOffers(input: EventJsonLdInput) {
       highPrice: parsed.high,
       priceCurrency,
       availability,
+      ...validFrom,
     };
   }
 
@@ -263,6 +272,7 @@ function buildOffers(input: EventJsonLdInput) {
     price: parsed.low,
     priceCurrency,
     availability,
+    ...validFrom,
   };
 }
 

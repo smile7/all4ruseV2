@@ -80,8 +80,13 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates,
-    ...(filtered ? { robots: { index: false, follow: true } } : {}),
+    // A filtered view is noindex and emits no canonical. Combining noindex with
+    // a canonical pointing at a different URL lets Google consolidate the two
+    // and apply the noindex to the clean homepage, so the two never ship
+    // together.
+    ...(filtered
+      ? { robots: { index: false, follow: true } }
+      : { alternates }),
     openGraph: {
       title,
       description,

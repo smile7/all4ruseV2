@@ -11,7 +11,8 @@
     "format:check": "prettier --check .",
     "types": "node -e \"const fs=require('node:fs');fs.rmSync('.next/types',{recursive:true,force:true});fs.rmSync('.next/dev/types',{recursive:true,force:true});\" && next typegen && tsc --noEmit",
     "db:types": "export $(grep -v '^#' .env.local | xargs) && supabase gen types typescript --project-id $SUPABASE_PROJECT_REF --schema public > src/types/database.tmp.ts && mv src/types/database.tmp.ts src/types/database.ts",
-    "geocode:upcoming": "node --conditions=react-server --env-file=.env.local --import tsx scripts/geocode-upcoming.ts"
+    "geocode:upcoming": "node --conditions=react-server --env-file=.env.local --import tsx scripts/geocode-upcoming.ts",
+    "usernames:fix": "node --conditions=react-server --env-file=.env.local --import tsx scripts/fix-profile-usernames.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

@@ -322,20 +322,34 @@ export const profilesApi = {
       .single<Profile>();
   },
 
-  /** Returns all non-null usernames — used by the sitemap to list public profile URLs. */
-  async getAllPublicUsernames(client: Client): Promise<string[]> {
+  /**
+   * Usernames whose profile page is worth putting in the sitemap.
+   *
+   * Two filters, both for indexing reasons:
+   * - Only profiles that host at least one event. A profile with no events
+   *   renders an empty shell that Google crawls and then drops as
+   *   "Crawled - currently not indexed", burning crawl budget on the way.
+   * - Only usernames matching the public username pattern. Legacy rows store
+   *   the signup email in `username`, and those must never reach a public
+   *   sitemap.
+   */
+  async getIndexableUsernames(client: Client): Promise<string[]> {
+    // Driven from the profiles side with an inner join, so the response is
+    // bounded by the number of profiles. Listing event rows and collecting
+    // their `createdBy` instead would silently lose hosts once active events
+    // pass PostgREST's 1000-row response cap.
     const { data, error } = await client
       .from("profiles")
-      .select("username")
-      .not("username", "is", null)
-      .neq("username", "");
+      .select("username, events!inner(id)")
+      .eq("events.isEventActive", true)
+      .limit(1, { referencedTable: "events" });
 
     if (error) {
-      console.error("[getAllPublicUsernames]", error);
+      console.error("[getIndexableUsernames]", error);
       return [];
     }
     return (data ?? [])
       .map((r) => r.username)
-      .filter((u): u is string => typeof u === "string" && u.length > 0);
+      .filter((u): u is string => !isUsernameInvalid(u));
   },
 };
