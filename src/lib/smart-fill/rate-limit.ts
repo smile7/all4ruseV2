@@ -41,6 +41,13 @@ export function smartFillDailyLimitResponse(err: SmartFillDailyLimitError) {
   );
 }
 
+export type SmartFillConsumption = ConsumeRow & {
+  userId: string;
+  feature: SmartFillFeature;
+  /** UTC day the import was counted against; refunds must target the same day. */
+  usageDate: string;
+};
+
 /**
  * Atomically checks and increments today's smart-fill import count for a user.
  * Pass `feature` to also increment the per-feature counter for analytics.
@@ -49,7 +56,8 @@ export function smartFillDailyLimitResponse(err: SmartFillDailyLimitError) {
 export async function consumeSmartFillImport(
   userId: string,
   feature: SmartFillFeature,
-): Promise<ConsumeRow> {
+): Promise<SmartFillConsumption> {
+  const usageDate = new Date().toISOString().slice(0, 10);
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.rpc("consume_smart_fill_import", {
     p_user_id: userId,
@@ -70,5 +78,26 @@ export async function consumeSmartFillImport(
     throw new SmartFillDailyLimitError(row.used, SMART_FILL_DAILY_LIMIT);
   }
 
-  return row;
+  return { ...row, userId, feature, usageDate };
+}
+
+/**
+ * Gives back an import that failed on our side, so users only spend quota on
+ * imports that produced a draft. Best-effort: a failed refund is only logged.
+ */
+export async function refundSmartFillImport(
+  consumption: SmartFillConsumption | null,
+): Promise<void> {
+  if (!consumption) return;
+
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.rpc("refund_smart_fill_import", {
+    p_user_id: consumption.userId,
+    p_usage_date: consumption.usageDate,
+    p_feature: consumption.feature,
+  });
+
+  if (error) {
+    console.error("[smart-fill] refund failed:", error.message);
+  }
 }

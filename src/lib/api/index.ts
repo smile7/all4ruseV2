@@ -1,6 +1,5 @@
 export type { AdvertiseInquiry } from "./advertise-inquiries";
 export { advertiseInquiriesApi } from "./advertise-inquiries";
-export { clickCountsApi } from "./click-counts";
 export type {
   AdminArticleListItem,
   ArticleGroupOption,
@@ -9,7 +8,10 @@ export type {
 export { articlesApi } from "./articles";
 export type { ClaimStatus, EventClaim } from "./claims";
 export { claimsApi } from "./claims";
+export { clickCountsApi } from "./click-counts";
 export { eventsApi } from "./events";
+export type { FailureLogInput } from "./failures";
+export { failuresApi } from "./failures";
 export { profilesApi } from "./profiles";
 export type {
   DueReminders,

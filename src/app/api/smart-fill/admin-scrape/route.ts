@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { reuploadImageFromUrl } from "~/lib/smart-fill/image-reupload";
+import { recordSmartFillFailure } from "~/lib/smart-fill/record-failure";
 import { isGraboUrl, scrapeGrabo } from "~/lib/smart-fill/scrape-grabo";
 import {
   isRuseDanubeUrl,
@@ -74,13 +75,29 @@ export async function POST(request: Request) {
 
     if (scrapeResult.rawImageUrl) {
       const storagePath = await reuploadImageFromUrl(scrapeResult.rawImageUrl);
-      if (storagePath) draft.image = storagePath;
+      if (storagePath) {
+        draft.image = storagePath;
+      } else {
+        await recordSmartFillFailure({
+          userId: user.id,
+          source: "admin_scrape",
+          stage: "image_reupload_failed",
+          url,
+        });
+      }
     }
 
     return NextResponse.json({ draft });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[smart-fill/admin-scrape]", url, message);
+    await recordSmartFillFailure({
+      userId: user.id,
+      source: "admin_scrape",
+      stage: "scrape_failed",
+      error: err,
+      url,
+    });
     return NextResponse.json(
       { error: "Scraping failed. The page structure may have changed." },
       { status: 502 },

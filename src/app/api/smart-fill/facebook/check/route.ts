@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { checkFacebookEventVisibility } from "~/lib/smart-fill/facebook-public-check";
 import { resolveFacebookEventUrl } from "~/lib/smart-fill/facebook-url";
+import { recordSmartFillFailure } from "~/lib/smart-fill/record-failure";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -29,6 +30,13 @@ export async function POST(request: Request) {
   const eventUrl = await resolveFacebookEventUrl(url);
 
   if (!eventUrl) {
+    await recordSmartFillFailure({
+      userId: user.id,
+      source: "facebook_check",
+      stage: "invalid_input",
+      error: "Invalid Facebook event URL",
+      url,
+    });
     return NextResponse.json(
       {
         error:
@@ -44,6 +52,13 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[smart-fill/facebook/check]", message);
+    await recordSmartFillFailure({
+      userId: user.id,
+      source: "facebook_check",
+      stage: "visibility_check_failed",
+      error: err,
+      url: eventUrl,
+    });
     return NextResponse.json(
       { error: "Could not check this event right now. Try again in a moment." },
       { status: 502 },

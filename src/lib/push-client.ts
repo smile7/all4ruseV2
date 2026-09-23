@@ -3,6 +3,8 @@
  * Must stay free of server-only imports so `src/app/sw.ts` can bundle it.
  */
 
+import { type FailureStage, reportFailure } from "~/lib/failures";
+
 export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
 export function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
@@ -16,43 +18,21 @@ export function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   return outputArray.buffer;
 }
 
-/** Mirrors the push_enable_failures_stage_check constraint in the database. */
-export const PUSH_ENABLE_FAILURE_STAGES = [
-  "no_vapid_key",
-  "permission_denied",
-  "no_service_worker",
-  "missing_keys",
-  "save_rejected",
-  "subscribe_threw",
-  "sw_resubscribe_failed",
-] as const;
-
-export type PushEnableFailureStage =
-  (typeof PUSH_ENABLE_FAILURE_STAGES)[number];
-
 /**
- * Records why an attempt to turn reminders on failed. There is no external log
- * service, so these land in Postgres where they can be queried directly.
- * Reporting is best-effort and never affects the caller's outcome.
+ * Records why an attempt to turn reminders on failed, together with the
+ * current notification permission. Best-effort, like every failure report.
  */
 export async function reportPushEnableFailure(
-  stage: PushEnableFailureStage,
+  stage: FailureStage<"push_enable">,
   message?: string,
 ): Promise<void> {
-  try {
-    await fetch("/api/push/failures", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        stage,
-        message: message?.slice(0, 500),
-        permission:
-          typeof Notification === "undefined"
-            ? undefined
-            : Notification.permission,
-      }),
-    });
-  } catch {
-    // Diagnostics only.
-  }
+  await reportFailure({
+    flow: "push_enable",
+    stage,
+    message,
+    metadata:
+      typeof Notification === "undefined"
+        ? undefined
+        : { permission: Notification.permission },
+  });
 }

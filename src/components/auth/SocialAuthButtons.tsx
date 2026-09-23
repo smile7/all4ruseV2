@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "~/components/ui/button";
+import { reportFailure } from "~/lib/failures";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 
 type Provider = "facebook" | "google";
@@ -57,7 +58,9 @@ export function SocialAuthButtons({ next }: Props) {
     setError(null);
     setLoading(provider);
     const supabase = getSupabaseBrowserClient();
-    const redirectTo = `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`;
+    const callbackParams = new URLSearchParams({ provider });
+    if (next) callbackParams.set("next", next);
+    const redirectTo = `${window.location.origin}/auth/callback?${callbackParams.toString()}`;
 
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
@@ -65,6 +68,12 @@ export function SocialAuthButtons({ next }: Props) {
     });
 
     if (oauthError) {
+      void reportFailure({
+        flow: "auth",
+        stage: "oauth_start_failed",
+        message: oauthError.message,
+        metadata: { method: provider },
+      });
       setError(t("errorOccurred"));
       setLoading(null);
     }

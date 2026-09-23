@@ -8,9 +8,12 @@ import { preprocessImageForExtraction } from "~/lib/smart-fill/image-preprocess"
 import {
   consumeSmartFillImport,
   isSmartFillAdmin,
+  refundSmartFillImport,
+  type SmartFillConsumption,
   SmartFillDailyLimitError,
   smartFillDailyLimitResponse,
 } from "~/lib/smart-fill/rate-limit";
+import { recordSmartFillFailure } from "~/lib/smart-fill/record-failure";
 import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import type { EventDraft } from "~/types";
@@ -40,10 +43,22 @@ export async function POST(request: Request) {
 
   const file = formData.get("image");
   if (!(file instanceof File)) {
+    await recordSmartFillFailure({
+      userId: user.id,
+      source: "image",
+      stage: "invalid_input",
+      error: "No image provided",
+    });
     return NextResponse.json({ error: "No image provided" }, { status: 422 });
   }
 
   if (file.size > MAX_FILE_SIZE) {
+    await recordSmartFillFailure({
+      userId: user.id,
+      source: "image",
+      stage: "invalid_input",
+      error: `Image too large (${file.size} bytes)`,
+    });
     return NextResponse.json(
       { error: "Image must be under 5 MB" },
       { status: 422 },
@@ -52,6 +67,12 @@ export async function POST(request: Request) {
 
   const mimeType = file.type || "image/jpeg";
   if (!ALLOWED_TYPES.includes(mimeType)) {
+    await recordSmartFillFailure({
+      userId: user.id,
+      source: "image",
+      stage: "invalid_input",
+      error: `Unsupported image type (${mimeType})`,
+    });
     return NextResponse.json(
       { error: "Only JPEG, PNG, or WEBP images are supported" },
       { status: 422 },
@@ -66,13 +87,19 @@ export async function POST(request: Request) {
       ? rawText.trim().slice(0, MAX_TEXT_LENGTH)
       : undefined;
 
+  let consumption: SmartFillConsumption | null = null;
   if (!isSmartFillAdmin(user.id)) {
     try {
-      await consumeSmartFillImport(user.id, "image");
+      consumption = await consumeSmartFillImport(user.id, "image");
     } catch (err) {
-      if (err instanceof SmartFillDailyLimitError) {
-        return smartFillDailyLimitResponse(err);
-      }
+      const isLimit = err instanceof SmartFillDailyLimitError;
+      await recordSmartFillFailure({
+        userId: user.id,
+        source: "image",
+        stage: isLimit ? "daily_limit" : "rate_limit_check_failed",
+        error: err,
+      });
+      if (isLimit) return smartFillDailyLimitResponse(err);
       throw err;
     }
   }
@@ -88,6 +115,13 @@ export async function POST(request: Request) {
 
   if (uploadError) {
     console.error("[smart-fill/photo] upload error:", uploadError.message);
+    await refundSmartFillImport(consumption);
+    await recordSmartFillFailure({
+      userId: user.id,
+      source: "image",
+      stage: "image_upload_failed",
+      error: uploadError,
+    });
     return NextResponse.json({ error: "Image upload failed" }, { status: 502 });
   }
 
@@ -105,6 +139,16 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[smart-fill/photo]", message);
+    await refundSmartFillImport(consumption);
+    await recordSmartFillFailure({
+      userId: user.id,
+      source: "image",
+      stage:
+        err instanceof QuotaExceededError
+          ? "ai_quota_exceeded"
+          : "extraction_failed",
+      error: err,
+    });
     // Image was uploaded — still return a partial draft with the image.
     // For quota errors, signal the client so it can show the right message.
     const partialDraft: EventDraft = { image: storagePath };

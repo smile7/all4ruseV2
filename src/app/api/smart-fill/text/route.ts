@@ -7,9 +7,12 @@ import {
 import {
   consumeSmartFillImport,
   isSmartFillAdmin,
+  refundSmartFillImport,
+  type SmartFillConsumption,
   SmartFillDailyLimitError,
   smartFillDailyLimitResponse,
 } from "~/lib/smart-fill/rate-limit";
+import { recordSmartFillFailure } from "~/lib/smart-fill/record-failure";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 const MAX_TEXT_LENGTH = 3000;
@@ -37,6 +40,12 @@ export async function POST(request: Request) {
       : "";
 
   if (text.length < 10) {
+    await recordSmartFillFailure({
+      userId: user.id,
+      source: "text",
+      stage: "invalid_input",
+      error: `Text too short (${text.length} chars)`,
+    });
     return NextResponse.json(
       { error: "Please provide at least a short description" },
       { status: 422 },
@@ -46,13 +55,19 @@ export async function POST(request: Request) {
   const trimmed =
     text.length > MAX_TEXT_LENGTH ? text.slice(0, MAX_TEXT_LENGTH) : text;
 
+  let consumption: SmartFillConsumption | null = null;
   if (!isSmartFillAdmin(user.id)) {
     try {
-      await consumeSmartFillImport(user.id, "text");
+      consumption = await consumeSmartFillImport(user.id, "text");
     } catch (err) {
-      if (err instanceof SmartFillDailyLimitError) {
-        return smartFillDailyLimitResponse(err);
-      }
+      const isLimit = err instanceof SmartFillDailyLimitError;
+      await recordSmartFillFailure({
+        userId: user.id,
+        source: "text",
+        stage: isLimit ? "daily_limit" : "rate_limit_check_failed",
+        error: err,
+      });
+      if (isLimit) return smartFillDailyLimitResponse(err);
       throw err;
     }
   }
@@ -63,6 +78,18 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[smart-fill/text]", message);
+
+    await refundSmartFillImport(consumption);
+    await recordSmartFillFailure({
+      userId: user.id,
+      source: "text",
+      stage:
+        err instanceof QuotaExceededError
+          ? "ai_quota_exceeded"
+          : "extraction_failed",
+      error: err,
+    });
+
     if (err instanceof QuotaExceededError) {
       return NextResponse.json(
         { error: message, errorCode: "quota_exceeded" },

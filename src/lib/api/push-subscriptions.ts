@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { PushEnableFailureStage } from "~/lib/push-client";
 import type { Database } from "~/types/database";
 
 type Client = SupabaseClient<Database>;
@@ -145,29 +144,6 @@ async function hasPushSubscription(
     .eq("endpoint", endpoint)
     .maybeSingle();
   return data !== null;
-}
-
-type PushEnableFailureInput = {
-  stage: PushEnableFailureStage;
-  message: string | null;
-  permission: string | null;
-  userAgent: string | null;
-};
-
-/** Requires an admin client — the table is readable only via the service role. */
-async function logPushEnableFailure(
-  client: Client,
-  userId: string | null,
-  input: PushEnableFailureInput,
-): Promise<void> {
-  const { error } = await client.from("push_enable_failures").insert({
-    user_id: userId,
-    stage: input.stage,
-    message: input.message,
-    permission: input.permission,
-    user_agent: input.userAgent,
-  });
-  if (error) throw error;
 }
 
 /** Whether the event a reminder refers to happens today or tomorrow. */
@@ -376,6 +352,5 @@ export const pushSubscriptionsApi = {
   deletePushSubscription,
   deletePushSubscriptionsByEndpoints,
   hasPushSubscription,
-  logPushEnableFailure,
   getDueReminders,
 };

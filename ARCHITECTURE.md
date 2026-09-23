@@ -534,6 +534,16 @@ export async function GET(request: Request) {
 }
 ```
 
+### Flow failure diagnostics
+
+Failures in the push-reminder, smart fill, and auth flows are recorded in the `flow_failures` table (RLS on, no policies — service role only), queried directly in Postgres.
+
+- Allowed stages per flow live in `src/lib/failures.ts`. Stages caused by the user (`provider_cancelled`, `already_registered`, `daily_limit`, `invalid_input`) are separate so they can be filtered out.
+- Server routes call `recordFailure` (`src/lib/failures-server.ts`); smart fill routes use `recordSmartFillFailure`. Both never throw.
+- Browser-side failures (push enable, OAuth start, captcha, sign-up) go through `reportFailure` → `POST /api/failures`, which accepts only the `push_enable` and `auth` flows.
+- OAuth buttons add `?provider=` to the callback URL so callback failures are attributable to Facebook or Google; email flows are recorded as `method: "email"`.
+- Smart fill imports that fail on our side are refunded via `refund_smart_fill_import`, so the daily limit only counts imports that produced a draft.
+
 ---
 
 ## Forms

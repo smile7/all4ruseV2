@@ -11,9 +11,12 @@ import { reuploadImageFromUrl } from "~/lib/smart-fill/image-reupload";
 import {
   consumeSmartFillImport,
   isSmartFillAdmin,
+  refundSmartFillImport,
+  type SmartFillConsumption,
   SmartFillDailyLimitError,
   smartFillDailyLimitResponse,
 } from "~/lib/smart-fill/rate-limit";
+import { recordSmartFillFailure } from "~/lib/smart-fill/record-failure";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import type { EventDraft } from "~/types";
 
@@ -42,6 +45,13 @@ export async function POST(request: Request) {
   const eventUrl = await resolveFacebookEventUrl(url);
 
   if (!eventUrl) {
+    await recordSmartFillFailure({
+      userId: user.id,
+      source: "facebook",
+      stage: "invalid_input",
+      error: "Invalid Facebook event URL",
+      url,
+    });
     return NextResponse.json(
       {
         error:
@@ -51,13 +61,19 @@ export async function POST(request: Request) {
     );
   }
 
+  let consumption: SmartFillConsumption | null = null;
   if (!isSmartFillAdmin(user.id)) {
     try {
-      await consumeSmartFillImport(user.id, "facebook");
+      consumption = await consumeSmartFillImport(user.id, "facebook");
     } catch (err) {
-      if (err instanceof SmartFillDailyLimitError) {
-        return smartFillDailyLimitResponse(err);
-      }
+      const isLimit = err instanceof SmartFillDailyLimitError;
+      await recordSmartFillFailure({
+        userId: user.id,
+        source: "facebook",
+        stage: isLimit ? "daily_limit" : "rate_limit_check_failed",
+        error: err,
+      });
+      if (isLimit) return smartFillDailyLimitResponse(err);
       throw err;
     }
   }
@@ -86,13 +102,32 @@ export async function POST(request: Request) {
 
     if (rawImageUrl) {
       const imageUrl = await reuploadImageFromUrl(rawImageUrl);
-      if (imageUrl) draft.image = imageUrl;
+      if (imageUrl) {
+        draft.image = imageUrl;
+      } else {
+        await recordSmartFillFailure({
+          userId: user.id,
+          source: "facebook",
+          stage: "image_reupload_failed",
+          url: eventUrl,
+        });
+      }
     }
 
     return NextResponse.json({ draft });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[smart-fill/facebook]", message);
+
+    await refundSmartFillImport(consumption);
+    await recordSmartFillFailure({
+      userId: user.id,
+      source: "facebook",
+      stage:
+        err instanceof EmptyDatasetError ? "scrape_empty" : "scrape_failed",
+      error: err,
+      url: eventUrl,
+    });
 
     if (err instanceof EmptyDatasetError) {
       return NextResponse.json(

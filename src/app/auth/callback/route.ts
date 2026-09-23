@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { DEFAULT_LOCALE } from "~/constants";
 import { profilesApi } from "~/lib/api";
+import { getFailureMessage } from "~/lib/failures";
+import { recordFailure } from "~/lib/failures-server";
 import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import {
@@ -30,6 +32,41 @@ export async function GET(request: NextRequest) {
   const isLocal = process.env.NODE_ENV === "development";
   const base = isLocal || !forwardedHost ? origin : `https://${forwardedHost}`;
 
+  // Set by SocialAuthButtons; absent for email confirmation and password reset.
+  const method = searchParams.get("provider")?.slice(0, 20) ?? "email";
+  const userAgent = request.headers.get("user-agent");
+  const providerError = searchParams.get("error");
+  const providerErrorCode = searchParams.get("error_code");
+
+  if (providerError) {
+    await recordFailure({
+      flow: "auth",
+      stage:
+        providerError === "access_denied"
+          ? "provider_cancelled"
+          : "provider_error",
+      userId: null,
+      userAgent,
+      message: searchParams.get("error_description"),
+      metadata: {
+        method,
+        next,
+        error: providerError.slice(0, 200),
+        ...(providerErrorCode && {
+          error_code: providerErrorCode.slice(0, 200),
+        }),
+      },
+    });
+  } else if (!code) {
+    await recordFailure({
+      flow: "auth",
+      stage: "callback_missing_code",
+      userId: null,
+      userAgent,
+      metadata: { method, next },
+    });
+  }
+
   if (code) {
     const response = NextResponse.redirect(`${base}${next}`);
     const supabase = await createSupabaseServerClient({
@@ -41,11 +78,13 @@ export async function GET(request: NextRequest) {
     if (!error) {
       // Bootstrap the profile row for newly confirmed users, then sync the
       // OAuth avatar only when the profile still has no custom avatar.
+      let userId: string | null = null;
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser();
         if (user) {
+          userId = user.id;
           const admin = createSupabaseAdminClient();
           await profilesApi.ensureProfile(admin, user);
 
@@ -61,8 +100,16 @@ export async function GET(request: NextRequest) {
               .is("avatar_url", null);
           }
         }
-      } catch {
+      } catch (err) {
         // Non-fatal — avatar sync failure should not block the redirect
+        await recordFailure({
+          flow: "auth",
+          stage: "profile_bootstrap_failed",
+          userId,
+          userAgent,
+          message: getFailureMessage(err),
+          metadata: { method, next },
+        });
       }
 
       response.cookies.set(
@@ -72,6 +119,15 @@ export async function GET(request: NextRequest) {
       );
       return response;
     }
+
+    await recordFailure({
+      flow: "auth",
+      stage: "code_exchange_failed",
+      userId: null,
+      userAgent,
+      message: error.message,
+      metadata: { method, next, ...(error.code && { error_code: error.code }) },
+    });
   }
 
   // Something went wrong — send back to login with an error indicator

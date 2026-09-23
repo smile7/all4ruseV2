@@ -29,6 +29,7 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { PasswordInput } from "~/components/ui/password-input";
+import { reportFailure } from "~/lib/failures";
 import { executeRecaptcha } from "~/lib/recaptcha";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 
@@ -111,6 +112,12 @@ export default function SignupPage() {
         body: JSON.stringify({ token, action: "signup" }),
       });
       if (!res.ok) {
+        void reportFailure({
+          flow: "auth",
+          stage: "captcha_failed",
+          message: `HTTP ${res.status}`,
+          metadata: { method: "email" },
+        });
         setAuthError(t("captchaError"));
         return;
       }
@@ -135,6 +142,15 @@ export default function SignupPage() {
       const isDuplicate =
         error.message.toLowerCase().includes("user already registered") ||
         error.message.toLowerCase().includes("already been registered");
+      void reportFailure({
+        flow: "auth",
+        stage: isDuplicate ? "already_registered" : "signup_failed",
+        message: error.message,
+        metadata: {
+          method: "email",
+          ...(error.code && { error_code: error.code }),
+        },
+      });
       setDuplicateEmail(isDuplicate);
       setAuthError(mapSignupError(error.message, t));
       return;
@@ -143,6 +159,11 @@ export default function SignupPage() {
     // Confirmed duplicate: Supabase returns success with no error (anti-enumeration)
     // but identities is empty — no confirmation email is sent.
     if (!data.user?.identities?.length) {
+      void reportFailure({
+        flow: "auth",
+        stage: "already_registered",
+        metadata: { method: "email", detected_by: "empty_identities" },
+      });
       setDuplicateEmail(true);
       setAuthError(t("userAlreadyExists"));
       return;
