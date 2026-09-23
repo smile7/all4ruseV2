@@ -10,6 +10,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
   Bold,
+  CalendarPlus,
   ImagePlus,
   Italic,
   Link2,
@@ -22,6 +23,12 @@ import {
   Underline as UnderlineIcon,
 } from "lucide-react";
 
+import {
+  ARTICLE_EVENT_NODE,
+  ArticleEventNode,
+  type ArticleEventNodeAttrs,
+} from "~/components/ArticleForm/article-event-node";
+import { ArticleEventPicker } from "~/components/ArticleForm/ArticleEventPicker";
 import { Button } from "~/components/ui/button";
 import {
   Select,
@@ -32,10 +39,13 @@ import {
 } from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
 import { Toggle } from "~/components/ui/toggle";
+import type { ArticleEventOption } from "~/lib/api";
+import { formatArticleEventDate } from "~/lib/article-event-links";
 import {
   ARTICLE_EDITOR_INNER_CLASSES,
   sanitizeArticleHtml,
 } from "~/lib/article-html";
+import { formatEventTitle } from "~/lib/event-utils";
 import { cn } from "~/lib/utils";
 
 type Props = {
@@ -44,6 +54,9 @@ type Props = {
   onBlur?: () => void;
   disabled?: boolean;
   onUploadError?: (message: string) => void;
+  /** Article locale — the event cards' dates are formatted in it. */
+  locale: string;
+  events: ArticleEventOption[];
 };
 
 function blockTypeValue(editor: Editor | null): string {
@@ -65,11 +78,14 @@ export function ArticleBodyEditor({
   onBlur,
   disabled,
   onUploadError,
+  locale,
+  events,
 }: Props) {
   const t = useTranslations("CreateEvent");
   const tAdmin = useTranslations("MoreFromRuse.admin");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [eventPickerOpen, setEventPickerOpen] = useState(false);
 
   const editor = useEditor(
     {
@@ -101,6 +117,7 @@ export function ArticleBodyEditor({
         Image.configure({
           HTMLAttributes: { loading: "lazy", decoding: "async" },
         }),
+        ArticleEventNode,
       ],
       onUpdate: ({ editor: ed }) => onChange(sanitizeArticleHtml(ed.getHTML())),
     },
@@ -151,6 +168,28 @@ export function ArticleBodyEditor({
     const href = window.prompt(tAdmin("editorLinkPrompt"));
     if (!href) return;
     editor.chain().focus().setLink({ href }).run();
+  }
+
+  function insertEvents(picked: ArticleEventOption[]) {
+    if (!editor || picked.length === 0) return;
+    editor
+      .chain()
+      .focus()
+      .insertContent(
+        picked.map((event) => ({
+          type: ARTICLE_EVENT_NODE,
+          attrs: {
+            eventId: event.id,
+            date: formatArticleEventDate(
+              event.startDate,
+              event.endDate,
+              locale,
+            ),
+            title: formatEventTitle(event.title),
+          } satisfies ArticleEventNodeAttrs,
+        })),
+      )
+      .run();
   }
 
   if (!editor) {
@@ -326,6 +365,20 @@ export function ArticleBodyEditor({
           <Minus className="size-4" />
         </Button>
 
+        <Separator orientation="vertical" className="mx-0.5 h-6" />
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={disabled}
+          className="gap-1 px-2"
+          onClick={() => setEventPickerOpen(true)}
+        >
+          <CalendarPlus className="size-4" />
+          {tAdmin("editorEvents")}
+        </Button>
+
         <input
           ref={fileInputRef}
           type="file"
@@ -342,6 +395,14 @@ export function ArticleBodyEditor({
       <div className="relative min-h-[420px]" onBlur={onBlur}>
         <EditorContent editor={editor} />
       </div>
+
+      <ArticleEventPicker
+        open={eventPickerOpen}
+        onOpenChange={setEventPickerOpen}
+        events={events}
+        locale={locale}
+        onInsert={insertEvents}
+      />
     </div>
   );
 }

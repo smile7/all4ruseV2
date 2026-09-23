@@ -4,7 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { ArticleAdminList, ArticleForm } from "~/components/ArticleForm";
 import { Typography } from "~/components/layout";
-import { articlesApi, tagsApi } from "~/lib/api";
+import { articlesApi, eventsApi, tagsApi } from "~/lib/api";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 type Props = {
@@ -27,13 +27,14 @@ export default async function CreateArticlePage({ searchParams }: Props) {
 
   const { editId } = await searchParams;
 
-  const [initialData, groups, adminArticles, tags] = await Promise.all([
+  const [initialData, groups, adminArticles, tags, events] = await Promise.all([
     editId
       ? articlesApi.getArticleById(supabase, editId)
       : Promise.resolve(null),
     articlesApi.getArticleGroups(supabase),
     articlesApi.getAdminArticleList(supabase),
     tagsApi.getTags(supabase),
+    eventsApi.getArticleEventOptions(supabase),
   ]);
 
   const [t, locale] = await Promise.all([
@@ -61,6 +62,7 @@ export default async function CreateArticlePage({ searchParams }: Props) {
         initialData={initialData}
         groups={groups}
         tags={tags}
+        events={events}
       />
     </div>
   );

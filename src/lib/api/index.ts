@@ -9,6 +9,7 @@ export { articlesApi } from "./articles";
 export type { ClaimStatus, EventClaim } from "./claims";
 export { claimsApi } from "./claims";
 export { clickCountsApi } from "./click-counts";
+export type { ArticleEventOption } from "./events";
 export { eventsApi } from "./events";
 export type { FailureLogInput } from "./failures";
 export { failuresApi } from "./failures";

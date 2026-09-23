@@ -375,6 +375,13 @@
   background-size: min(12rem, 55%) 1px;
 }
 
+/* An explicit divider already separates the section — skip the heading's own line. */
+.article-body hr + h2:not(:first-child) {
+  margin-top: 0;
+  padding-top: 0;
+  background-image: none;
+}
+
 .article-body h2::before {
   content: "";
   display: inline-block;
@@ -658,6 +665,16 @@
 }
 
 .article-body .article-schedule-linked:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Event card selected in the article editor (delete / drag target). */
+.article-body p[data-article-event] {
+  cursor: grab;
+}
+
+.article-body p[data-article-event].ProseMirror-selectednode {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }

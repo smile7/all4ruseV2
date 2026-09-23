@@ -81,7 +81,8 @@ function buildSanitizeOptions(sponsored: boolean): sanitizeHtml.IOptions {
       h2: ["id", "style"],
       h3: ["id", "style"],
       h4: ["style"],
-      p: ["style", "class"],
+      // `data-article-event` marks an event card — see article-event-links.ts.
+      p: ["style", "class", "data-article-event"],
       li: ["style", "class"],
       span: ["style", "class"],
       div: ["style"],

@@ -461,6 +461,28 @@ async function getEventsByIds(client: Client, ids: number[]): Promise<Event[]> {
   return (data ?? []).map(mapEvent);
 }
 
+export type ArticleEventOption = Pick<
+  Event,
+  "id" | "slug" | "title" | "startDate" | "endDate" | "place"
+>;
+
+/** Upcoming events for the article editor's event picker — only what the list shows. */
+async function getArticleEventOptions(
+  client: Client,
+): Promise<ArticleEventOption[]> {
+  const { data, error } = await client
+    .from("events")
+    .select("id, slug, title, startDate, endDate, place")
+    .eq("isEventActive", true)
+    .gte("endDate", todayStr())
+    .not("slug", "is", null)
+    .order("startDate", { ascending: true })
+    .order("startTime", { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
 // Fetches all active events overlapping a given calendar month.
 // Used by the calendar view to include past events for the current/previous months.
 async function getEventsByMonthRange(
@@ -833,6 +855,7 @@ export const eventsApi = {
   getAllSlugsWithDates,
   getMyEvents,
   getEventsByIds,
+  getArticleEventOptions,
   createEvent,
   createRecurringEvents,
   updateEvent,

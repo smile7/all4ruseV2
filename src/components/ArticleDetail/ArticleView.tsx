@@ -9,6 +9,10 @@ import { Typography } from "~/components/layout";
 import { Badge } from "~/components/ui/badge";
 import { Link } from "~/i18n/navigation";
 import {
+  type ArticleEventLinkSource,
+  renderArticleEventLinks,
+} from "~/lib/article-event-links";
+import {
   ARTICLE_BODY_CLASSES,
   enhanceArticleBodyHtml,
   extractArticleHeadings,
@@ -24,9 +28,11 @@ const MIN_HEADINGS_FOR_TOC = 3;
 type Props = {
   article: Article;
   locale: string;
+  /** Events referenced by the body's event cards, fetched by the page. */
+  linkedEvents: ArticleEventLinkSource[];
 };
 
-export async function ArticleView({ article, locale }: Props) {
+export async function ArticleView({ article, locale, linkedEvents }: Props) {
   const t = await getTranslations({ locale, namespace: "MoreFromRuse" });
 
   // Sanitized on write and again on read, so a row edited directly in the
@@ -34,7 +40,9 @@ export async function ArticleView({ article, locale }: Props) {
   const sanitizedBody = sanitizeArticleHtml(article.body_html, {
     sponsored: article.is_sponsored,
   });
-  const bodyHtml = enhanceArticleBodyHtml(sanitizedBody);
+  const bodyHtml = enhanceArticleBodyHtml(
+    renderArticleEventLinks(sanitizedBody, linkedEvents, article.locale),
+  );
   const headings = extractArticleHeadings(sanitizedBody);
   const tocHeadings = headings.filter((heading) => heading.level === 2);
 

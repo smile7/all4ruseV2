@@ -1326,6 +1326,8 @@ Unique on `(locale, slug)` and `(group_id, locale)`. `updated_at` is maintained 
 
 `addHeadingIds` assigns transliterated ids to `h2`/`h3` at save time, which is what makes the table of contents work with zero client JS.
 
+**Event cards.** The editor's „Събития" button inserts one or more events (upcoming ones, from `eventsApi.getArticleEventOptions`) as an atom block stored as `<p data-article-event="ID">` with a date/title snapshot. The snapshot exists only for the editor: the detail page fetches the referenced events with `getEventsByIds` and `renderArticleEventLinks` (`src/lib/article-event-links.ts`) rebuilds each card from the live row, so renamed or rescheduled events never go stale. Cards whose event was deleted or deactivated are dropped. The old way — a `18 октомври - <link>` paragraph turned into a card by `enhanceArticleBodyHtml` — still works for hand-written lines.
+
 ### SEO specifics
 
 - `buildArticleAlternates` emits hreflang for **published translations that exist only** — never all four locales, since an untranslated article 404s. It always includes a self-referencing alternate, and `x-default` points at the Bulgarian URL when there is one.

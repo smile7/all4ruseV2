@@ -34,7 +34,7 @@ import { DEBOUNCE_MS, DEFAULT_ARTICLE_AUTHOR, LOCALES } from "~/constants";
 import { useDebounce } from "~/hooks/useDebounce";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { Link, useRouter } from "~/i18n/navigation";
-import type { ArticleGroupOption } from "~/lib/api";
+import type { ArticleEventOption, ArticleGroupOption } from "~/lib/api";
 import { buildArticleSlugFromTitle } from "~/lib/article-slug";
 import { ARTICLES_PATH } from "~/lib/seo";
 import {
@@ -51,6 +51,7 @@ type Props = {
   initialData: Article | null;
   groups: ArticleGroupOption[];
   tags: Tag[];
+  events: ArticleEventOption[];
 };
 
 function toFormValues(article: Article | null): ArticleFormValues {
@@ -74,7 +75,7 @@ function toFormValues(article: Article | null): ArticleFormValues {
   };
 }
 
-export function ArticleForm({ initialData, groups, tags }: Props) {
+export function ArticleForm({ initialData, groups, tags, events }: Props) {
   const t = useTranslations("MoreFromRuse.admin");
   const tCategories = useTranslations("MoreFromRuse.categories");
   const messages = useMessages() as { EventTags?: Record<string, string> };
@@ -526,6 +527,8 @@ export function ArticleForm({ initialData, groups, tags }: Props) {
                   onBlur={field.onBlur}
                   disabled={submitting}
                   onUploadError={(message) => toast.error(message)}
+                  locale={locale}
+                  events={events}
                 />
               </FormControl>
               <FormDescription>{t("editorScheduleLinkHint")}</FormDescription>

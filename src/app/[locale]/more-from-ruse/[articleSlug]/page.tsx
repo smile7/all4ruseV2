@@ -7,7 +7,8 @@ import { ArticleCard } from "~/components/ArticleCard";
 import { ArticleView } from "~/components/ArticleDetail";
 import { ARTICLES_RELATED_COUNT, type Locale } from "~/constants";
 import { Link } from "~/i18n/navigation";
-import { articlesApi } from "~/lib/api";
+import { articlesApi, eventsApi } from "~/lib/api";
+import { extractArticleEventIds } from "~/lib/article-event-links";
 import {
   buildArticleJsonLd,
   buildBreadcrumbJsonLd,
@@ -133,12 +134,18 @@ export default async function ArticleDetailPage({ params }: Props) {
   if (!article) notFound();
 
   const client = createSupabasePublicServerClient();
-  const related = await articlesApi.getRelatedArticles(
-    client,
-    locale,
-    article.id,
-    ARTICLES_RELATED_COUNT,
-  );
+  const [related, linkedEvents] = await Promise.all([
+    articlesApi.getRelatedArticles(
+      client,
+      locale,
+      article.id,
+      ARTICLES_RELATED_COUNT,
+    ),
+    eventsApi.getEventsByIds(
+      client,
+      extractArticleEventIds(article.body_html),
+    ),
+  ]);
 
   const url = buildArticleUrl(locale, article.slug);
   const categoryLabel = article.category
@@ -170,7 +177,11 @@ export default async function ArticleDetailPage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
 
-      <ArticleView article={article} locale={locale} />
+      <ArticleView
+        article={article}
+        locale={locale}
+        linkedEvents={linkedEvents}
+      />
 
       {related.length > 0 && (
         // Offset main's xl:px-30 so the heading lines up with the header logo.
