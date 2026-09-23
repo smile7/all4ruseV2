@@ -1,5 +1,7 @@
+import { FALLBACK_IMAGE } from "~/constants";
 import {
   formatEventTitle,
+  getEventImageUrl,
   getIntlLocale,
   parseLocalDate,
 } from "~/lib/event-utils";
@@ -18,6 +20,7 @@ export type ArticleEventLinkSource = {
   title: string;
   startDate: string;
   endDate: string;
+  image: string | null;
 };
 
 const ARTICLE_EVENT_REGEX =
@@ -56,6 +59,21 @@ export function formatArticleEventDate(
   return `${dayMonth.format(start)} – ${dayMonth.format(end)}`;
 }
 
+/** Widths must be in Next's default `images.imageSizes`, or the optimizer rejects them. */
+function optimizedImageUrl(src: string, width: 128 | 256): string {
+  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=75`;
+}
+
+/** Empty when the event has no usable poster; the "no image" placeholder adds nothing to a card. */
+function buildThumbHtml(image: string | null): string {
+  const src = getEventImageUrl(image);
+  if (src === FALLBACK_IMAGE) return "";
+
+  const small = escapeHtml(optimizedImageUrl(src, 128));
+  const large = escapeHtml(optimizedImageUrl(src, 256));
+  return `<span class="article-schedule-thumb"><img src="${small}" srcset="${small} 1x, ${large} 2x" alt="" loading="lazy" decoding="async"></span>`;
+}
+
 export function extractArticleEventIds(html: string): number[] {
   const ids = [...html.matchAll(ARTICLE_EVENT_REGEX)].map((match) =>
     Number(match[1]),
@@ -84,6 +102,10 @@ export function renderArticleEventLinks(
       formatArticleEventDate(event.startDate, event.endDate, locale),
     );
     const title = escapeHtml(formatEventTitle(event.title));
-    return `<p class="article-schedule-item article-schedule-linked"><a href="${href}" target="_blank" rel="noopener"><span class="article-schedule-lead">${date}</span><span class="article-schedule-text">${title}</span></a></p>`;
+    const thumb = buildThumbHtml(event.image);
+    const classes = thumb
+      ? "article-schedule-item article-schedule-linked article-schedule-has-thumb"
+      : "article-schedule-item article-schedule-linked";
+    return `<p class="${classes}"><a href="${href}" target="_blank" rel="noopener">${thumb}<span class="article-schedule-body"><span class="article-schedule-lead">${date}</span><span class="article-schedule-text">${title}</span></span></a></p>`;
   });
 }

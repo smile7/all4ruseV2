@@ -27,7 +27,7 @@ export function Header() {
           </div>
         </div>
 
-        {/* Row 2: full-width link to the articles section */}
+        {/* Row 2: full-width link to the featured article */}
         <HeaderMoreFromRuseLink variant="mobile" />
       </div>
 
@@ -38,7 +38,7 @@ export function Header() {
           <Logo />
         </div>
 
-        {/* Center — articles entry point, exactly centered */}
+        {/* Center — featured article, exactly centered */}
         <div className="flex items-center justify-center">
           <HeaderMoreFromRuseLink />
         </div>

@@ -31,6 +31,7 @@ export const TRACKED_EVENT_KEYS = [
   "home.view.calendar",
   "home.create_event",
   "header.create_event",
+  "header.featured_article",
   "auth.signup.from_save",
   "auth.login.from_save",
   "reminders.enable",
