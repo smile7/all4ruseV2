@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { ARTICLES_PAGE_SIZE } from "~/constants";
+import { ARTICLES_PAGE_SIZE, DEFAULT_LOCALE } from "~/constants";
 import type { Article, ArticleSibling } from "~/types";
 import type { Database, TablesInsert, TablesUpdate } from "~/types/database";
 
@@ -111,6 +111,31 @@ export const articlesApi = {
 
     if (error) throw error;
     return data ?? [];
+  },
+
+  /**
+   * Newest published article tagged with any of the event's tags. Prefers the
+   * visitor's locale and falls back to the Bulgarian source article.
+   */
+  async getLatestArticleForEventTags(
+    client: Client,
+    tagIds: number[],
+    locale: string,
+  ): Promise<Article | null> {
+    if (tagIds.length === 0) return null;
+
+    const { data, error } = await client
+      .from("articles")
+      .select("*")
+      .in("event_tag_id", tagIds)
+      .in("locale", [...new Set([locale, DEFAULT_LOCALE])])
+      .eq("status", PUBLISHED)
+      .order("published_at", { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+    const rows = data ?? [];
+    return rows.find((row) => row.locale === locale) ?? rows[0] ?? null;
   },
 
   async getRelatedArticles(

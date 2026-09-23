@@ -17,6 +17,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { EventArticlePromo } from "~/components/EventArticlePromo";
 import { EventTag } from "~/components/EventTag";
 import {
   EventActionButtons,
@@ -30,15 +31,9 @@ import {
 import { RelatedEventsRow } from "~/components/layout/RelatedEventsRow";
 import { PartnerNearby } from "~/components/PartnerNearby";
 import { PremiumBadge } from "~/components/PremiumBadge";
-import { TheatreArticlePromo } from "~/components/TheatreArticlePromo";
 import { Card, CardContent } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
-import {
-  DEFAULT_LOCALE,
-  type Locale,
-  THEATRE_PROMO_ARTICLE_LOCALE,
-  THEATRE_PROMO_ARTICLE_SLUG,
-} from "~/constants";
+import { DEFAULT_LOCALE, type Locale } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { articlesApi, eventsApi, profilesApi } from "~/lib/api";
 import { buildBreadcrumbJsonLd, serializeJsonLd } from "~/lib/article-jsonld";
@@ -49,7 +44,6 @@ import {
 } from "~/lib/event-description-html";
 import { buildEventJsonLd } from "~/lib/event-jsonld";
 import { eventTagSlug } from "~/lib/event-tag-slug";
-import { normalizeEventTagKey } from "~/lib/event-tag-styles";
 import {
   buildGCalUrl,
   formatEventTitle,
@@ -189,12 +183,10 @@ export default async function EventDetailPage({ params }: Props) {
   // Imported by the admin, so no real owner has taken it over yet.
   const isAdminEvent = Boolean(adminUserId && event.createdBy === adminUserId);
 
-  const hasTheatreTag = (event.tags ?? []).some(
-    (tag) => normalizeEventTagKey(tag.title) === "THEATRE",
-  );
+  const eventTagIds = (event.tags ?? []).map((tag) => tag.id);
 
   // Run all remaining independent fetches in parallel.
-  const [hostProfileResult, relatedEvents, theatrePromoArticle] =
+  const [hostProfileResult, relatedEvents, promoArticle] =
     await Promise.all([
       event.createdBy && event.createdBy !== adminUserId
         ? profilesApi
@@ -204,18 +196,12 @@ export default async function EventDetailPage({ params }: Props) {
       eventsApi.getRelatedEvents(
         publicClient,
         event.id,
-        (event.tags ?? []).map((tag) => tag.id),
+        eventTagIds,
         event.title,
       ),
-      hasTheatreTag
-        ? articlesApi
-            .getPublishedArticleBySlug(
-              publicClient,
-              THEATRE_PROMO_ARTICLE_LOCALE,
-              THEATRE_PROMO_ARTICLE_SLUG,
-            )
-            .catch(() => null)
-        : Promise.resolve(null),
+      articlesApi
+        .getLatestArticleForEventTags(publicClient, eventTagIds, locale)
+        .catch(() => null),
     ]);
 
   const hostProfile = hostProfileResult;
@@ -511,10 +497,10 @@ export default async function EventDetailPage({ params }: Props) {
                 </CardContent>
               </Card>
 
-              {theatrePromoArticle && (
+              {promoArticle && (
                 <div className="lg:hidden">
-                  <TheatreArticlePromo
-                    article={theatrePromoArticle}
+                  <EventArticlePromo
+                    article={promoArticle}
                     locale={locale}
                   />
                 </div>
@@ -589,9 +575,9 @@ export default async function EventDetailPage({ params }: Props) {
 
             {/* ── Desktop sidebar (hidden on mobile) ──────────────────── */}
             <div className="hidden lg:sticky lg:top-20 lg:flex lg:w-52 lg:shrink-0 lg:flex-col lg:gap-3">
-              {theatrePromoArticle && (
-                <TheatreArticlePromo
-                  article={theatrePromoArticle}
+              {promoArticle && (
+                <EventArticlePromo
+                  article={promoArticle}
                   locale={locale}
                 />
               )}

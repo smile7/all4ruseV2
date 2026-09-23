@@ -297,8 +297,8 @@
     "reportEventReported": "Подію поскарговано",
     "adminEventSourceDisclaimer": "Інформація про цю подію взята з публічно доступних джерел і опублікована з інформаційною метою. За потреби виправлення, оновлення або видалення, будь ласка, скористайтеся кнопкою \"Поскаржитися на подію\".",
     "breadcrumbHome": "Головна",
-    "theatreArticlePromo": {
-      "heading": "Дивіться всі гастрольні театри та стендап-шоу в Русе в нашій статті"
+    "articlePromo": {
+      "label": "Читайте в нашій статті"
     }
   },
   "CurrentEvents": {
@@ -856,6 +856,9 @@
       "metaDescriptionHint": "Замінює короткий опис у результатах Google.",
       "categoryLabel": "Категорія",
       "categoryNone": "Без категорії",
+      "eventTagLabel": "Тег подій",
+      "eventTagNone": "Без тегу",
+      "eventTagHint": "Статтю показано на сторінках подій з цим тегом.",
       "authorLabel": "Автор",
       "heroImageLabel": "Головне зображення",
       "heroImageAltLabel": "Alt-текст зображення",

@@ -19,7 +19,7 @@ export const TRACKED_EVENT_KEYS = [
   "advertise.cta.add_event",
   "embed.event",
   "embed.see_more",
-  "event.promo.theatre_article",
+  "event.promo.article",
   "event.save",
   "event.unsave",
   "event.save.guest",

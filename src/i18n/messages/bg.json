@@ -294,8 +294,8 @@
     "reportEventReported": "Докладвано събитие",
     "adminEventSourceDisclaimer": "Информацията за това събитие е взета от публично достъпни източници и е публикувана с информативна цел. При необходимост от корекция, актуализация или премахване, моля използвайте бутона \"Докладвай събитие\". Източник: Facebook.",
     "breadcrumbHome": "Начало",
-    "theatreArticlePromo": {
-      "heading": "Виж всички гостуващи театри и стендъп шоута в Русе в статията ни"
+    "articlePromo": {
+      "label": "Прочети в статията ни"
     }
   },
   "CurrentEvents": {
@@ -849,6 +849,9 @@
       "metaDescriptionHint": "Замества резюмето в резултатите на Google.",
       "categoryLabel": "Категория",
       "categoryNone": "Без категория",
+      "eventTagLabel": "Таг на събития",
+      "eventTagNone": "Без таг",
+      "eventTagHint": "Статията се показва на страниците на събития с този таг.",
       "authorLabel": "Автор",
       "heroImageLabel": "Основно изображение",
       "heroImageAltLabel": "Alt текст на изображението",

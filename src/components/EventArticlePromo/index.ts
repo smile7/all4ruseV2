@@ -1,0 +1,1 @@
+export { EventArticlePromo } from "./EventArticlePromo";

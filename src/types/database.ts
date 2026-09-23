@@ -51,6 +51,7 @@ export type Database = {
           category: string | null
           created_at: string
           created_by: string | null
+          event_tag_id: number | null
           excerpt: string
           group_id: string
           hero_image: string | null
@@ -74,6 +75,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           created_by?: string | null
+          event_tag_id?: number | null
           excerpt: string
           group_id?: string
           hero_image?: string | null
@@ -97,6 +99,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           created_by?: string | null
+          event_tag_id?: number | null
           excerpt?: string
           group_id?: string
           hero_image?: string | null
@@ -114,7 +117,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "articles_event_tag_id_fkey"
+            columns: ["event_tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       click_counts: {
         Row: {

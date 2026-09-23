@@ -187,6 +187,7 @@ export const articleSchema = z
       .optional()
       .or(z.literal("")),
     category: z.enum(ARTICLE_CATEGORIES).optional().or(z.literal("")),
+    event_tag_id: z.number().int().positive().nullable(),
     author_name: z
       .string()
       .trim()

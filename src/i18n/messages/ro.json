@@ -297,8 +297,8 @@
     "reportEventReported": "Eveniment raportat",
     "adminEventSourceDisclaimer": "Informațiile despre acest eveniment au fost preluate din surse publice disponibile și sunt publicate în scop informativ. Dacă este necesară o corectare, actualizare sau eliminare, vă rugăm să folosiți butonul \"Raportează evenimentul\".",
     "breadcrumbHome": "Acasă",
-    "theatreArticlePromo": {
-      "heading": "Vezi toate teatrele în turneu și show-urile de stand-up din Ruse în articolul nostru"
+    "articlePromo": {
+      "label": "Citește în articolul nostru"
     }
   },
   "CurrentEvents": {
@@ -856,6 +856,9 @@
       "metaDescriptionHint": "Înlocuiește rezumatul în rezultatele Google.",
       "categoryLabel": "Categorie",
       "categoryNone": "Fără categorie",
+      "eventTagLabel": "Etichetă de evenimente",
+      "eventTagNone": "Fără etichetă",
+      "eventTagHint": "Articolul este promovat pe paginile evenimentelor cu această etichetă.",
       "authorLabel": "Autor",
       "heroImageLabel": "Imagine principală",
       "heroImageAltLabel": "Text alternativ pentru imagine",

@@ -41,6 +41,7 @@ export function buildArticleRow(
     hero_image: nullify(values.hero_image),
     hero_image_alt: nullify(values.hero_image_alt),
     category: nullify(values.category),
+    event_tag_id: values.event_tag_id,
     author_name: nullify(values.author_name),
     is_sponsored: values.is_sponsored,
     sponsor_name: values.is_sponsored ? nullify(values.sponsor_name) : null,

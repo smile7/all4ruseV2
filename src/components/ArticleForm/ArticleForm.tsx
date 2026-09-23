@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import NextImage from "next/image";
-import { useTranslations } from "next-intl";
+import { useMessages, useTranslations } from "next-intl";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
@@ -32,6 +32,7 @@ import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { DEBOUNCE_MS, DEFAULT_ARTICLE_AUTHOR, LOCALES } from "~/constants";
 import { useDebounce } from "~/hooks/useDebounce";
+import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { Link, useRouter } from "~/i18n/navigation";
 import type { ArticleGroupOption } from "~/lib/api";
 import { buildArticleSlugFromTitle } from "~/lib/article-slug";
@@ -41,6 +42,7 @@ import {
   ARTICLE_CATEGORIES,
   type ArticleFormValues,
   articleSchema,
+  type Tag,
 } from "~/types";
 
 const NONE_VALUE = "__none__";
@@ -48,6 +50,7 @@ const NONE_VALUE = "__none__";
 type Props = {
   initialData: Article | null;
   groups: ArticleGroupOption[];
+  tags: Tag[];
 };
 
 function toFormValues(article: Article | null): ArticleFormValues {
@@ -62,6 +65,7 @@ function toFormValues(article: Article | null): ArticleFormValues {
     hero_image: article?.hero_image ?? "",
     hero_image_alt: article?.hero_image_alt ?? "",
     category: (article?.category ?? "") as ArticleFormValues["category"],
+    event_tag_id: article?.event_tag_id ?? null,
     author_name: article?.author_name ?? DEFAULT_ARTICLE_AUTHOR,
     is_sponsored: article?.is_sponsored ?? false,
     sponsor_name: article?.sponsor_name ?? "",
@@ -70,9 +74,11 @@ function toFormValues(article: Article | null): ArticleFormValues {
   };
 }
 
-export function ArticleForm({ initialData, groups }: Props) {
+export function ArticleForm({ initialData, groups, tags }: Props) {
   const t = useTranslations("MoreFromRuse.admin");
   const tCategories = useTranslations("MoreFromRuse.categories");
+  const messages = useMessages() as { EventTags?: Record<string, string> };
+  const eventTagLabels = messages.EventTags;
   const router = useRouter();
 
   const isPublished = initialData?.status === "published";
@@ -397,6 +403,40 @@ export function ArticleForm({ initialData, groups }: Props) {
                     ))}
                   </SelectContent>
                 </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="event_tag_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("eventTagLabel")}</FormLabel>
+                <Select
+                  value={field.value ? String(field.value) : NONE_VALUE}
+                  onValueChange={(value) =>
+                    field.onChange(value === NONE_VALUE ? null : Number(value))
+                  }
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value={NONE_VALUE}>
+                      {t("eventTagNone")}
+                    </SelectItem>
+                    {tags.map((tag) => (
+                      <SelectItem key={tag.id} value={String(tag.id)}>
+                        {localizedEventTagTitle(tag.title, eventTagLabels)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>{t("eventTagHint")}</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

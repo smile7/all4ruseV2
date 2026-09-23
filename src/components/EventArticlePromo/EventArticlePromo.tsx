@@ -13,15 +13,15 @@ type Props = {
   locale: string;
 };
 
-export async function TheatreArticlePromo({ article, locale }: Props) {
+export async function EventArticlePromo({ article, locale }: Props) {
   const t = await getTranslations({
     locale,
-    namespace: "SingleEvent.theatreArticlePromo",
+    namespace: "SingleEvent.articlePromo",
   });
 
   return (
     <TrackedLink
-      eventKey="event.promo.theatre_article"
+      eventKey="event.promo.article"
       href={`${ARTICLES_PATH}/${article.slug}`}
       locale={article.locale as Locale}
       className="group border-primary/35 from-primary/15 to-card hover:border-primary/55 focus-visible:ring-ring flex items-center gap-3 overflow-hidden rounded-xl border bg-linear-to-br p-2 pr-3 shadow-sm transition-all hover:shadow-md focus-visible:ring-2 focus-visible:outline-none lg:flex-col lg:items-stretch lg:gap-0 lg:p-0"
@@ -35,8 +35,15 @@ export async function TheatreArticlePromo({ article, locale }: Props) {
           className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
         />
       </div>
-      <span className="flex min-w-0 flex-1 items-start gap-2 text-sm leading-snug font-medium text-pretty lg:p-3">
-        {t("heading")}
+      <span className="flex min-w-0 flex-1 items-start gap-2 lg:p-3">
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-primary text-xs font-semibold">
+            {t("label")}
+          </span>
+          <span className="text-sm leading-snug font-medium text-pretty">
+            {article.title}
+          </span>
+        </span>
         <ArrowRight
           aria-hidden
           className="text-muted-foreground group-hover:text-primary mt-0.5 size-4 shrink-0 transition-transform group-hover:translate-x-0.5"

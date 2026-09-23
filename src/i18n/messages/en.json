@@ -297,8 +297,8 @@
     "reportEventReported": "Event reported",
     "adminEventSourceDisclaimer": "The information about this event was taken from publicly available sources and is published for informational purposes. If a correction, update, or removal is needed, please use the \"Report event\" button.",
     "breadcrumbHome": "Home",
-    "theatreArticlePromo": {
-      "heading": "See all visiting theatres and stand-up shows in Ruse in our article"
+    "articlePromo": {
+      "label": "Read our article"
     }
   },
   "CurrentEvents": {
@@ -856,6 +856,9 @@
       "metaDescriptionHint": "Replaces the excerpt in Google results.",
       "categoryLabel": "Category",
       "categoryNone": "No category",
+      "eventTagLabel": "Event tag",
+      "eventTagNone": "No tag",
+      "eventTagHint": "The article is promoted on event pages with this tag.",
       "authorLabel": "Author",
       "heroImageLabel": "Hero image",
       "heroImageAltLabel": "Image alt text",

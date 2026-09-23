@@ -1,1 +1,0 @@
-export { TheatreArticlePromo } from "./TheatreArticlePromo";
