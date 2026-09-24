@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import { Newspaper } from "lucide-react";
+import { Gem } from "lucide-react";
 
 import { TrackedLink } from "~/components/TrackedLink";
 import { Button } from "~/components/ui/button";
@@ -31,8 +31,8 @@ export function HeaderMoreFromRuseLink({ variant = "desktop" }: Props) {
       asChild
       variant="default"
       className={cn(
-        "h-auto justify-center rounded-full py-2 text-xs font-medium tracking-wider uppercase",
-        isMobile ? "w-full px-4" : "px-8",
+        "block! h-auto rounded-full py-2 text-center text-xs font-medium tracking-wider uppercase",
+        isMobile ? "w-full px-4" : "w-max shrink-0 px-6",
       )}
     >
       {/* The article is BG-only, so always open the Bulgarian version. */}
@@ -41,8 +41,17 @@ export function HeaderMoreFromRuseLink({ variant = "desktop" }: Props) {
         href={href}
         locale="bg"
       >
-        <Newspaper className="size-4 shrink-0" />
-        <span>{t("familyWeekendTitle")}</span>
+        <span className="whitespace-nowrap">
+          <Gem className="mr-2 inline-block! size-4 align-middle" />
+          {t.rich("familyWeekendTitle", {
+            line: (chunks) => (
+              <>
+                <br />
+                {chunks}
+              </>
+            ),
+          })}
+        </span>
       </TrackedLink>
     </Button>
   );
