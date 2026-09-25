@@ -1,6 +1,14 @@
 export const EVENTS_BUCKET = "event-images";
 export const AVATARS_BUCKET = "avatars";
 export const ARTICLES_BUCKET = "article-images";
+
+/**
+ * Stored images are immutable — every upload gets a unique path and replacing an
+ * image writes a new one — so browsers, the CDN and the image optimizer can hold
+ * them for a year. Supabase defaults to one hour, which made the optimizer
+ * re-fetch every original hourly and dominated our storage egress.
+ */
+export const UPLOAD_CACHE_CONTROL = "31536000";
 export const EVENTS_PAGE_SIZE = 12;
 export const ARTICLES_PAGE_SIZE = 12;
 export const ARTICLES_TEASER_COUNT = 3;

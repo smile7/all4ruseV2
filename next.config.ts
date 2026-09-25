@@ -58,6 +58,11 @@ const nextConfig: NextConfig = {
     // 75 is the Next default; 90 is used for the logo, where JPEG/WebP
     // artifacts around thin lettering are visible at small sizes.
     qualities: [75, 90],
+    // Stored images never change in place (each upload gets a unique path), so
+    // the optimizer can keep an optimized variant for a month instead of
+    // re-fetching the original from Supabase Storage as its short
+    // Cache-Control expires. Keeps storage egress off the critical path.
+    minimumCacheTTL: 60 * 60 * 24 * 31,
     remotePatterns: [
       {
         protocol: "https",

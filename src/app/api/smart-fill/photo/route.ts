@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { UPLOAD_CACHE_CONTROL } from "~/constants";
+import { compressImageForUpload } from "~/lib/images/compress-server";
 import {
   extractDraftFromImageBytes,
   QuotaExceededError,
@@ -105,13 +107,17 @@ export async function POST(request: Request) {
   }
 
   // Upload the image to permanent storage first
-  const ext = mimeType.split("/")[1] ?? "jpg";
-  const storagePath = `${SMART_FILL_PREFIX}/${crypto.randomUUID()}.${ext}`;
+  const stored = await compressImageForUpload(imageBytes, mimeType);
+  const storagePath = `${SMART_FILL_PREFIX}/${crypto.randomUUID()}.${stored.ext}`;
 
   const adminClient = createSupabaseAdminClient();
   const { error: uploadError } = await adminClient.storage
     .from(EVENTS_BUCKET)
-    .upload(storagePath, imageBytes, { contentType: mimeType, upsert: false });
+    .upload(storagePath, stored.bytes, {
+      contentType: stored.mimeType,
+      cacheControl: UPLOAD_CACHE_CONTROL,
+      upsert: false,
+    });
 
   if (uploadError) {
     console.error("[smart-fill/photo] upload error:", uploadError.message);

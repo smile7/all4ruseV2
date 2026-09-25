@@ -61,7 +61,7 @@ import {
 import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import { EVENTS_BUCKET } from "~/constants";
+import { EVENTS_BUCKET, UPLOAD_CACHE_CONTROL } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { useRouter } from "~/i18n/navigation";
 import { eventsApi } from "~/lib/api/events";
@@ -77,6 +77,7 @@ import {
   type StashedPlacesCoords,
 } from "~/lib/geocode/event-coords";
 import type { PlaceDetailsResult } from "~/lib/geocode/types";
+import { compressImageForUpload } from "~/lib/images/compress-client";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 import { isOptionalWebUrl, normalizeWebUrl } from "~/lib/url-input";
 import { isValidYoutubeUrl } from "~/lib/youtube-url";
@@ -628,13 +629,17 @@ export function EventForm({
   );
 
   // ── Image upload ──────────────────────────────────────────────────────────
-  async function uploadImage(file: File): Promise<string> {
+  async function uploadImage(original: File): Promise<string> {
     const supabase = getSupabaseBrowserClient();
+    const file = await compressImageForUpload(original);
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
     const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage
       .from(EVENTS_BUCKET)
-      .upload(path, file, { cacheControl: "3600", upsert: false });
+      .upload(path, file, {
+        cacheControl: UPLOAD_CACHE_CONTROL,
+        upsert: false,
+      });
     if (error) throw error;
     // Store the full public URL so both the old and new app can display the image
     // without needing to know the Supabase base URL at render time.

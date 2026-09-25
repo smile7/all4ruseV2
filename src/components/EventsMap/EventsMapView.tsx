@@ -1,20 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 
 import {
   GoogleMap,
-  OverlayViewF,
   MarkerClustererF,
   MarkerF,
+  OverlayViewF,
 } from "@react-google-maps/api";
 import type {
   Cluster,
   Clusterer,
   ClusterIconInfo,
 } from "@react-google-maps/marker-clusterer";
-import { Calendar, Loader2, LocateFixed, MapPin, Clock, ImageOff, ChevronRight, X } from "lucide-react";
+import { Calendar, ChevronRight, Clock, Loader2, LocateFixed, MapPin, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useTheme } from "~/components/ThemeProvider";
@@ -33,7 +34,6 @@ import type { Event } from "~/types";
 
 import { GoogleMapsProvider, useGoogleMapsLoader } from "./GoogleMapsProvider";
 import {
-  eventDetailHref,
   eventListHref,
   formatMapScopeDate,
   groupEventsByCoords,
@@ -513,10 +513,12 @@ function EventInfoContent({
         return (
           <div key={event.id} className="group flex flex-col gap-2.5 border-b pb-4 last:border-0 last:pb-1">
             <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-md bg-muted">
-              <img
+              <Image
                 src={imageUrl}
                 alt=""
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                fill
+                sizes="256px"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
               />
             </div>
             <div className="flex flex-col gap-1.5 px-0.5">

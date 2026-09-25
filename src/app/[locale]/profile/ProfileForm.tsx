@@ -46,10 +46,12 @@ import {
   AVATARS_BUCKET,
   DEFAULT_PROFILE_COLOR,
   PROFILE_COLOR_SWATCHES,
+  UPLOAD_CACHE_CONTROL,
 } from "~/constants";
 import { DEBOUNCE_DELAY, useDebounce } from "~/hooks/useDebounce";
 import { Link, useRouter } from "~/i18n/navigation";
 import { profilesApi } from "~/lib/api";
+import { compressImageForUpload } from "~/lib/images/compress-client";
 import {
   AVATAR_INPUT_ACCEPT,
   buildAvatarPublicUrl,
@@ -443,32 +445,44 @@ export function ProfileForm({
     }
   }
 
-  async function uploadAvatarToStorage(file: File): Promise<string> {
+  async function uploadAvatarToStorage(original: File): Promise<string> {
     const supabase = getSupabaseBrowserClient();
+    const file = await compressImageForUpload(original);
     const path = buildAvatarStorageObjectPath(userId, file);
     const { error } = await supabase.storage
       .from(AVATARS_BUCKET)
-      .upload(path, file, { cacheControl: "3600", upsert: false });
+      .upload(path, file, {
+        cacheControl: UPLOAD_CACHE_CONTROL,
+        upsert: false,
+      });
     if (error) throw error;
     return buildAvatarPublicUrl(path);
   }
 
-  async function uploadHeaderToStorage(file: File): Promise<string> {
+  async function uploadHeaderToStorage(original: File): Promise<string> {
     const supabase = getSupabaseBrowserClient();
+    const file = await compressImageForUpload(original);
     const path = buildHeaderStorageObjectPath(userId, file);
     const { error } = await supabase.storage
       .from(AVATARS_BUCKET)
-      .upload(path, file, { cacheControl: "3600", upsert: false });
+      .upload(path, file, {
+        cacheControl: UPLOAD_CACHE_CONTROL,
+        upsert: false,
+      });
     if (error) throw error;
     return buildHeaderPublicUrl(path);
   }
 
-  async function uploadGalleryImageToStorage(file: File): Promise<string> {
+  async function uploadGalleryImageToStorage(original: File): Promise<string> {
     const supabase = getSupabaseBrowserClient();
+    const file = await compressImageForUpload(original);
     const path = buildProfileGalleryStorageObjectPath(userId, file);
     const { error } = await supabase.storage
       .from(AVATARS_BUCKET)
-      .upload(path, file, { cacheControl: "3600", upsert: false });
+      .upload(path, file, {
+        cacheControl: UPLOAD_CACHE_CONTROL,
+        upsert: false,
+      });
     if (error) throw error;
     return buildProfileGalleryPublicUrl(path);
   }

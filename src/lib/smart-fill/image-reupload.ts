@@ -1,3 +1,5 @@
+import { UPLOAD_CACHE_CONTROL } from "~/constants";
+import { compressImageForUpload } from "~/lib/images/compress-server";
 import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 
 const SMART_FILL_PREFIX = "smart-fill";
@@ -23,17 +25,21 @@ export async function reuploadImageFromUrl(
 
     if (!response.ok) return null;
 
-    const contentType = response.headers.get("content-type") ?? "image/jpeg";
-    const ext = contentTypeToExt(contentType);
-    const buffer = await response.arrayBuffer();
+    const sourceType = response.headers.get("content-type") ?? "image/jpeg";
+    const source = new Uint8Array(await response.arrayBuffer());
+    const { bytes, mimeType, ext } = await compressImageForUpload(
+      source,
+      sourceType,
+    );
 
     const storagePath = `${SMART_FILL_PREFIX}/${crypto.randomUUID()}.${ext}`;
 
     const adminClient = createSupabaseAdminClient();
     const { error } = await adminClient.storage
       .from(EVENTS_BUCKET)
-      .upload(storagePath, buffer, {
-        contentType,
+      .upload(storagePath, bytes, {
+        contentType: mimeType,
+        cacheControl: UPLOAD_CACHE_CONTROL,
         upsert: false,
       });
 
@@ -54,11 +60,4 @@ export async function reuploadImageFromUrl(
     console.error("[smart-fill] image reupload error:", err);
     return null;
   }
-}
-
-function contentTypeToExt(contentType: string): string {
-  if (contentType.includes("png")) return "png";
-  if (contentType.includes("webp")) return "webp";
-  if (contentType.includes("gif")) return "gif";
-  return "jpg";
 }

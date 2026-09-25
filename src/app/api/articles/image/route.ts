@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { ARTICLES_BUCKET } from "~/constants";
+import { ARTICLES_BUCKET, UPLOAD_CACHE_CONTROL } from "~/constants";
 import { requireArticleAdmin } from "~/lib/articles/admin-guard";
+import { compressImageForUpload } from "~/lib/images/compress-server";
 import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -42,14 +43,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const ext = mimeType.split("/")[1] ?? "jpg";
-  const storagePath = `${new Date().getFullYear()}/${crypto.randomUUID()}.${ext}`;
+  const compressed = await compressImageForUpload(
+    new Uint8Array(await file.arrayBuffer()),
+    mimeType,
+  );
+  const storagePath = `${new Date().getFullYear()}/${crypto.randomUUID()}.${compressed.ext}`;
 
   const admin = createSupabaseAdminClient();
   const { error } = await admin.storage
     .from(ARTICLES_BUCKET)
-    .upload(storagePath, new Uint8Array(await file.arrayBuffer()), {
-      contentType: mimeType,
+    .upload(storagePath, compressed.bytes, {
+      contentType: compressed.mimeType,
+      cacheControl: UPLOAD_CACHE_CONTROL,
       upsert: false,
     });
 
