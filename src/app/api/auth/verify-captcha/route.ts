@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 const SCORE_THRESHOLDS = {
   default: 0.5,
   signup: 0.3,
+  // Same leniency as sign-up: a blocked resend leaves the user unable to
+  // confirm their account at all.
+  resend: 0.3,
 } as const;
 
 type SiteverifyResponse = {

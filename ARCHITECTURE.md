@@ -534,6 +534,15 @@ export async function GET(request: Request) {
 }
 ```
 
+### Email links and session cookies
+
+Two constraints keep email-based sign-in working on mobile, where the mail app rarely opens links in the browser the user signed up in:
+
+- **Prefer `token_hash` links.** A `?code=` link is PKCE and can only be redeemed in the browser that started the flow. `{{ .TokenHash }}` templates pointing at `/auth/confirm?token_hash=...&type=...&next=/[locale]` are verified with `verifyOtp` and work anywhere, so the Supabase confirmation and recovery templates should use them. `/auth/callback` forwards any link carrying `token_hash` to `/auth/confirm`. Both `/auth/callback` and `/auth/confirm` must be in the dashboard "Redirect URLs" allowlist.
+- **Never shorten the PKCE verifier cookie.** The remember-me policy (`isSupabaseAuthCookie`) applies only to the session token cookies. `sb-<ref>-auth-token-code-verifier` also contains `-auth-token`, but it is written when a flow starts and read when the user returns from the email, so dropping its `maxAge` makes `code_exchange_failed` / `pkce_code_verifier_not_found` inevitable once the browser is closed in between.
+
+`next` from the query string is validated with `safeAuthNextPath` before being appended to the origin. A failed link redirects to `/[locale]/auth/login?error=…` with the reason, so the page can offer the right remedy: `email_link_invalid` offers a resend (`auth.resend`, shared in `src/lib/auth/resend-confirmation.ts`, behind the same reCAPTCHA check as sign-up because it can trigger mail for any address), `reset_link_invalid` sends the user to forgot-password for a new reset email, and `oauth_cancelled` / `oauth_failed` only explain what happened. The sign-up success screen offers the same resend, using the address the form left in session storage — deliberately not in the URL, since page URLs reach analytics.
+
 ### Flow failure diagnostics
 
 Failures in the push-reminder, smart fill, and auth flows are recorded in the `flow_failures` table (RLS on, no policies — service role only), queried directly in Postgres.

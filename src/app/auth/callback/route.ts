@@ -1,7 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { DEFAULT_LOCALE } from "~/constants";
 import { profilesApi } from "~/lib/api";
+import {
+  isPasswordResetNext,
+  LOGIN_ERROR_CODES,
+  type LoginErrorCode,
+  loginErrorPath,
+  safeAuthNextPath,
+} from "~/lib/auth/redirects";
 import { getFailureMessage } from "~/lib/failures";
 import { recordFailure } from "~/lib/failures-server";
 import { createSupabaseAdminClient } from "~/lib/supabase/admin";
@@ -10,6 +16,21 @@ import {
   AUTH_REMEMBER_COOKIE,
   getRememberFlagCookieOptions,
 } from "~/lib/supabase/session-persistence";
+
+function pickLoginError(
+  providerError: string | null,
+  method: string,
+  next: string,
+): LoginErrorCode {
+  if (providerError === "access_denied")
+    return LOGIN_ERROR_CODES.oauthCancelled;
+  if (providerError) return LOGIN_ERROR_CODES.oauthFailed;
+  if (method !== "email") return LOGIN_ERROR_CODES.oauthFailed;
+
+  return isPasswordResetNext(next)
+    ? LOGIN_ERROR_CODES.resetLinkInvalid
+    : LOGIN_ERROR_CODES.emailLinkInvalid;
+}
 
 /**
  * Supabase PKCE auth callback.
@@ -26,11 +47,20 @@ import {
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  // `next` can be an absolute path like /bg/auth/update-password
-  const next = searchParams.get("next") ?? `/${DEFAULT_LOCALE}`;
+  // `next` can be a same-site path like /bg/auth/update-password
+  const next = safeAuthNextPath(searchParams.get("next"));
   const forwardedHost = request.headers.get("x-forwarded-host");
   const isLocal = process.env.NODE_ENV === "development";
   const base = isLocal || !forwardedHost ? origin : `https://${forwardedHost}`;
+
+  // Email templates built on `{{ .TokenHash }}` work in any browser because
+  // verifyOtp needs no PKCE verifier. /auth/confirm owns that flow, so accept
+  // those links here too in case a template points at this route.
+  if (searchParams.get("token_hash")) {
+    const confirmUrl = new URL("/auth/confirm", base);
+    confirmUrl.search = searchParams.toString();
+    return NextResponse.redirect(confirmUrl);
+  }
 
   // Set by SocialAuthButtons; absent for email confirmation and password reset.
   const method = searchParams.get("provider")?.slice(0, 20) ?? "email";
@@ -130,8 +160,8 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Something went wrong — send back to login with an error indicator
+  // Something went wrong — send back to login with an error the page can explain
   return NextResponse.redirect(
-    `${origin}/${DEFAULT_LOCALE}/auth/login?error=auth_callback_failed`,
+    `${base}${loginErrorPath(next, pickLoginError(providerError, method, next))}`,
   );
 }

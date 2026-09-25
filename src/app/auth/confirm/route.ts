@@ -2,8 +2,12 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import type { EmailOtpType } from "@supabase/supabase-js";
 
-import { DEFAULT_LOCALE } from "~/constants";
 import { profilesApi } from "~/lib/api";
+import {
+  LOGIN_ERROR_CODES,
+  loginErrorPath,
+  safeAuthNextPath,
+} from "~/lib/auth/redirects";
 import { getFailureMessage } from "~/lib/failures";
 import { recordFailure } from "~/lib/failures-server";
 import { createSupabaseAdminClient } from "~/lib/supabase/admin";
@@ -36,7 +40,7 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
-  const next = searchParams.get("next") ?? `/${DEFAULT_LOCALE}`;
+  const next = safeAuthNextPath(searchParams.get("next"));
   const forwardedHost = request.headers.get("x-forwarded-host");
   const isLocal = process.env.NODE_ENV === "development";
   const base = isLocal || !forwardedHost ? origin : `https://${forwardedHost}`;
@@ -114,7 +118,11 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  return NextResponse.redirect(
-    `${origin}/${DEFAULT_LOCALE}/auth/login?error=auth_confirm_failed`,
-  );
+  // A dead recovery link needs a new reset email, not a new confirmation one.
+  const linkError =
+    type === "recovery"
+      ? LOGIN_ERROR_CODES.resetLinkInvalid
+      : LOGIN_ERROR_CODES.emailLinkInvalid;
+
+  return NextResponse.redirect(`${base}${loginErrorPath(next, linkError)}`);
 }
