@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import { MailCheck } from "lucide-react";
 
+import { ResendConfirmationButton } from "~/components/auth/ResendConfirmationButton";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -40,6 +41,8 @@ export default async function SignupSuccessPage({ params }: Props) {
           <Button asChild variant="outline" className="w-full">
             <Link href={`/${locale}`}>{tHome("goHomePage")}</Link>
           </Button>
+
+          <ResendConfirmationButton />
         </CardContent>
       </Card>
     </div>

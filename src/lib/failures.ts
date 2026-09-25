@@ -38,6 +38,7 @@ export const FAILURE_STAGES = {
     "profile_bootstrap_failed",
     "confirm_invalid_link",
     "confirm_failed",
+    "resend_failed",
     "captcha_failed",
     "signup_failed",
     "already_registered",

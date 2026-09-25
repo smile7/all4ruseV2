@@ -29,6 +29,8 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { PasswordInput } from "~/components/ui/password-input";
+import { LOGIN_ERROR_CODES, safeAuthNextPath } from "~/lib/auth/redirects";
+import { resendConfirmationEmail } from "~/lib/auth/resend-confirmation";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 import { setAuthRememberPreference } from "~/lib/supabase/session-persistence";
 
@@ -40,12 +42,43 @@ const loginSchema = z.object({
 
 type LoginValues = z.infer<typeof loginSchema>;
 
-function mapLoginError(message: string, t: (key: string) => string): string {
-  if (message.toLowerCase().includes("invalid login credentials")) {
+function isEmailNotConfirmed(error: {
+  code?: string;
+  message: string;
+}): boolean {
+  return (
+    error.code === "email_not_confirmed" ||
+    error.message.toLowerCase().includes("email not confirmed")
+  );
+}
+
+function mapLoginError(
+  error: { code?: string; message: string },
+  t: (key: string) => string,
+): string {
+  if (error.message.toLowerCase().includes("invalid login credentials")) {
     return t("invalidCredentials");
   }
-  if (message.toLowerCase().includes("email not confirmed")) {
+  if (isEmailNotConfirmed(error)) {
     return t("pleaseCheckEmail");
+  }
+  return t("errorOccurred");
+}
+
+/** Errors the auth callback routes report back through `?error=`. */
+function mapRedirectError(
+  code: string | null,
+  t: (key: string) => string,
+): string | null {
+  if (!code) return null;
+  if (code === LOGIN_ERROR_CODES.emailLinkInvalid) {
+    return t("emailLinkInvalid");
+  }
+  if (code === LOGIN_ERROR_CODES.resetLinkInvalid) {
+    return t("resetLinkInvalid");
+  }
+  if (code === LOGIN_ERROR_CODES.oauthCancelled) {
+    return t("oauthCancelled");
   }
   return t("errorOccurred");
 }
@@ -53,22 +86,15 @@ function mapLoginError(message: string, t: (key: string) => string): string {
 /** Same-origin path only. Auth pages fall back to locale home so login cannot loop. */
 function getPostLoginPath(next: string | null, locale: string): string {
   const home = `/${locale}`;
-  if (
-    !next ||
-    !next.startsWith("/") ||
-    next.startsWith("//") ||
-    next.includes("://")
-  ) {
-    return home;
-  }
+  const safeNext = safeAuthNextPath(next, home);
 
-  const pathOnly = next.split("?")[0] ?? next;
+  const pathOnly = safeNext.split("?")[0] ?? safeNext;
   const withoutLocale = pathOnly.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
   if (withoutLocale === "/auth" || withoutLocale.startsWith("/auth/")) {
     return home;
   }
 
-  return next;
+  return safeNext;
 }
 
 function LoginForm() {
@@ -77,14 +103,27 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const locale = params.locale as string;
   const next = getPostLoginPath(searchParams.get("next"), locale);
+  const redirectError = searchParams.get("error");
 
   const [authError, setAuthError] = useState<string | null>(() =>
-    searchParams.get("error") ? t("errorOccurred") : null,
+    mapRedirectError(redirectError, t),
+  );
+  // An unconfirmed account and a dead confirmation link both need a fresh
+  // email; a dead password-reset link needs a new reset request instead.
+  const [canResendConfirmation, setCanResendConfirmation] = useState(
+    redirectError === LOGIN_ERROR_CODES.emailLinkInvalid,
+  );
+  const needsNewResetLink =
+    redirectError === LOGIN_ERROR_CODES.resetLinkInvalid;
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">(
+    "idle",
   );
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "", rememberMe: false },
+    // Staying signed in is what users expect; unchecking it makes the session
+    // cookies expire when the browser closes.
+    defaultValues: { email: "", password: "", rememberMe: true },
   });
 
   async function onSubmit(values: LoginValues) {
@@ -98,13 +137,39 @@ function LoginForm() {
     });
 
     if (error) {
-      setAuthError(mapLoginError(error.message, t));
+      setAuthError(mapLoginError(error, t));
+      // Keep the offer once it is relevant: a mistyped password should not
+      // take away the resend the user arrived here for.
+      setCanResendConfirmation((prev) => prev || isEmailNotConfirmed(error));
+      setResendState("idle");
       return;
     }
 
     // Hard navigation: client `push` + `refresh` can race on mobile Safari
     // and leave the user on this screen after a successful sign-in.
     window.location.replace(next);
+  }
+
+  async function onResendConfirmation() {
+    const email = form.getValues("email").trim();
+    if (!z.email().safeParse(email).success) {
+      form.setError("email", { message: t("resendNeedsEmail") });
+      return;
+    }
+
+    setAuthError(null);
+    setResendState("sending");
+
+    const outcome = await resendConfirmationEmail(email, locale);
+    if (outcome !== "sent") {
+      setResendState("idle");
+      setAuthError(
+        outcome === "captcha_failed" ? t("captchaError") : t("errorOccurred"),
+      );
+      return;
+    }
+
+    setResendState("sent");
   }
 
   return (
@@ -199,6 +264,31 @@ function LoginForm() {
                   {authError}
                 </p>
               )}
+
+              {needsNewResetLink && (
+                <Button asChild variant="outline" className="w-full">
+                  <Link href={`/${locale}/auth/forgot-password`}>
+                    {t("requestNewResetLink")}
+                  </Link>
+                </Button>
+              )}
+
+              {canResendConfirmation &&
+                (resendState === "sent" ? (
+                  <p role="status" className="text-muted-foreground text-sm">
+                    {t("confirmationEmailSent")}
+                  </p>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={onResendConfirmation}
+                    disabled={resendState === "sending"}
+                  >
+                    {t("resendConfirmation")}
+                  </Button>
+                ))}
 
               <Button
                 type="submit"

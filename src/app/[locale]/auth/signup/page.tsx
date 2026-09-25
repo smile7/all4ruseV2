@@ -29,6 +29,7 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { PasswordInput } from "~/components/ui/password-input";
+import { rememberPendingConfirmationEmail } from "~/lib/auth/resend-confirmation";
 import { reportFailure } from "~/lib/failures";
 import { executeRecaptcha } from "~/lib/recaptcha";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
@@ -131,7 +132,8 @@ export default function SignupPage() {
       options: {
         // Supabase will redirect the user here after clicking the confirmation email.
         // This URL must be in the "Redirect URLs" allowlist in your Supabase dashboard.
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // `next` keeps the user in the language they signed up in.
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/${locale}`,
         data: {
           full_name: values.fullName ?? "",
         },
@@ -169,6 +171,9 @@ export default function SignupPage() {
       return;
     }
 
+    // Lets the success screen resend the confirmation email without asking for
+    // the address again.
+    rememberPendingConfirmationEmail(values.email);
     router.push(`/${locale}/auth/signup-success`);
   }
 

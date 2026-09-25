@@ -68,8 +68,15 @@ export function getRememberFlagCookieOptions(remember: boolean): CookieOptions {
     : BASE_COOKIE_OPTIONS;
 }
 
+/**
+ * Matches the session token cookies only. The PKCE code verifier is named
+ * `<storageKey>-code-verifier`, so it also contains `-auth-token`, but it must
+ * never become a session cookie: it is written when a sign-up, password reset,
+ * or OAuth flow starts and read back when the user returns from the email link,
+ * which can be hours later and after the browser has been closed.
+ */
 export function isSupabaseAuthCookie(name: string): boolean {
-  return name.includes("-auth-token");
+  return name.includes("-auth-token") && !name.includes("-code-verifier");
 }
 
 export function rememberFromCookieValue(value: string | undefined): boolean {
