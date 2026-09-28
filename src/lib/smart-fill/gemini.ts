@@ -178,20 +178,75 @@ function readModelText(result: GenerateContentResult): string {
   }
 }
 
+const JSON_CONTROL_ESCAPES: Record<string, string> = {
+  "\n": "\\n",
+  "\r": "\\r",
+  "\t": "\\t",
+  "\b": "\\b",
+  "\f": "\\f",
+};
+
+/**
+ * The model sometimes writes the paragraph breaks of the description as real
+ * line breaks inside the JSON string instead of `\n`, which `JSON.parse`
+ * rejects as a bad control character.
+ */
+function escapeControlCharsInStrings(json: string): string {
+  let result = "";
+  let inString = false;
+  let escaped = false;
+
+  for (const char of json) {
+    if (escaped) {
+      result += char;
+      escaped = false;
+      continue;
+    }
+    if (inString && char === "\\") {
+      result += char;
+      escaped = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      result += char;
+      continue;
+    }
+    if (inString && char < " ") {
+      result +=
+        JSON_CONTROL_ESCAPES[char] ??
+        `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`;
+      continue;
+    }
+    result += char;
+  }
+
+  return result;
+}
+
 function extractJsonObject(raw: string): string {
   const cleaned = raw
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
 
-  try {
-    JSON.parse(cleaned);
-    return cleaned;
-  } catch {
-    const match = cleaned.match(/\{[\s\S]*\}/);
-    if (match) return match[0];
-    throw new Error("No JSON object found in model response");
+  const candidates = [cleaned, escapeControlCharsInStrings(cleaned)];
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (match) candidates.push(escapeControlCharsInStrings(match[0]));
+
+  let lastError: unknown;
+  for (const candidate of candidates) {
+    try {
+      JSON.parse(candidate);
+      return candidate;
+    } catch (err) {
+      lastError = err;
+    }
   }
+
+  throw new Error(
+    `No usable JSON object in model response: ${errorMessage(lastError)}`,
+  );
 }
 
 function parseDraftFromJson(raw: string): EventDraft {

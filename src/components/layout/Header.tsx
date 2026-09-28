@@ -1,6 +1,5 @@
 import { HeaderAuthButton } from "./HeaderAuthButton";
 import { HeaderInnerContainer } from "./HeaderInnerContainer";
-import { HeaderMoreFromRuseLink } from "./HeaderMoreFromRuseLink";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { Logo } from "./Logo";
 import { MobileBackButton } from "./MobileBackButton";
@@ -28,7 +27,7 @@ export function Header() {
         </div>
 
         {/* Row 2: full-width link to the featured article */}
-        <HeaderMoreFromRuseLink variant="mobile" />
+        {/* <HeaderMoreFromRuseLink variant="mobile" /> */}
       </div>
 
       {/* ── Desktop (md+) — 3-column grid: left | center | right ──────── */}
@@ -39,9 +38,9 @@ export function Header() {
         </div>
 
         {/* Center — featured article, exactly centered */}
-        <div className="flex items-center justify-center">
+        {/* <div className="flex items-center justify-center">
           <HeaderMoreFromRuseLink />
-        </div>
+        </div> */}
 
         {/* Right — controls */}
         <div className="flex items-center justify-end gap-1.5">
