@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 
+import { fetchScrapeHtml } from "~/lib/smart-fill/scrape-fetch";
 import type { EventDraft } from "~/types";
 
 const BASE_URL = "ruseonthedanube.com";
@@ -13,17 +14,7 @@ export function isRuseDanubeUrl(url: string): boolean {
 export async function scrapeRuseDanube(
   url: string,
 ): Promise<{ draft: Omit<EventDraft, "image">; rawImageUrl: string | null }> {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; All4Ruse/2.0; +https://all4ruse.com)",
-      Accept: "text/html,application/xhtml+xml",
-    },
-  });
-
-  if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
-
-  const html = await res.text();
+  const html = await fetchScrapeHtml(url);
   const $ = cheerio.load(html);
 
   const rawImageUrl = ogImage($);

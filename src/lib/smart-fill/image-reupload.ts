@@ -1,5 +1,6 @@
 import { UPLOAD_CACHE_CONTROL } from "~/constants";
 import { compressImageForUpload } from "~/lib/images/compress-server";
+import { imageFetchHeaders } from "~/lib/smart-fill/scrape-fetch";
 import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 
 const SMART_FILL_PREFIX = "smart-fill";
@@ -17,13 +18,17 @@ export async function reuploadImageFromUrl(
 ): Promise<string | null> {
   try {
     const response = await fetch(sourceUrl, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; All4Ruse/2.0; +https://all4ruse.com)",
-      },
+      headers: imageFetchHeaders(sourceUrl),
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.error(
+        "[smart-fill] image fetch rejected:",
+        response.status,
+        sourceUrl,
+      );
+      return null;
+    }
 
     const sourceType = response.headers.get("content-type") ?? "image/jpeg";
     const source = new Uint8Array(await response.arrayBuffer());
