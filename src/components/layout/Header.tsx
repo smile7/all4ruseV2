@@ -38,9 +38,9 @@ export function Header() {
         </div>
 
         {/* Center — featured article, exactly centered */}
-        {/* <div className="flex items-center justify-center">
-          <HeaderMoreFromRuseLink />
-        </div> */}
+        <div className="flex items-center justify-center">
+          {/* <HeaderMoreFromRuseLink /> */}
+        </div>
 
         {/* Right — controls */}
         <div className="flex items-center justify-end gap-1.5">
