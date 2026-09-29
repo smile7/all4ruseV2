@@ -1,46 +1,7 @@
 import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
-import { getLocale } from "next-intl/server";
-
-import { serializeJsonLd } from "~/lib/article-jsonld";
-import { LOCALE_TO_HREFLANG } from "~/lib/seo";
-import { buildSiteJsonLd } from "~/lib/site-jsonld";
-import { THEME_INIT_SCRIPT } from "~/lib/theme-script";
 
 import "./globals.css";
-
-const comfortaa = localFont({
-  variable: "--font-comfortaa",
-  display: "swap",
-  src: [
-    {
-      path: "../../public/fonts/Comfortaa-Light.ttf",
-      weight: "300",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/Comfortaa-Regular.ttf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/Comfortaa-Medium.ttf",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/Comfortaa-SemiBold.ttf",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/Comfortaa-Bold.ttf",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
@@ -110,27 +71,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  const locale = await getLocale();
-
-  return (
-    <html
-      lang={LOCALE_TO_HREFLANG[locale] ?? locale}
-      className={comfortaa.variable}
-      suppressHydrationWarning
-    >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: serializeJsonLd(buildSiteJsonLd()),
-          }}
-        />
-      </head>
-      <body className="min-h-screen antialiased" suppressHydrationWarning>
-        {children}
-      </body>
-    </html>
-  );
+/**
+ * Pass-through by design. `<html>` and `<body>` live in the locale and embed
+ * layouts instead, because the document language is only known from the route
+ * params there. Resolving it here (via next-intl's `getLocale()`) reads request
+ * headers, which opts every route in the app out of static rendering — the
+ * prerendered event, tag and article pages are then discarded and re-rendered
+ * on every crawl.
+ */
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return children;
 }

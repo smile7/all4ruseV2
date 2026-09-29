@@ -68,7 +68,7 @@ import { eventsApi } from "~/lib/api/events";
 import {
   plainTextFromHtml,
 } from "~/lib/event-description-html";
-import { getEventImageUrl } from "~/lib/event-utils";
+import { getEventImageUrl, isFreeEventPrice } from "~/lib/event-utils";
 import {
   coordsFromStoredEvent,
   type EventCoordsWrite,
@@ -78,6 +78,7 @@ import {
 } from "~/lib/geocode/event-coords";
 import type { PlaceDetailsResult } from "~/lib/geocode/types";
 import { compressImageForUpload } from "~/lib/images/compress-client";
+import { notifyEventIndexed } from "~/lib/seo-notify-client";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 import { isOptionalWebUrl, normalizeWebUrl } from "~/lib/url-input";
 import { isValidYoutubeUrl } from "~/lib/youtube-url";
@@ -357,8 +358,7 @@ function uploadableImagesFingerprint(images: UploadableImage[]): string {
 
 function baselineFreeFromEvent(initialData?: Event | null): boolean {
   if (!initialData) return false;
-  const p = initialData.price;
-  return !p || p === "" || p === "0" || p === "0.00";
+  return isFreeEventPrice(initialData.price);
 }
 
 function buildInitialImages(event: Event): UploadableImage[] {
@@ -486,11 +486,9 @@ export function EventForm({
   const formSchema = useMemo(() => makeFormSchema(t), [t]);
 
   // ── UI-only state (not part of DB schema) ──────────────────────────────────
-  const [isFree, setIsFree] = useState<boolean>(() => {
-    if (!initialData) return false;
-    const p = initialData.price;
-    return !p || p === "" || p === "0" || p === "0.00";
-  });
+  const [isFree, setIsFree] = useState<boolean>(() =>
+    baselineFreeFromEvent(initialData),
+  );
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrencePattern, setRecurrencePattern] =
     useState<RecurrencePattern>("weekly");
@@ -814,6 +812,9 @@ export function EventForm({
           seriesId,
         );
         const anyLive = created.some((e) => e.isEventActive);
+        for (const event of created) {
+          if (event.isEventActive) notifyEventIndexed(event.slug);
+        }
         toast.success(
           anyLive
             ? t("recurringEventsCreated", { count: created.length })
@@ -853,6 +854,7 @@ export function EventForm({
 
       const slug = typeof saved.slug === "string" ? saved.slug.trim() : "";
       if (saved.isEventActive && slug !== "") {
+        notifyEventIndexed(slug);
         router.push(`/${slug}`);
       } else {
         router.push("/");
@@ -871,6 +873,9 @@ export function EventForm({
     try {
       const supabase = getSupabaseBrowserClient();
       await eventsApi.deleteEvent(supabase, initialData.id);
+      notifyEventIndexed(
+        typeof initialData.slug === "string" ? initialData.slug : null,
+      );
       toast.success(t("eventDeleted"));
       router.push("/my-events");
     } catch {

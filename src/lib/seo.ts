@@ -191,6 +191,22 @@ export function buildEventAlternates(_locale: string, slug: string) {
   return buildDefaultLocaleAlternates(`/${slug}`);
 }
 
+/**
+ * City in the title tag is how local event directories (and the competitor)
+ * keep "Русе" in the SERP without stuffing the H1.
+ */
+export function eventDocumentTitle(title: string, city: string): string {
+  const haystack = title.toLocaleLowerCase();
+  if (
+    haystack.includes(city.toLocaleLowerCase()) ||
+    haystack.includes("русе") ||
+    haystack.includes("ruse")
+  ) {
+    return title;
+  }
+  return `${title} | ${city}`;
+}
+
 export function buildProfileAlternates(username: string) {
   return buildDefaultLocaleAlternates(`/user/${username}`);
 }

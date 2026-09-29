@@ -26,7 +26,14 @@ export type Host = {
   link?: string;
 };
 
-export type Event = Tables<"events"> & {
+/**
+ * `description` is optional because list queries deliberately do not select it.
+ * It averages ~1.8 KB of HTML per event and gets serialised into the client
+ * payload for every card, which made it the largest single item on the homepage
+ * while no list view renders it. Only the detail page and the edit form read it.
+ */
+export type Event = Omit<Tables<"events">, "description"> & {
+  description?: string;
   tags?: Tag[];
 };
 

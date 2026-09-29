@@ -32,6 +32,12 @@ Editorial city guides about Ruse at `https://all4ruse.com/[locale]/more-from-rus
 
 Each event has a dedicated page at `https://all4ruse.com/bg/[slug]` with full details: title, date, time, location, price, description, and organisers. Events include structured JSON-LD (schema.org/Event) for machine readability.
 
+## Feeds
+
+- RSS of upcoming events: https://all4ruse.com/feed.xml
+- iCalendar of upcoming events: https://all4ruse.com/events.ics
+- Sitemap: https://all4ruse.com/sitemap.xml
+
 ## Notes
 
 - Event data is real and updated regularly by the All4Ruse team and community.

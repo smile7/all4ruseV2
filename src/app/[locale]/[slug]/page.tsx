@@ -50,6 +50,7 @@ import {
   formatFullDate,
   formatTime,
   getEventImageUrl,
+  isFreeEventPrice,
   isLiveNow,
   toSofiaIsoDateTime,
 } from "~/lib/event-utils";
@@ -57,6 +58,7 @@ import { isUsernameInvalid } from "~/lib/profile-username";
 import {
   buildEventAlternates,
   buildEventMetaDescription,
+  eventDocumentTitle,
   sliceUtf16Safe,
 } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
@@ -103,12 +105,16 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, locale } = await params;
   const safeLocale = locale as Locale;
-  const t = await getTranslations({ locale, namespace: "CreateEvent" });
+  const [t, tEvent] = await Promise.all([
+    getTranslations({ locale, namespace: "CreateEvent" }),
+    getTranslations({ locale, namespace: "SingleEvent" }),
+  ]);
   try {
     const event = await getEventBySlugCached(slug);
     if (!event) return { title: t("eventNotFound") };
 
     const formattedTitle = formatEventTitle(event.title);
+    const seoTitle = eventDocumentTitle(formattedTitle, tEvent("seoCity"));
 
     const rawDescription = plainTextFromHtml(
       sanitizeEventDescription(event.description ?? ""),
@@ -127,13 +133,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? `${siteUrl}${imageUrl}`
       : imageUrl;
     const eventUrl = buildEventUrl(locale, slug);
+    const isCanonicalLocale = locale === DEFAULT_LOCALE;
 
     return {
-      title: formattedTitle,
+      title: seoTitle,
       description,
+      // Non-BG event URLs canonicalize to Bulgarian; indexing them splits
+      // ranking across four near-duplicate pages.
+      ...(!isCanonicalLocale
+        ? { robots: { index: false, follow: true } }
+        : {}),
       alternates: buildEventAlternates(locale, slug),
       openGraph: {
-        title: formattedTitle,
+        title: seoTitle,
         description,
         url: eventUrl,
         siteName: "All4Ruse",
@@ -148,6 +160,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             ]
           : [],
         type: "article",
+        publishedTime: event.created_at,
+        modifiedTime: event.updated_at ?? event.created_at,
         locale: openGraphLocaleByRouteLocale[safeLocale],
         alternateLocale: Object.values(openGraphLocaleByRouteLocale).filter(
           (ogLocale) => ogLocale !== openGraphLocaleByRouteLocale[safeLocale],
@@ -155,7 +169,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
       twitter: {
         card: "summary_large_image",
-        title: formattedTitle,
+        title: seoTitle,
         description,
         images: absoluteImageUrl ? [absoluteImageUrl] : [],
       },
@@ -223,6 +237,7 @@ export default async function EventDetailPage({ params }: Props) {
 
   const formattedTitle = formatEventTitle(event.title);
   const imageUrl = getEventImageUrl(event.image);
+  const isFree = isFreeEventPrice(event.price);
   const live = isLiveNow(event);
   const startTime = formatTime(event.startTime);
   const endTime = formatTime(event.endTime);
@@ -280,6 +295,7 @@ export default async function EventDetailPage({ params }: Props) {
     price: event.price,
     ticketsLink: event.ticketsLink,
     createdAt: event.created_at,
+    updatedAt: event.updated_at,
     tags: event.tags,
     hosts,
   });
@@ -424,21 +440,17 @@ export default async function EventDetailPage({ params }: Props) {
                       </EventDetailRow>
                     )}
 
-                    {/* Price */}
-                    {event.price !== null &&
-                      event.price !== undefined &&
-                      event.price !== "" && (
-                        <EventDetailRow
-                          icon={<Ticket className="size-4" />}
-                          label={t("price")}
-                        >
-                          <p className="text-sm font-semibold">
-                            {event.price === "0" || event.price === "0.00"
-                              ? t("free")
-                              : `${event.price} ${t("euros")}`}
-                          </p>
-                        </EventDetailRow>
-                      )}
+                    {/* Price — always shown. An empty price means free (see
+                        isFreeEventPrice), and the Event JSON-LD states that as a
+                        €0 offer, so the page has to say it too. */}
+                    <EventDetailRow
+                      icon={<Ticket className="size-4" />}
+                      label={t("price")}
+                    >
+                      <p className="text-sm font-semibold">
+                        {isFree ? t("free") : `${event.price} ${t("euros")}`}
+                      </p>
+                    </EventDetailRow>
 
                     {/* Hosts */}
                     {hosts.length > 0 && (

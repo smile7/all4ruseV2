@@ -19,6 +19,14 @@ import { ThemeProvider } from "~/components/ThemeProvider";
 import type { Locale } from "~/constants";
 import { AuthProvider } from "~/contexts/AuthContext";
 import { routing } from "~/i18n/routing";
+import { serializeJsonLd } from "~/lib/article-jsonld";
+import { LOCALE_TO_HREFLANG } from "~/lib/seo";
+import { buildSiteJsonLd } from "~/lib/site-jsonld";
+import { THEME_INIT_SCRIPT } from "~/lib/theme-script";
+
+import { comfortaa } from "../fonts";
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
 type Props = {
   children: React.ReactNode;
@@ -43,32 +51,61 @@ export default async function LocaleLayout({ children, params }: Props) {
   const messages = await getMessages({ locale });
 
   return (
-    <ThemeProvider defaultTheme="system" enableSystem>
-      <NextIntlClientProvider messages={messages}>
-        <Providers>
-          <AppSerwistProvider>
-            <AuthProvider>
-              <CookieConsentProvider>
-                <ScrollToTopOnNavigate />
-                <Header />
-                {/*
-                  main-layout — responsive bottom padding that clears the mobile nav
-                  bar (including iOS home indicator safe area) on mobile, and the
-                  fixed desktop footer on md+. Defined in globals.css.
-                */}
-                <main className="main-layout min-h-[calc(100svh-3.5rem)] overflow-x-clip xl:px-30">
-                  {children}
-                </main>
-                <Footer />
-                <MobileBottomNav />
-                <TrackingScripts />
-              </CookieConsentProvider>
-            </AuthProvider>
-          </AppSerwistProvider>
-        </Providers>
-      </NextIntlClientProvider>
-      <Analytics />
-      <SpeedInsights />
-    </ThemeProvider>
+    <html
+      lang={LOCALE_TO_HREFLANG[locale] ?? locale}
+      className={comfortaa.variable}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: serializeJsonLd(buildSiteJsonLd()),
+          }}
+        />
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="All4Ruse"
+          href={`${siteUrl}/feed.xml`}
+        />
+        <link
+          rel="alternate"
+          type="text/calendar"
+          title="All4Ruse"
+          href={`${siteUrl}/events.ics`}
+        />
+      </head>
+      <body className="min-h-screen antialiased" suppressHydrationWarning>
+        <ThemeProvider defaultTheme="system" enableSystem>
+          <NextIntlClientProvider messages={messages}>
+            <Providers>
+              <AppSerwistProvider>
+                <AuthProvider>
+                  <CookieConsentProvider>
+                    <ScrollToTopOnNavigate />
+                    <Header />
+                    {/*
+                      main-layout — responsive bottom padding that clears the mobile nav
+                      bar (including iOS home indicator safe area) on mobile, and the
+                      fixed desktop footer on md+. Defined in globals.css.
+                    */}
+                    <main className="main-layout min-h-[calc(100svh-3.5rem)] overflow-x-clip xl:px-30">
+                      {children}
+                    </main>
+                    <Footer />
+                    <MobileBottomNav />
+                    <TrackingScripts />
+                  </CookieConsentProvider>
+                </AuthProvider>
+              </AppSerwistProvider>
+            </Providers>
+          </NextIntlClientProvider>
+          <Analytics />
+          <SpeedInsights />
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }

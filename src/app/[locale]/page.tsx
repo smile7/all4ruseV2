@@ -1,29 +1,42 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Plus } from "lucide-react";
 
 import { ArticlesTeaser } from "~/components/ArticlesTeaser";
 import { EventsGridSkeleton } from "~/components/EventCard/EventCardSkeleton";
 import { EventFiltersBar } from "~/components/EventFilters";
+import { EventPeriodNav } from "~/components/EventPeriodNav";
 import { EventsList } from "~/components/EventsList";
+import { EventTagHubNav } from "~/components/EventTagHubNav";
 import { Typography } from "~/components/layout";
 import { TrackedLink } from "~/components/TrackedLink";
 import { Button } from "~/components/ui/button";
 import { ARTICLES_TEASER_COUNT, DEFAULT_LOCALE } from "~/constants";
+import { routing } from "~/i18n/routing";
 import { articlesApi, eventsApi } from "~/lib/api";
 import { serializeJsonLd } from "~/lib/article-jsonld";
 import { buildEventCollectionJsonLd } from "~/lib/event-jsonld";
 import { formatEventTitle } from "~/lib/event-utils";
 import { buildAlternates } from "~/lib/seo";
-import { createSupabaseServerClient } from "~/lib/supabase/server";
+import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 import type { Event, GetEventsParams } from "~/types";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 const HOME_LIST_JSON_LD_LIMIT = 30;
 
+export const revalidate = 300;
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+type Props = {
+  params: Promise<{ locale: string }>;
+  searchParams: SearchParams;
+};
 
 function parseSearchParams(
   raw: Record<string, string | string[] | undefined>,
@@ -63,13 +76,13 @@ function hasEventFilters(params: Partial<GetEventsParams>): boolean {
 }
 
 export async function generateMetadata({
+  params,
   searchParams,
-}: {
-  searchParams: SearchParams;
-}): Promise<Metadata> {
-  const [t, locale, rawParams] = await Promise.all([
-    getTranslations("HomePage"),
-    getLocale(),
+}: Props): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const [t, rawParams] = await Promise.all([
+    getTranslations({ locale, namespace: "HomePage" }),
     searchParams,
   ]);
   const filtered = hasEventFilters(parseSearchParams(rawParams));
@@ -97,19 +110,17 @@ export async function generateMetadata({
   };
 }
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  const [t, locale] = await Promise.all([
-    getTranslations("HomePage"),
-    getLocale(),
-  ]);
-  const params = parseSearchParams(await searchParams);
-  const filtered = hasEventFilters(params);
+export default async function HomePage({ params, searchParams }: Props) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "HomePage" });
+  const filters = parseSearchParams(await searchParams);
+  const filtered = hasEventFilters(filters);
 
-  const client = await createSupabaseServerClient();
+  // Public client, not the cookie-bound one: reading cookies here would opt the
+  // homepage out of caching, and Googlebot would hit a no-store HTML page on
+  // every crawl. Nothing on this page is user-specific.
+  const client = createSupabasePublicServerClient();
   let initialData: Event[] = [];
   let totalCount = 0;
 
@@ -122,13 +133,13 @@ export default async function HomePage({
 
   if (filtered) {
     const [filteredEvents, allEvents] = await Promise.all([
-      eventsApi.getActiveEvents(client, params),
+      eventsApi.getActiveEvents(client, filters),
       eventsApi.getActiveEvents(client),
     ]);
     initialData = filteredEvents;
     totalCount = allEvents.length;
   } else {
-    initialData = await eventsApi.getActiveEvents(client, params);
+    initialData = await eventsApi.getActiveEvents(client, filters);
     totalCount = initialData.length;
   }
 
@@ -189,6 +200,17 @@ export default async function HomePage({
           variant="active"
         />
       </Suspense>
+
+      {!filtered && (
+        <>
+          <EventTagHubNav
+            events={initialData}
+            locale={locale}
+            heading={t("browseByCategory")}
+          />
+          <EventPeriodNav locale={locale} heading={t("browseByDate")} />
+        </>
+      )}
 
       <ArticlesTeaser articles={latestArticles} locale={locale} />
     </div>
