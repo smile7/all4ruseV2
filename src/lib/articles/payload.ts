@@ -42,6 +42,12 @@ export function buildArticleRow(
     hero_image_alt: nullify(values.hero_image_alt),
     category: nullify(values.category),
     event_tag_id: values.event_tag_id,
+    event_tag_is_active: values.event_tag_id
+      ? values.event_tag_is_active
+      : true,
+    event_tag_expires_on: values.event_tag_id
+      ? nullify(values.event_tag_expires_on)
+      : null,
     author_name: nullify(values.author_name),
     is_sponsored: values.is_sponsored,
     sponsor_name: values.is_sponsored ? nullify(values.sponsor_name) : null,
@@ -59,6 +65,8 @@ export function buildArticleRow(
 export function revalidateArticle(locale: string, slugs: string[]) {
   revalidatePath(`/${locale}${ARTICLES_PATH}`);
   revalidatePath(`/${locale}`);
+  // Event pages may show this article as a tag promo (ISR 300s).
+  revalidatePath("/[locale]/[slug]", "page");
   for (const slug of new Set(slugs)) {
     revalidatePath(`/${locale}${ARTICLES_PATH}/${slug}`);
   }

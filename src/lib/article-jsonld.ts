@@ -1,5 +1,5 @@
 import { ARTICLE_AUTHOR_LINKS } from "~/constants";
-import { truncateForMeta } from "~/lib/seo";
+import { jsonLdImages, stripLoneSurrogates, truncateForMeta } from "~/lib/seo";
 import { SITE_ORGANIZATION_ID } from "~/lib/site-jsonld";
 import type { Article } from "~/types";
 
@@ -83,7 +83,7 @@ export function buildArticleJsonLd({
     headline: truncateForMeta(article.title, MAX_HEADLINE_LENGTH),
     description: truncateForMeta(article.meta_description || article.excerpt),
     url,
-    ...(imageUrl ? { image: [imageUrl] } : {}),
+    image: jsonLdImages(imageUrl),
     datePublished: article.published_at ?? article.created_at,
     dateModified: article.updated_at,
     inLanguage: LOCALE_TO_BCP47[article.locale] ?? article.locale,
@@ -129,7 +129,21 @@ export function buildArticleListJsonLd({
   };
 }
 
+function sanitizeJsonLdValue(value: unknown): unknown {
+  if (typeof value === "string") return stripLoneSurrogates(value);
+  if (Array.isArray(value)) return value.map(sanitizeJsonLdValue);
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, nested]) => [
+        key,
+        sanitizeJsonLdValue(nested),
+      ]),
+    );
+  }
+  return value;
+}
+
 /** `<` is escaped so a title containing markup cannot break out of the script tag. */
 export function serializeJsonLd(value: unknown): string {
-  return JSON.stringify(value).replace(/</g, "\\u003c");
+  return JSON.stringify(sanitizeJsonLdValue(value)).replace(/</g, "\\u003c");
 }

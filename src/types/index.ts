@@ -188,6 +188,14 @@ export const articleSchema = z
       .or(z.literal("")),
     category: z.enum(ARTICLE_CATEGORIES).optional().or(z.literal("")),
     event_tag_id: z.number().int().positive().nullable(),
+    event_tag_is_active: z.boolean(),
+    event_tag_expires_on: z
+      .string()
+      .optional()
+      .or(z.literal(""))
+      .refine((val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val), {
+        message: "Невалидна дата",
+      }),
     author_name: z
       .string()
       .trim()

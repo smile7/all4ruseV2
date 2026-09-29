@@ -54,7 +54,11 @@ import {
   toSofiaIsoDateTime,
 } from "~/lib/event-utils";
 import { isUsernameInvalid } from "~/lib/profile-username";
-import { buildEventAlternates, buildEventMetaDescription } from "~/lib/seo";
+import {
+  buildEventAlternates,
+  buildEventMetaDescription,
+  sliceUtf16Safe,
+} from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 import type { Host } from "~/types";
 
@@ -251,8 +255,8 @@ export default async function EventDetailPage({ params }: Props) {
   const gcalUrl = buildGCalUrl(event);
   const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(eventUrl)}`;
   const descriptionText =
-    plainTextFromHtml(sanitizeEventDescription(event.description ?? "")).slice(
-      0,
+    sliceUtf16Safe(
+      plainTextFromHtml(sanitizeEventDescription(event.description ?? "")),
       300,
     ) || formattedTitle;
   const eventJsonLd = buildEventJsonLd({

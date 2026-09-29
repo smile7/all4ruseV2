@@ -1,6 +1,6 @@
-import { FALLBACK_IMAGE } from "~/constants";
 import { normalizeEventTagKey } from "~/lib/event-tag-styles";
 import { toSofiaIsoDateTime } from "~/lib/event-utils";
+import { jsonLdImages } from "~/lib/seo";
 import type { Host } from "~/types";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
@@ -103,18 +103,9 @@ function schemaEventType(tags: EventJsonLdInput["tags"]): SchemaEventType {
   return "Event";
 }
 
-function absoluteEventImage(imageUrl: string | null): string | undefined {
-  if (!imageUrl || imageUrl === FALLBACK_IMAGE) return undefined;
-  if (imageUrl.startsWith("/")) return `${SITE_URL}${imageUrl}`;
-  return imageUrl;
-}
-
 /** Google prefers several images per event; it picks the best crop for the SERP. */
 function buildImages(input: EventJsonLdInput): string[] {
-  const all = [input.imageUrl, ...(input.galleryUrls ?? [])]
-    .map((url) => absoluteEventImage(url ?? null))
-    .filter((url): url is string => Boolean(url));
-  return [...new Set(all)].slice(0, 6);
+  return jsonLdImages(input.imageUrl, ...(input.galleryUrls ?? []));
 }
 
 /**
@@ -290,7 +281,7 @@ export function buildEventJsonLd(input: EventJsonLdInput) {
     name: input.name,
     description: input.description,
     url: input.url,
-    ...(images.length > 0 ? { image: images } : {}),
+    image: images,
     startDate: toSofiaIsoDateTime(input.startDate, input.startTime),
     endDate: buildEndDateTime(input),
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",

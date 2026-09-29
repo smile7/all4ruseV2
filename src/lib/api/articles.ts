@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { ARTICLES_PAGE_SIZE, DEFAULT_LOCALE } from "~/constants";
+import { todayInSofia } from "~/lib/event-utils";
 import type { Article, ArticleSibling } from "~/types";
 import type { Database, TablesInsert, TablesUpdate } from "~/types/database";
 
@@ -12,6 +13,15 @@ type Client = SupabaseClient<Database>;
  * drafts mixed into the public listing.
  */
 const PUBLISHED = "published";
+
+function isEventTagPromoLive(
+  row: Pick<Article, "event_tag_is_active" | "event_tag_expires_on">,
+  today: string,
+): boolean {
+  if (!row.event_tag_is_active) return false;
+  if (!row.event_tag_expires_on) return true;
+  return row.event_tag_expires_on >= today;
+}
 
 export type ArticleSitemapEntry = {
   locale: string;
@@ -115,7 +125,8 @@ export const articlesApi = {
 
   /**
    * Newest published article tagged with any of the event's tags. Prefers the
-   * visitor's locale and falls back to the Bulgarian source article.
+   * visitor's locale and falls back to the Bulgarian source article. Paused or
+   * expired promos are skipped — expiry is the last Sofia calendar day inclusive.
    */
   async getLatestArticleForEventTags(
     client: Client,
@@ -124,17 +135,20 @@ export const articlesApi = {
   ): Promise<Article | null> {
     if (tagIds.length === 0) return null;
 
+    const today = todayInSofia();
     const { data, error } = await client
       .from("articles")
       .select("*")
       .in("event_tag_id", tagIds)
       .in("locale", [...new Set([locale, DEFAULT_LOCALE])])
       .eq("status", PUBLISHED)
+      .eq("event_tag_is_active", true)
+      .or(`event_tag_expires_on.is.null,event_tag_expires_on.gte.${today}`)
       .order("published_at", { ascending: false })
       .limit(20);
 
     if (error) throw error;
-    const rows = data ?? [];
+    const rows = (data ?? []).filter((row) => isEventTagPromoLive(row, today));
     return rows.find((row) => row.locale === locale) ?? rows[0] ?? null;
   },
 

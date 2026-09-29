@@ -10,6 +10,7 @@ import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ArticleBodyEditor } from "~/components/ArticleForm/ArticleBodyEditor";
+import { DatePopover } from "~/components/layout/DatePopover";
 import { Button } from "~/components/ui/button";
 import {
   Form,
@@ -36,6 +37,7 @@ import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { Link, useRouter } from "~/i18n/navigation";
 import type { ArticleEventOption, ArticleGroupOption } from "~/lib/api";
 import { buildArticleSlugFromTitle } from "~/lib/article-slug";
+import { todayInSofia } from "~/lib/event-utils";
 import { ARTICLES_PATH } from "~/lib/seo";
 import {
   type Article,
@@ -67,6 +69,8 @@ function toFormValues(article: Article | null): ArticleFormValues {
     hero_image_alt: article?.hero_image_alt ?? "",
     category: (article?.category ?? "") as ArticleFormValues["category"],
     event_tag_id: article?.event_tag_id ?? null,
+    event_tag_is_active: article?.event_tag_is_active ?? true,
+    event_tag_expires_on: article?.event_tag_expires_on?.slice(0, 10) ?? "",
     author_name: article?.author_name ?? DEFAULT_ARTICLE_AUTHOR,
     is_sponsored: article?.is_sponsored ?? false,
     sponsor_name: article?.sponsor_name ?? "",
@@ -101,6 +105,11 @@ export function ArticleForm({ initialData, groups, tags, events }: Props) {
   const metaDescription = form.watch("meta_description") ?? "";
   const heroImage = form.watch("hero_image");
   const isSponsored = form.watch("is_sponsored");
+  const eventTagId = form.watch("event_tag_id");
+  const eventTagExpiresOn = form.watch("event_tag_expires_on") ?? "";
+  const eventTagPromoExpired = Boolean(
+    eventTagId && eventTagExpiresOn && eventTagExpiresOn < todayInSofia(),
+  );
 
   // Derive the slug from the title until the article is published, after which
   // the URL is frozen.
@@ -411,6 +420,22 @@ export function ArticleForm({ initialData, groups, tags, events }: Props) {
 
           <FormField
             control={form.control}
+            name="author_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("authorLabel")}</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="border-border/60 space-y-4 rounded-lg border p-4">
+          <FormField
+            control={form.control}
             name="event_tag_id"
             render={({ field }) => (
               <FormItem>
@@ -443,19 +468,60 @@ export function ArticleForm({ initialData, groups, tags, events }: Props) {
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="author_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("authorLabel")}</FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value ?? ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {eventTagId ? (
+            <>
+              <FormField
+                control={form.control}
+                name="event_tag_is_active"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between gap-4">
+                    <div>
+                      <FormLabel>{t("eventTagActiveLabel")}</FormLabel>
+                      <FormDescription>
+                        {t("eventTagActiveHint")}
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="event_tag_expires_on"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("eventTagExpiresLabel")}</FormLabel>
+                    <FormControl>
+                      <DatePopover
+                        id={field.name}
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        placeholder={t("eventTagExpiresPlaceholder")}
+                        clearLabel={t("eventTagExpiresClear")}
+                        disabled={busy}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t("eventTagExpiresHint")}
+                    </FormDescription>
+                    {eventTagPromoExpired ? (
+                      <p className="text-destructive text-sm">
+                        {t("eventTagExpiredNote")}
+                      </p>
+                    ) : null}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          ) : null}
         </div>
 
         <FormItem>

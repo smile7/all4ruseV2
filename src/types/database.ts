@@ -51,7 +51,9 @@ export type Database = {
           category: string | null
           created_at: string
           created_by: string | null
+          event_tag_expires_on: string | null
           event_tag_id: number | null
+          event_tag_is_active: boolean
           excerpt: string
           group_id: string
           hero_image: string | null
@@ -75,7 +77,9 @@ export type Database = {
           category?: string | null
           created_at?: string
           created_by?: string | null
+          event_tag_expires_on?: string | null
           event_tag_id?: number | null
+          event_tag_is_active?: boolean
           excerpt: string
           group_id?: string
           hero_image?: string | null
@@ -99,7 +103,9 @@ export type Database = {
           category?: string | null
           created_at?: string
           created_by?: string | null
+          event_tag_expires_on?: string | null
           event_tag_id?: number | null
+          event_tag_is_active?: boolean
           excerpt?: string
           group_id?: string
           hero_image?: string | null

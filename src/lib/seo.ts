@@ -1,4 +1,9 @@
-import { DEFAULT_LOCALE, LOCALES } from "~/constants";
+import {
+  DEFAULT_LOCALE,
+  FALLBACK_IMAGE,
+  LOCALES,
+  SCHEMA_FALLBACK_IMAGE,
+} from "~/constants";
 import { formatCalendarDate, formatTime } from "~/lib/event-utils";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
@@ -108,15 +113,47 @@ export function buildArticleAlternates(
 }
 
 /**
+ * Drops unpaired UTF-16 surrogates. `JSON.stringify` encodes a lone high
+ * surrogate as `\ud83d` with no following `\uXXXX`; Google then reports
+ * "Truncated Unicode character" and the item is ineligible for rich results.
+ */
+export function stripLoneSurrogates(text: string): string {
+  let out = "";
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const next = text.charCodeAt(i + 1);
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        out += text[i]! + text[i + 1]!;
+        i += 1;
+      }
+      continue;
+    }
+    if (code >= 0xdc00 && code <= 0xdfff) continue;
+    out += text[i]!;
+  }
+  return out;
+}
+
+/** Truncate without splitting a surrogate pair (emoji, some symbols). */
+export function sliceUtf16Safe(text: string, maxLength: number): string {
+  if (maxLength <= 0) return "";
+  if (text.length <= maxLength) return text;
+  let end = maxLength;
+  const last = text.charCodeAt(end - 1);
+  if (last >= 0xd800 && last <= 0xdbff) end -= 1;
+  return text.slice(0, end);
+}
+
+/**
  * Trims to a meta-description length on a word boundary — a description cut
  * mid-word reads as broken in the SERP snippet.
  */
 export function truncateForMeta(text: string, maxLength = 160): string {
-  const normalized = text.trim();
+  const normalized = stripLoneSurrogates(text.trim());
   if (normalized.length <= maxLength) return normalized;
-  return normalized
-    .slice(0, maxLength)
-    .replace(/\s+\S*$/, "")
+  return sliceUtf16Safe(normalized, maxLength)
+    .replace(/\s+\S*$/u, "")
     .trim();
 }
 
@@ -156,6 +193,28 @@ export function buildEventAlternates(_locale: string, slug: string) {
 
 export function buildProfileAlternates(username: string) {
   return buildDefaultLocaleAlternates(`/user/${username}`);
+}
+
+/**
+ * Google Event/Article rich results warn on a missing `image`. Skip the UI
+ * placeholder and, when nothing representative exists, emit the branded OG
+ * image so the field is always a crawlable absolute URL.
+ */
+export function jsonLdImages(
+  ...urls: Array<string | null | undefined>
+): string[] {
+  const unique = [
+    ...new Set(
+      urls.flatMap((url) => {
+        if (!url || url === FALLBACK_IMAGE) return [];
+        if (url.startsWith("/")) return [`${SITE_URL}${url}`];
+        return [url];
+      }),
+    ),
+  ].slice(0, 6);
+  return unique.length > 0
+    ? unique
+    : [`${SITE_URL}${SCHEMA_FALLBACK_IMAGE}`];
 }
 
 /**

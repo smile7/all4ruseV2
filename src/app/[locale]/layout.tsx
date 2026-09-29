@@ -1,4 +1,3 @@
-import localFont from "next/font/local";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
@@ -20,44 +19,6 @@ import { ThemeProvider } from "~/components/ThemeProvider";
 import type { Locale } from "~/constants";
 import { AuthProvider } from "~/contexts/AuthContext";
 import { routing } from "~/i18n/routing";
-import { serializeJsonLd } from "~/lib/article-jsonld";
-import { LOCALE_TO_HREFLANG } from "~/lib/seo";
-import { buildSiteJsonLd } from "~/lib/site-jsonld";
-import { THEME_INIT_SCRIPT } from "~/lib/theme-script";
-
-import "../globals.css";
-
-const comfortaa = localFont({
-  variable: "--font-comfortaa",
-  display: "swap",
-  src: [
-    {
-      path: "../../../public/fonts/Comfortaa-Light.ttf",
-      weight: "300",
-      style: "normal",
-    },
-    {
-      path: "../../../public/fonts/Comfortaa-Regular.ttf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../../../public/fonts/Comfortaa-Medium.ttf",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../../../public/fonts/Comfortaa-SemiBold.ttf",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "../../../public/fonts/Comfortaa-Bold.ttf",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-});
 
 type Props = {
   children: React.ReactNode;
@@ -82,47 +43,32 @@ export default async function LocaleLayout({ children, params }: Props) {
   const messages = await getMessages({ locale });
 
   return (
-    <html
-      lang={LOCALE_TO_HREFLANG[locale] ?? locale}
-      className={comfortaa.variable}
-      suppressHydrationWarning
-    >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildSiteJsonLd()) }}
-        />
-      </head>
-      <body className="min-h-screen antialiased" suppressHydrationWarning>
-        <ThemeProvider defaultTheme="system" enableSystem>
-          <NextIntlClientProvider messages={messages}>
-            <Providers>
-              <AppSerwistProvider>
-                <AuthProvider>
-                  <CookieConsentProvider>
-                    <ScrollToTopOnNavigate />
-                    <Header />
-                    {/*
-                      main-layout — responsive bottom padding that clears the mobile nav
-                      bar (including iOS home indicator safe area) on mobile, and the
-                      fixed desktop footer on md+. Defined in globals.css.
-                    */}
-                    <main className="main-layout min-h-[calc(100svh-3.5rem)] overflow-x-clip xl:px-30">
-                      {children}
-                    </main>
-                    <Footer />
-                    <MobileBottomNav />
-                    <TrackingScripts />
-                  </CookieConsentProvider>
-                </AuthProvider>
-              </AppSerwistProvider>
-            </Providers>
-          </NextIntlClientProvider>
-        </ThemeProvider>
-        <Analytics />
-        <SpeedInsights />
-      </body>
-    </html>
+    <ThemeProvider defaultTheme="system" enableSystem>
+      <NextIntlClientProvider messages={messages}>
+        <Providers>
+          <AppSerwistProvider>
+            <AuthProvider>
+              <CookieConsentProvider>
+                <ScrollToTopOnNavigate />
+                <Header />
+                {/*
+                  main-layout — responsive bottom padding that clears the mobile nav
+                  bar (including iOS home indicator safe area) on mobile, and the
+                  fixed desktop footer on md+. Defined in globals.css.
+                */}
+                <main className="main-layout min-h-[calc(100svh-3.5rem)] overflow-x-clip xl:px-30">
+                  {children}
+                </main>
+                <Footer />
+                <MobileBottomNav />
+                <TrackingScripts />
+              </CookieConsentProvider>
+            </AuthProvider>
+          </AppSerwistProvider>
+        </Providers>
+      </NextIntlClientProvider>
+      <Analytics />
+      <SpeedInsights />
+    </ThemeProvider>
   );
 }

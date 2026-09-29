@@ -31,6 +31,7 @@ export const PAST_EVENTS_WINDOW_DAYS = 15;
 export const EMBED_UPCOMING_DAYS = 3;
 export const THEME_STORE_KEY = "theme";
 export const FALLBACK_IMAGE = "/no_image_available.jpg";
+export const SCHEMA_FALLBACK_IMAGE = "/og-home.png";
 export const DEFAULT_AVATAR = "/cat.png";
 export const DEBOUNCE_MS = 400;
 export const RELATED_EVENTS_COUNT = 9;
