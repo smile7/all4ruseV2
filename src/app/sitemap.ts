@@ -1,8 +1,19 @@
 import type { MetadataRoute } from "next";
 
-import { DEFAULT_LOCALE, LOCALES, MIN_INDEXABLE_TAG_EVENTS } from "~/constants";
+import {
+  DEFAULT_LOCALE,
+  LOCALES,
+  MIN_INDEXABLE_PERIOD_EVENTS,
+  MIN_INDEXABLE_TAG_EVENTS,
+} from "~/constants";
 import { articlesApi, eventsApi, profilesApi, tagsApi } from "~/lib/api";
+import {
+  eventPeriodPath,
+  eventPeriodSlugs,
+  resolveEventPeriod,
+} from "~/lib/event-periods";
 import { eventTagSlug } from "~/lib/event-tag-slug";
+import { todayInSofia } from "~/lib/event-utils";
 import { ARTICLES_PATH, LOCALE_TO_HREFLANG } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
@@ -22,6 +33,12 @@ function localeAlternates(path: string) {
   }
   languages["x-default"] = `${siteUrl}/${DEFAULT_LOCALE}${path}`;
   return { languages };
+}
+
+function addIsoDays(isoDate: string, days: number): string {
+  const shifted = new Date(`${isoDate}T12:00:00Z`);
+  shifted.setUTCDate(shifted.getUTCDate() + days);
+  return shifted.toISOString().slice(0, 10);
 }
 
 // Dynamic listing pages: content changes daily so lastModified = now is accurate.
@@ -119,13 +136,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })),
   );
 
+  // Upcoming events are the pages worth recrawling daily. Events that already
+  // happened stay in the sitemap — they hold the rankings and links they earned
+  // for the event name — but at a frequency that reflects that they no longer
+  // change, so they do not compete with new listings for crawl budget.
+  const today = todayInSofia();
   const eventEntries: MetadataRoute.Sitemap = slugsWithDates.map(
-    ({ slug, createdAt }) => ({
-      url: `${siteUrl}/${DEFAULT_LOCALE}/${slug}`,
-      lastModified: new Date(createdAt),
-      changeFrequency: "daily" as const,
-      priority: 0.7,
-    }),
+    ({ slug, updatedAt, startDate, endDate }) => {
+      const upcoming = endDate >= today;
+      // Visible "днес" / "утре" labels change as the date approaches, so
+      // lastmod for events in the next two days is honestly today.
+      const startsSoon = upcoming && startDate <= addIsoDays(today, 2);
+      return {
+        url: `${siteUrl}/${DEFAULT_LOCALE}/${slug}`,
+        lastModified: startsSoon ? now : new Date(updatedAt),
+        changeFrequency: upcoming ? ("daily" as const) : ("yearly" as const),
+        priority: upcoming ? 0.7 : 0.3,
+      };
+    },
   );
 
   // Bulgarian only, like event pages: a profile's name, bio and event list are
@@ -137,6 +165,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "weekly" as const,
     priority: 0.6,
   }));
+
+  // Date landing pages. Like the tag hubs, a sparse one renders noindex and must
+  // stay out of the sitemap, so the event count decides inclusion.
+  const periodEntries: MetadataRoute.Sitemap = eventPeriodSlugs().flatMap(
+    (slug) => {
+      const period = resolveEventPeriod(slug);
+      if (!period) return [];
+
+      const count = upcomingEvents.filter(
+        (event) =>
+          event.endDate >= period.from && event.startDate <= period.to,
+      ).length;
+      if (count < MIN_INDEXABLE_PERIOD_EVENTS) return [];
+
+      const path = eventPeriodPath(slug);
+      return LOCALES.map((locale) => ({
+        url: `${siteUrl}/${locale}${path}`,
+        lastModified: now,
+        changeFrequency: "daily" as const,
+        priority: period.kind === "month" ? 0.8 : 0.9,
+        alternates: localeAlternates(path),
+      }));
+    },
+  );
 
   // Tag hubs are the main category landing pages, so they rank above individual
   // events for generic queries. Thin ones render noindex, so they are skipped.
@@ -183,6 +235,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...dynamicEntries,
     ...staticEntries,
+    ...periodEntries,
     ...tagEntries,
     ...articleIndexEntries,
     ...articleDetailEntries,

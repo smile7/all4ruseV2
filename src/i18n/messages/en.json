@@ -102,7 +102,9 @@
     "menuMoreFromRuse": "More from Ruse",
     "moreFromRuseTitle": "More from Ruse",
     "familyWeekendTitle": "Family weekend with kids",
-    "moreFromRuseSeeAll": "See all"
+    "moreFromRuseSeeAll": "See all",
+    "browseByCategory": "Browse events in Ruse by category",
+    "browseByDate": "Browse events in Ruse by date"
   },
   "CreateEvent": {
     "createEventTitle": "Create New Event",
@@ -298,6 +300,7 @@
     "reportEventReported": "Event reported",
     "adminEventSourceDisclaimer": "The information about this event was taken from publicly available sources and is published for informational purposes. If a correction, update, or removal is needed, please use the \"Report event\" button.",
     "breadcrumbHome": "Home",
+    "seoCity": "Ruse",
     "articlePromo": {
       "label": "Read our article"
     }
@@ -577,7 +580,6 @@
   "Advertise": {
     "pageTitle": "Advertise on All4Ruse | Reach the people of Ruse",
     "pageDescription": "Showcase your business to people browsing events and planning their free time in Ruse. Learn more about advertising and partnerships with All4Ruse.",
-
     "heroEyebrow": "Advertising & partnerships",
     "heroTitle": "Your business – part of what people in Ruse are planning",
     "heroText": "All4Ruse brings together upcoming events in the city and helps people decide where to go. Showcase your business exactly when they're planning their free time.",
@@ -588,7 +590,6 @@
     "statVisitorsNote": "Data for the last 30 days as of August 2026.",
     "statEvents": "{count} upcoming events",
     "statAudience": "Audience from Ruse and the surrounding region",
-
     "opportunitiesTitle": "Not just another ad – a useful suggestion at the right moment",
     "opportunitiesText": "People on All4Ruse are already looking for something to do and somewhere to go. A partner presence connects your business to that exact moment, instead of showing a random ad without context.",
     "opportunity1Title": "An audience with intent",
@@ -597,7 +598,6 @@
     "opportunity2Text": "Your presence can be linked to nearby events and suitable places around the city.",
     "opportunity3Title": "A natural fit",
     "opportunity3Text": "Your business becomes part of the page's useful content, without getting in the visitor's way.",
-
     "formatTitle": "Show your venue next to nearby events",
     "formatText": "When someone views an event happening near your venue, they can see a suggestion below the map to visit you before or after it.",
     "formatSubtext": "This way, a café, restaurant, bar, or other suitable venue appears exactly when the visitor is deciding how to plan their outing.",
@@ -607,7 +607,6 @@
     "mockupDescription": "Close to the event location.",
     "mockupCta": "View the venue",
     "formatNote": "Partner suggestions are clearly labeled and only shown when relevant to the event's location.",
-
     "profileTitle": "A dedicated place for your business on All4Ruse",
     "profileText": "Visitors can open a profile page and find the most important information about your business in one place.",
     "profileList1": "name, logo, and description",
@@ -619,11 +618,9 @@
     "profileList7": "upcoming events, if your business organizes any",
     "profileNote": "The profile can also work as a compact representative page you can share on your own channels.",
     "profileCta": "I want to feature my business",
-
     "offlineTitle": "Connect your physical venue to the city's calendar",
     "offlineText": "With a physical venue partnership, we can prepare QR materials for tables, the counter, or a window display. Your visitors can easily check what's coming up in Ruse, and All4Ruse will direct relevant users back to your business.",
     "offlineNote": "The exact format and placement are agreed on in advance.",
-
     "audienceTitle": "Is it a good fit for your business?",
     "audienceText": "The partnership brings the most value when the business is a natural part of people's outings and free time.",
     "audienceCategory1": "cafés, restaurants, and bars",
@@ -633,11 +630,9 @@
     "audienceCategory5": "shops and services with a suitable location or offer",
     "audienceCategory6": "local brands connected to culture and city life",
     "audienceNote": "If your business doesn't fit these categories, feel free to write to me anyway. We'll figure out if there's a useful and natural way for it to appear on All4Ruse.",
-
     "premiumTitle": "Organizing an event?",
     "premiumText": "Publishing events on All4Ruse is free. If you want extra visibility, you can make your event PREMIUM so it appears in a top position in the calendar.",
     "premiumCta": "Add an event",
-
     "stepsTitle": "How we get started",
     "step1Title": "Tell me about your business",
     "step1Text": "Send a short overview of your venue, your audience, and what you'd like to promote.",
@@ -646,7 +641,6 @@
     "step3Title": "We prepare and publish",
     "step3Text": "After approval, we create the page and the necessary ad placements.",
     "stepsCta": "Send an inquiry",
-
     "faqTitle": "Frequently asked questions",
     "faq1Q": "Where will my business be shown?",
     "faq1A": "It depends on the chosen format. Physical venues can appear on the pages of suitable nearby events and can have their own profile page.",
@@ -664,7 +658,6 @@
     "faq7A": "Terms depend on the chosen format, duration, and placement. After a short conversation, you'll get a clear, concrete proposal.",
     "faq8Q": "Is adding events still free?",
     "faq8A": "Yes. Organizers can publish their events for free. PREMIUM positioning and advertising partnerships are additional options.",
-
     "finalTitle": "Contact form",
     "finalText": "Tell me briefly about your business and what you'd like to promote. We'll discuss how All4Ruse can be useful to you. You can also write to me at <email>silvena@all4ruse.com</email>",
     "formNameLabel": "Name",
@@ -919,5 +912,22 @@
       "statusPublished": "Published",
       "editingNow": "Editing now"
     }
+  },
+  "EventPeriodPage": {
+    "breadcrumbHome": "Home",
+    "browseAll": "All events",
+    "empty": "There are no events for this period right now.",
+    "otherPeriods": "Events in Ruse on other dates",
+    "navToday": "Today",
+    "navWeekend": "This weekend",
+    "todayTitle": "Events in Ruse today",
+    "todayDescription": "What's on in Ruse today — concerts, theatre, exhibitions, sports and children's events with times, venues and prices.",
+    "todayIntro": "Every event in Ruse today, ordered by start time.",
+    "weekendTitle": "Events in Ruse this weekend",
+    "weekendDescription": "What to do in Ruse this weekend — concerts, theatre, exhibitions, sports and family events on Saturday and Sunday.",
+    "weekendIntro": "Every event in Ruse this coming weekend — Saturday and Sunday.",
+    "monthTitle": "Events in Ruse in {month} {year}",
+    "monthDescription": "Calendar of events in Ruse in {month} {year} — concerts, theatre, exhibitions, sports and children's events with dates, times and prices.",
+    "monthIntro": "All upcoming events in Ruse in {month} {year}."
   }
 }

@@ -1,4 +1,5 @@
 import {
+  DEFAULT_LOCALE,
   FACEBOOK_URL,
   INSTAGRAM_URL,
   TIKTOK_URL,
@@ -45,6 +46,19 @@ export function buildSiteJsonLd() {
         name: "All4Ruse",
         publisher: { "@id": SITE_ORGANIZATION_ID },
         inLanguage: ["bg", "en", "uk", "ro"],
+        // Sitelinks search box. Results live on the homepage `?search=` filter.
+        potentialAction: {
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: `${SITE_URL}/${DEFAULT_LOCALE}?search={search_term_string}`,
+          },
+          "query-input": {
+            "@type": "PropertyValueSpecification",
+            valueRequired: true,
+            valueName: "search_term_string",
+          },
+        },
       },
     ],
   };

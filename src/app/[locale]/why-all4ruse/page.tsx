@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import Image from "next/image";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import {
   AlertCircle,
@@ -18,6 +19,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { FACEBOOK_URL, INSTAGRAM_URL } from "~/constants";
+import { routing } from "~/i18n/routing";
 import { buildAlternates } from "~/lib/seo";
 import { cn } from "~/lib/utils";
 
@@ -74,11 +76,17 @@ const helpCardClass =
 const contactCardClass =
   "flex flex-col items-center rounded-xl border border-border/80 bg-linear-to-br from-primary/10 to-background p-6 text-center shadow-sm";
 
-export async function generateMetadata() {
-  const [t, locale] = await Promise.all([
-    getTranslations("WhyUs"),
-    getLocale(),
-  ]);
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+type Props = {
+  params: Promise<{ locale: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "WhyUs" });
   return {
     title: t("pageTitle"),
     description: t("pageDescription"),
@@ -86,8 +94,11 @@ export async function generateMetadata() {
   };
 }
 
-export default async function WhyAll4RusePage() {
-  const t = await getTranslations("WhyUs");
+export default async function WhyAll4RusePage({ params }: Props) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
+  const t = await getTranslations({ locale, namespace: "WhyUs" });
 
   return (
     <div className="from-primary/10 via-background to-background mx-auto flex w-full max-w-[1800px] flex-col items-center gap-16 rounded-xl bg-linear-to-b px-4 py-10 sm:px-6 lg:px-8">

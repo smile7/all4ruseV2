@@ -1,48 +1,20 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-import { SearchX } from "lucide-react";
+import { DEFAULT_LOCALE } from "~/constants";
 
-import { Button } from "~/components/ui/button";
-import { Link } from "~/i18n/navigation";
+import { NotFoundContent } from "./NotFoundContent";
 
+// Metadata cannot use the client provider, and an implicit locale here would
+// read request headers. The page is noindex, so the default locale is enough.
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("NotFound");
-  return { title: t("title") };
+  const t = await getTranslations({
+    locale: DEFAULT_LOCALE,
+    namespace: "NotFound",
+  });
+  return { title: t("title"), robots: { index: false, follow: false } };
 }
 
-export default async function NotFoundPage() {
-  const t = await getTranslations("NotFound");
-
-  return (
-    <div className="flex min-h-[70vh] flex-col items-center justify-center gap-8 px-4 text-center">
-      {/* Big 404 */}
-      <div className="relative select-none">
-        <span className="text-muted-foreground/10 text-[12rem] leading-none font-extrabold tracking-tighter sm:text-[16rem]">
-          {t("code")}
-        </span>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <SearchX
-            className="text-muted-foreground size-16 sm:size-20"
-            aria-hidden
-          />
-        </div>
-      </div>
-
-      {/* Text */}
-      <div className="flex max-w-sm flex-col gap-2">
-        <h1 className="text-foreground text-2xl font-bold tracking-tight">
-          {t("title")}
-        </h1>
-        <p className="text-muted-foreground text-base">{t("description")}</p>
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <Button asChild>
-          <Link href="/">{t("events")}</Link>
-        </Button>
-      </div>
-    </div>
-  );
+export default function NotFoundPage() {
+  return <NotFoundContent />;
 }

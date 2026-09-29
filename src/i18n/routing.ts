@@ -7,4 +7,8 @@ export const routing = defineRouting({
   defaultLocale: DEFAULT_LOCALE,
   // Always redirect `/` to default locale (`/bg`) instead of browser language.
   localeDetection: false,
+  // next-intl would emit hreflang="ua" from the URL slug. Ukrainian's BCP 47
+  // tag is "uk", which generateMetadata already sets — two conflicting
+  // hreflang sets make Google ignore the cluster.
+  alternateLinks: false,
 });

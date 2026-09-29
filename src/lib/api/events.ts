@@ -26,8 +26,12 @@ type Client = SupabaseClient<Database>;
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 // Supabase join adds event_tags to the row at runtime — typed as unknown
-// since the generated types only reflect the base table columns.
-type EventRow = Tables<"events"> & { event_tags: unknown };
+// since the generated types only reflect the base table columns. `description`
+// is optional because list queries omit it (see LIST_COLUMNS).
+type EventRow = Omit<Tables<"events">, "description"> & {
+  description?: string;
+  event_tags: unknown;
+};
 
 type QueryResult = {
   data: EventRow[] | null;
@@ -132,10 +136,50 @@ function filterByHost(events: Event[], host: string | undefined): Event[] {
 
 // Base query shared by all listing functions.
 // Selects all event fields plus tags joined through event_tags.
+/**
+ * Every column except `description`. Card, map and calendar views never render
+ * the description, but it is ~1.8 KB of HTML per row and ends up in the client
+ * payload for all of them, so listing it out beats `*` here. Keep in sync with
+ * the events table when columns are added.
+ */
+const LIST_COLUMNS = [
+  "id",
+  "created_at",
+  "updated_at",
+  "createdBy",
+  "created_by_full_name",
+  "title",
+  "slug",
+  "startDate",
+  "endDate",
+  "startTime",
+  "endTime",
+  "address",
+  "town",
+  "place",
+  "lat",
+  "lng",
+  "coords_source",
+  "price",
+  "image",
+  "images",
+  "organizers",
+  "ticketsLink",
+  "fbLink",
+  "youtubeUrl",
+  "phoneNumber",
+  "email",
+  "seriesId",
+  "isEventActive",
+  "isEventCancelled",
+  "isEventPremium",
+  "isSoldOut",
+].join(", ");
+
 function baseQuery(client: Client) {
   return client
     .from("events")
-    .select("*, event_tags(tags(id, title))")
+    .select(`${LIST_COLUMNS}, event_tags(tags(id, title))`)
     .eq("isEventActive", true);
 }
 
@@ -525,20 +569,23 @@ async function getAllSlugs(client: Client): Promise<string[]> {
     .filter((s): s is string => typeof s === "string");
 }
 
-// Returns slugs with their creation timestamps — used by the sitemap.
-// Only upcoming/active events: ended URLs stay reachable but should not
-// consume crawl budget. Events has no updated_at; created_at is the proxy.
+// Returns slugs with their last-modified timestamp and end date — used by the
+// sitemap. Includes events that already happened: those pages keep ranking for
+// the event name long after the date and are the archive an events directory is
+// built on. `endDate` lets the sitemap crawl them at a far lower frequency than
+// upcoming ones instead of dropping them.
 // Throws on DB error so the sitemap build fails visibly rather than silently
 // omitting all event URLs (which would harm SEO).
 async function getAllSlugsWithDates(
   client: Client,
-): Promise<{ slug: string; createdAt: string }[]> {
+): Promise<
+  { slug: string; updatedAt: string; startDate: string; endDate: string }[]
+> {
   const { data, error } = await client
     .from("events")
-    .select("slug, created_at")
+    .select("slug, updated_at, startDate, endDate")
     .eq("isEventActive", true)
-    .not("slug", "is", null)
-    .gte("endDate", todayStr());
+    .not("slug", "is", null);
 
   if (error) {
     console.error("[getAllSlugsWithDates]", error);
@@ -546,10 +593,21 @@ async function getAllSlugsWithDates(
   }
   return (data ?? [])
     .filter(
-      (r): r is { slug: string; created_at: string } =>
-        typeof r.slug === "string",
+      (
+        r,
+      ): r is {
+        slug: string;
+        updated_at: string;
+        startDate: string;
+        endDate: string;
+      } => typeof r.slug === "string",
     )
-    .map((r) => ({ slug: r.slug, createdAt: r.created_at }));
+    .map((r) => ({
+      slug: r.slug,
+      updatedAt: r.updated_at,
+      startDate: r.startDate,
+      endDate: r.endDate,
+    }));
 }
 
 // ─── Write types ──────────────────────────────────────────────────────────────

@@ -598,6 +598,21 @@ export function getEventImageUrl(image: string | null): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${EVENTS_BUCKET}/${image}`;
 }
 
+// ─── Price helpers ────────────────────────────────────────────────────────────
+
+/**
+ * The single definition of "free" across the app. An empty `price` means free,
+ * not unknown: the event form writes `null` when the organiser ticks the free
+ * checkbox, and the `isFree` filter selects on `price.is.null` for the same
+ * reason. The detail page and the Event JSON-LD must agree with that, otherwise
+ * the markup claims a price the visible page never shows.
+ */
+export function isFreeEventPrice(price: string | null | undefined): boolean {
+  const trimmed = price?.trim();
+  if (!trimmed) return true;
+  return Number(trimmed.replace(",", ".")) === 0;
+}
+
 // ─── Host helpers ─────────────────────────────────────────────────────────────
 
 /** Extracts the first host name from the JSON `organizers` column. */

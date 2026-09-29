@@ -21,6 +21,16 @@ export const ARTICLES_RELATED_COUNT = 3;
  */
 export const MIN_INDEXABLE_TAG_EVENTS = 3;
 
+/**
+ * Same rule for the date landing pages (`/events/today`, `/events/this-weekend`,
+ * `/events/2026-10`). These overlap the homepage by nature, so a sparse one is
+ * near-duplicate content and stays `noindex, follow`.
+ */
+export const MIN_INDEXABLE_PERIOD_EVENTS = 3;
+
+/** How many months ahead get their own `/events/YYYY-MM` landing page. */
+export const EVENT_PERIOD_MONTHS_AHEAD = 5;
+
 /** Article byline. A person's name is identical in every locale, so it never goes through next-intl. */
 export const DEFAULT_ARTICLE_AUTHOR = "Силвена Митева";
 
