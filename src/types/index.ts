@@ -280,6 +280,26 @@ export const ADVERTISE_INQUIRY_LIMITS = {
   message: 4000,
 } as const;
 
+export const ADVERTISE_INTERESTS = [
+  "rubric",
+  "nearby",
+  "sponsored",
+  "premium",
+  "unsure",
+  "other",
+] as const;
+
+export type AdvertiseInterest = (typeof ADVERTISE_INTERESTS)[number];
+
+export function parseAdvertiseInterest(
+  value: string | undefined,
+): AdvertiseInterest {
+  if (value && (ADVERTISE_INTERESTS as readonly string[]).includes(value)) {
+    return value as AdvertiseInterest;
+  }
+  return "unsure";
+}
+
 /** Server-side payload. User-facing messages live in the form schema factory. */
 export const advertiseInquiryApiSchema = z.object({
   name: z.string().trim().min(1).max(ADVERTISE_INQUIRY_LIMITS.name),
