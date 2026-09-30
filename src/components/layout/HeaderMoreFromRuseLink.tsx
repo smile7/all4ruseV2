@@ -31,8 +31,8 @@ export function HeaderMoreFromRuseLink({ variant = "desktop" }: Props) {
       asChild
       variant="default"
       className={cn(
-        "block! h-auto rounded-full py-2 text-center text-xs font-medium tracking-wider uppercase",
-        isMobile ? "w-full px-4" : "w-max shrink-0 px-6",
+        "h-9 min-h-9 rounded-full px-4 text-xs font-medium tracking-wider whitespace-nowrap uppercase",
+        isMobile ? "w-full" : "w-max shrink-0 px-6",
       )}
     >
       {/* The article is BG-only, so always open the Bulgarian version. */}
@@ -41,17 +41,8 @@ export function HeaderMoreFromRuseLink({ variant = "desktop" }: Props) {
         href={href}
         locale="bg"
       >
-        <span className="whitespace-nowrap">
-          <Gem className="mr-2 inline-block! size-4 align-middle" />
-          {t.rich("familyWeekendTitle", {
-            line: (chunks) => (
-              <>
-                <br />
-                {chunks}
-              </>
-            ),
-          })}
-        </span>
+        <Gem className="size-4" />
+        {t("familyWeekendTitle")}
       </TrackedLink>
     </Button>
   );
