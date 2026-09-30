@@ -1,26 +1,17 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import {
   ArrowRight,
-  BedDouble,
-  CalendarDays,
-  CheckCircle2,
-  Coffee,
-  Compass,
+  BookOpen,
+  Clapperboard,
   Crown,
-  Handshake,
   HelpCircle,
-  Landmark,
   MapPin,
-  MapPinned,
-  Megaphone,
-  Palette,
-  ShoppingBag,
-  Sparkles,
+  Newspaper,
+  Send,
   Store,
-  Target,
-  Users,
 } from "lucide-react";
 
 import { AdvertiseContactForm } from "~/components/AdvertiseContactForm";
@@ -40,14 +31,14 @@ import { eventsApi } from "~/lib/api";
 import { buildAlternates } from "~/lib/seo";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 import { cn } from "~/lib/utils";
+import { type AdvertiseInterest, parseAdvertiseInterest } from "~/types";
 
 const PARTNERSHIP_EMAIL = "silvena@all4ruse.com";
+const CONTACT_HASH = `#${ADVERTISE_CONTACT_HASH}`;
 
-const sectionCardClass = cn("border-primary/30 shadow-md", "why-fade-in");
-const sectionContentPad = "px-6 py-6 sm:px-8 sm:py-8";
-const sectionContentPadAfterHeader = "px-6 pb-6 pt-0 sm:px-8 sm:pb-8";
-
-// ─── Metadata ───────────────────────────────────────────────────────────────
+const sectionCardClass = cn("border-border/80 shadow-sm", "why-fade-in");
+const navyText = "text-[#1B2333] dark:text-foreground";
+const accentNumber = "text-[#E05D39] dark:text-primary";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
@@ -89,13 +80,11 @@ export async function generateMetadata() {
   };
 }
 
-// ─── Shared layout building blocks ─────────────────────────────────────────
-
 type AdvertiseSectionProps = {
   id?: string;
   fadeDelay: string;
-  bgTint?: string;
   title?: ReactNode;
+  subtitle?: ReactNode;
   contentClassName?: string;
   className?: string;
   children: ReactNode;
@@ -104,489 +93,488 @@ type AdvertiseSectionProps = {
 function AdvertiseSection({
   id,
   fadeDelay,
-  bgTint = "bg-background/90",
   title,
+  subtitle,
   contentClassName,
   className,
   children,
 }: AdvertiseSectionProps) {
   return (
-    <section id={id} className={cn("w-full max-w-3xl scroll-mt-24", className)}>
-      <Card className={cn(sectionCardClass, fadeDelay, bgTint, "gap-0")}>
-        {title != null ? (
-          <>
-            <CardHeader className="border-b-0 px-6 pt-6 pb-3 sm:px-8">
-              <Typography.H2 className="border-0 pb-0">{title}</Typography.H2>
-            </CardHeader>
-            <CardContent
-              className={cn(sectionContentPadAfterHeader, contentClassName)}
-            >
-              {children}
-            </CardContent>
-          </>
-        ) : (
-          <CardContent className={cn(sectionContentPad, contentClassName)}>
+    <section
+      id={id}
+      className={cn("w-full scroll-mt-24", className ?? "max-w-3xl")}
+    >
+      {title != null ? (
+        <Card className={cn(sectionCardClass, fadeDelay, "bg-card gap-0")}>
+          <CardHeader className="border-b-0 px-5 pt-5 pb-2 sm:px-7">
+            <Typography.H2 className={cn("border-0 pb-0", navyText)}>
+              {title}
+            </Typography.H2>
+            {subtitle != null ? (
+              <Typography.P className="text-muted-foreground mt-2 text-pretty">
+                {subtitle}
+              </Typography.P>
+            ) : null}
+          </CardHeader>
+          <CardContent
+            className={cn("px-5 pb-5 sm:px-7 sm:pb-7", contentClassName)}
+          >
             {children}
           </CardContent>
-        )}
-      </Card>
+        </Card>
+      ) : (
+        <div className={fadeDelay}>{children}</div>
+      )}
     </section>
   );
 }
 
-const highlightCardClass =
-  "flex flex-col items-center rounded-xl border border-border/80 bg-linear-to-br from-primary/15 to-background p-6 text-center shadow-sm";
+function contactHref(interest?: AdvertiseInterest) {
+  if (!interest) return CONTACT_HASH;
+  return `/advertise?interest=${interest}${CONTACT_HASH}`;
+}
 
-// ─── Event-page ad mockup — the visual centerpiece of the pitch ───────────
-
-function EventPageAdMockup({
-  label,
+function RubricExample({
+  kicker,
   title,
-  businessName,
-  description,
-  cta,
-  compact = false,
+  partner,
+  caption,
 }: {
-  label: string;
+  kicker: string;
   title: string;
-  businessName: string;
-  description: string;
-  cta: string;
-  compact?: boolean;
+  partner: string;
+  caption: string;
 }) {
   return (
-    <div
-      className={cn(
-        "border-border/80 bg-card mx-auto w-full overflow-hidden rounded-2xl border shadow-lg",
-        compact ? "max-w-sm" : "max-w-md",
-      )}
-      aria-hidden
-    >
-      {/* Fake map strip — neutral placeholder, not a real map */}
+    <figure className="flex flex-col gap-2">
       <div
-        className={cn(
-          "relative overflow-hidden",
-          compact ? "h-28" : "h-36 sm:h-40",
-        )}
+        className="border-border bg-card overflow-hidden rounded-2xl border shadow-sm"
+        aria-hidden
       >
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundColor: "var(--muted)",
-            backgroundImage:
-              "repeating-linear-gradient(0deg, color-mix(in oklch, var(--foreground) 6%, transparent) 0px, color-mix(in oklch, var(--foreground) 6%, transparent) 1px, transparent 1px, transparent 32px), repeating-linear-gradient(90deg, color-mix(in oklch, var(--foreground) 6%, transparent) 0px, color-mix(in oklch, var(--foreground) 6%, transparent) 1px, transparent 1px, transparent 32px)",
-          }}
-        />
-        <div className="from-primary/25 absolute inset-0 bg-linear-to-br via-transparent to-transparent" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <MapPin
-            className="text-primary size-9 drop-shadow-sm"
-            strokeWidth={2.25}
-          />
+        <div className="bg-muted/70 flex items-start gap-2 px-4 py-2.5">
+          <Newspaper className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+          <span className="text-muted-foreground text-xs leading-snug font-medium">
+            {kicker}
+          </span>
         </div>
-      </div>
-
-      {/* Partner card */}
-      <div className={cn("flex flex-col gap-3", compact ? "p-4" : "p-5")}>
-        <Badge
-          variant="secondary"
-          className="w-fit gap-1.5 rounded-md text-[10px] font-semibold tracking-wide uppercase"
-        >
-          <Sparkles className="size-3" aria-hidden />
-          {label}
-        </Badge>
-        <p className={cn("font-semibold", compact ? "text-sm" : "text-base")}>
-          {title}
-        </p>
-        <div className="flex items-center gap-3">
-          <div className="bg-muted flex size-10 shrink-0 items-center justify-center rounded-lg">
-            <Store className="text-muted-foreground size-5" aria-hidden />
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">{businessName}</p>
-            <p className="text-muted-foreground truncate text-xs">
-              {description}
-            </p>
+        <div className="flex flex-col gap-3 p-4">
+          <p className={cn("text-lg leading-snug font-semibold text-pretty", navyText)}>
+            {title}
+          </p>
+          <div className="border-primary/30 bg-primary/5 flex items-start gap-3 rounded-lg border px-3 py-2.5">
+            <div className="bg-background mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-md border">
+              <Store className="text-primary size-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-muted-foreground text-[11px] leading-snug font-medium">
+                {kicker}
+              </p>
+              <p
+                className={cn(
+                  "text-sm leading-snug font-semibold text-pretty",
+                  navyText,
+                )}
+              >
+                {partner}
+              </p>
+            </div>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full justify-between"
-          tabIndex={-1}
-        >
-          {cta}
-          <ArrowRight className="size-4" aria-hidden />
-        </Button>
       </div>
-    </div>
+      <figcaption className="text-muted-foreground text-xs text-pretty">
+        {caption}
+      </figcaption>
+    </figure>
   );
 }
 
-// ─── Page ───────────────────────────────────────────────────────────────────
+function NearbyExample({
+  label,
+  title,
+  name,
+  meta,
+  cta,
+  caption,
+}: {
+  label: string;
+  title: string;
+  name: string;
+  meta: string;
+  cta: string;
+  caption: string;
+}) {
+  return (
+    <figure className="flex flex-col gap-2">
+      <div
+        className="border-border bg-card overflow-hidden rounded-2xl border shadow-sm"
+        aria-hidden
+      >
+        <div className="relative h-36">
+          <Image
+            src="/partners/partner-evropa.jpg"
+            alt=""
+            fill
+            className="object-cover object-top"
+            sizes="(max-width: 768px) 100vw, 320px"
+          />
+        </div>
+        <div className="flex flex-col gap-3 p-4">
+          <Badge
+            variant="secondary"
+            className="w-fit rounded-md text-[10px] font-semibold tracking-wide uppercase"
+          >
+            {label}
+          </Badge>
+          <p className={cn("text-sm font-semibold", navyText)}>{title}</p>
+          <div>
+            <p className={cn("text-sm font-semibold", navyText)}>{name}</p>
+            <p className="text-muted-foreground text-xs">{meta}</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="pointer-events-none w-full justify-between"
+            tabIndex={-1}
+            aria-hidden
+          >
+            {cta}
+            <ArrowRight className="size-4" aria-hidden />
+          </Button>
+        </div>
+      </div>
+      <figcaption className="text-muted-foreground text-xs text-pretty">
+        {caption}
+      </figcaption>
+    </figure>
+  );
+}
 
-export default async function AdvertisePage() {
+type AdvertisePageProps = {
+  searchParams: Promise<{ interest?: string }>;
+};
+
+export default async function AdvertisePage({
+  searchParams,
+}: AdvertisePageProps) {
   const t = await getTranslations("Advertise");
+  const { interest: interestParam } = await searchParams;
+  const defaultInterest = parseAdvertiseInterest(interestParam);
 
   const client = await createSupabaseServerClient();
   const upcomingEvents = await eventsApi.getActiveEvents(client);
   const upcomingEventsCount = upcomingEvents.length;
 
-  const contactHref = `#${ADVERTISE_CONTACT_HASH}`;
-
   const opportunities = [
     {
-      icon: Target,
+      interest: "rubric" as const,
+      icon: BookOpen,
       title: t("opportunity1Title"),
       text: t("opportunity1Text"),
+      fit: t("opportunity1Fit"),
     },
     {
-      icon: MapPinned,
+      interest: "nearby" as const,
+      icon: MapPin,
       title: t("opportunity2Title"),
       text: t("opportunity2Text"),
+      fit: t("opportunity2Fit"),
     },
     {
-      icon: Sparkles,
+      interest: "sponsored" as const,
+      icon: Clapperboard,
       title: t("opportunity3Title"),
       text: t("opportunity3Text"),
+      fit: t("opportunity3Note"),
     },
   ];
 
-  const profileItems = [
-    t("profileList1"),
-    t("profileList2"),
-    t("profileList3"),
-    t("profileList4"),
-    t("profileList5"),
-    t("profileList6"),
-    t("profileList7"),
+  const steps = [
+    { title: t("step1Title"), text: t("step1Text") },
+    { title: t("step2Title"), text: t("step2Text") },
+    { title: t("step3Title"), text: t("step3Text") },
   ];
-
-  const audienceCategories = [
-    { icon: Coffee, text: t("audienceCategory1") },
-    { icon: Palette, text: t("audienceCategory2") },
-    { icon: BedDouble, text: t("audienceCategory3") },
-    { icon: Compass, text: t("audienceCategory4") },
-    { icon: ShoppingBag, text: t("audienceCategory5") },
-    { icon: Landmark, text: t("audienceCategory6") },
-  ];
-
-  // const steps = [
-  //   { icon: MessageCircle, title: t("step1Title"), text: t("step1Text") },
-  //   { icon: Handshake, title: t("step2Title"), text: t("step2Text") },
-  //   { icon: Rocket, title: t("step3Title"), text: t("step3Text") },
-  // ];
 
   const faqs = [
     { q: t("faq1Q"), a: t("faq1A") },
-    { q: t("faq3Q"), a: t("faq3A") },
-    { q: t("faq4Q"), a: t("faq4A") },
-    { q: t("faq6Q"), a: t("faq6A") },
     { q: t("faq7Q"), a: t("faq7A") },
+    { q: t("faq6Q"), a: t("faq6A") },
     { q: t("faq8Q"), a: t("faq8A") },
   ];
 
+  const stats = [
+    {
+      value: t("statVisitorsValue"),
+      label: t("statVisitorsLabel"),
+      accent: true,
+    },
+    {
+      value: String(upcomingEventsCount),
+      label: t("statEventsLabel"),
+      accent: true,
+    },
+    {
+      value: t("statAudienceValue"),
+      label: t("statAudienceLabel"),
+      accent: false,
+    },
+  ];
+
   return (
-    // Offset main's xl:px-30 so width matches HeaderInnerContainer (logo → auth button).
     <div className="xl:-mx-30">
-      <div className="mx-auto w-full max-w-7xl px-6 pt-6 sm:pt-8 lg:px-8">
-        <div className="from-primary/10 via-background to-background flex w-full flex-col items-center gap-16 rounded-xl bg-linear-to-b px-4 py-10 sm:px-6">
-          {/* ── 1. Hero — width matches the header's logo/auth-button bounds ── */}
-          <section className="relative w-full pb-4">
+      <div className="mx-auto w-full max-w-7xl px-6 pt-4 sm:pt-6 lg:px-8">
+        <div
+          className={cn(
+            "via-background to-background dark:from-background flex w-full flex-col items-center gap-8 rounded-xl bg-linear-to-b from-white px-4 py-8 sm:gap-10 sm:px-6 sm:py-10",
+            navyText,
+          )}
+        >
+          {/* 1. Hero */}
+          <section className="relative w-full max-w-3xl pb-1 text-center">
             <div
-              className="from-primary/30 via-primary/10 absolute inset-x-0 top-0 -z-10 h-40 bg-linear-to-b to-transparent opacity-60 blur-2xl"
+              className="from-primary/20 via-primary/5 absolute inset-x-0 top-0 -z-10 h-32 bg-linear-to-b to-transparent opacity-70 blur-2xl"
               aria-hidden
             />
-            <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-14">
-              {/* Left — copy */}
-              <div className="flex min-w-0 flex-col items-center text-center lg:flex-1 lg:items-start lg:text-left">
-                <Badge
-                  variant="default"
-                  className="why-fade-in why-fade-delay-0 mb-6 h-auto gap-2 rounded-lg px-5 py-2 text-base font-semibold shadow-lg [&>svg]:size-5"
+            <Typography.H1 className="why-fade-in why-fade-delay-0 mb-4 text-3xl text-pretty sm:text-4xl">
+              {t("heroTitle")}
+            </Typography.H1>
+            <Typography.P className="text-muted-foreground why-fade-in why-fade-delay-100 mx-auto max-w-2xl text-lg text-pretty">
+              {t("heroText")}
+            </Typography.P>
+            <div className="why-fade-in why-fade-delay-200 mt-6 flex flex-col items-center gap-2">
+              <Button asChild size="lg">
+                <TrackedLink
+                  eventKey="advertise.cta.request_proposal"
+                  href={CONTACT_HASH}
                 >
-                  <Megaphone className="shrink-0" aria-hidden />
-                  <span className="text-pretty">{t("heroEyebrow")}</span>
-                </Badge>
-                <Typography.H1 className="why-fade-in why-fade-delay-100 mb-4 text-pretty drop-shadow-sm">
-                  {t("heroTitle")}
-                </Typography.H1>
-                <Typography.P className="text-muted-foreground why-fade-in why-fade-delay-200 max-w-xl text-lg text-pretty">
-                  {t("heroText")}
-                </Typography.P>
-                {/* <Typography.P className="text-muted-foreground why-fade-in why-fade-delay-300 mt-3 max-w-xl text-pretty">
-              {t("heroSubtext")}
-            </Typography.P> */}
+                  <Send className="size-4" aria-hidden />
+                  {t("ctaRequestProposal")}
+                </TrackedLink>
+              </Button>
+              <p className="text-muted-foreground max-w-md text-sm text-pretty">
+                {t("heroCtaHint")}
+              </p>
+            </div>
+          </section>
 
-                <div className="why-fade-in why-fade-delay-400 mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-                  <Button asChild size="lg">
-                    <TrackedLink
-                      eventKey="advertise.cta.discuss_partnership"
-                      href={contactHref}
+          {/* 2. Proof */}
+          <section className="why-fade-in why-fade-delay-200 w-full max-w-4xl">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="bg-card border-border/80 flex flex-col items-center justify-center gap-1 rounded-xl border px-4 py-5 text-center shadow-sm"
+                >
+                  {stat.accent ? (
+                    <p
+                      className={cn(
+                        "text-2xl font-extrabold tracking-tight sm:text-3xl",
+                        accentNumber,
+                      )}
                     >
-                      <Handshake className="size-4" aria-hidden />
-                      {t("ctaDiscussPartnership")}
-                    </TrackedLink>
-                  </Button>
-                  <Button asChild variant="outline" size="lg">
-                    <TrackedLink
-                      eventKey="advertise.cta.see_opportunities"
-                      href="#opportunities"
-                    >
-                      {t("heroCtaSecondary")}
-                    </TrackedLink>
-                  </Button>
+                      {stat.value}
+                    </p>
+                  ) : (
+                    <p className="text-lg font-bold tracking-tight sm:text-xl">
+                      {stat.value}
+                    </p>
+                  )}
+                  <p className="text-sm leading-snug text-pretty">
+                    {stat.label}
+                  </p>
                 </div>
+              ))}
+            </div>
 
-                {/* Stats */}
-                <div className="why-fade-in why-fade-delay-500 mt-8 flex flex-col items-center gap-3 lg:items-start">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <div className="bg-primary/10 border-primary/20 flex flex-col items-center gap-1.5 rounded-xl border px-4 py-3 text-center">
-                      <Users
-                        className="text-primary size-5 shrink-0"
+            <div className="bg-card border-border/80 mt-3 rounded-xl border px-5 py-4 shadow-sm sm:px-6">
+              <p className="text-pretty">
+                <span
+                  className={cn(
+                    "mr-2 text-2xl font-extrabold tracking-tight",
+                    accentNumber,
+                  )}
+                >
+                  {t("proofReachValue")}
+                </span>
+                {t("proofReachText")}
+              </p>
+              <p className="text-muted-foreground mt-2 text-xs text-pretty">
+                {t("proofReachNote")}
+              </p>
+            </div>
+          </section>
+
+          {/* 3. Three options */}
+          <AdvertiseSection
+            id="opportunities"
+            fadeDelay="why-fade-delay-300"
+            className="max-w-5xl"
+            title={t("opportunitiesTitle")}
+            subtitle={t("opportunitiesSubtitle")}
+          >
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {opportunities.map(
+                ({ interest, icon: Icon, title, text, fit }, index) => (
+                  <article
+                    key={title}
+                    className="border-border/80 bg-background flex h-full flex-col rounded-xl border p-5 shadow-sm"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <span
+                        className={cn(
+                          "text-sm font-extrabold tracking-wide",
+                          accentNumber,
+                        )}
+                      >
+                        0{index + 1}
+                      </span>
+                      <Icon
+                        className="text-muted-foreground size-5"
                         aria-hidden
                       />
-                      <span className="text-primary text-sm font-semibold">
-                        {t("statVisitors")}
-                      </span>
                     </div>
-                    <div className="bg-primary/10 border-primary/20 flex flex-col items-center gap-1.5 rounded-xl border px-4 py-3 text-center">
-                      <CalendarDays
-                        className="text-primary size-5 shrink-0"
-                        aria-hidden
-                      />
-                      <span className="text-primary text-sm font-semibold">
-                        {t("statEvents", { count: upcomingEventsCount })}
-                      </span>
-                    </div>
-                    <div className="bg-primary/10 border-primary/20 flex flex-col items-center gap-1.5 rounded-xl border px-4 py-3 text-center">
-                      <MapPin
-                        className="text-primary size-5 shrink-0"
-                        aria-hidden
-                      />
-                      <span className="text-primary text-sm font-semibold">
-                        {t("statAudience")}
-                      </span>
-                    </div>
+                    <Typography.H3 className="mb-2 text-lg leading-snug">
+                      {title}
+                    </Typography.H3>
+                    <p className="text-sm leading-relaxed text-pretty">
+                      {text}
+                    </p>
+                    <p className="text-muted-foreground mt-3 text-xs leading-relaxed text-pretty">
+                      {fit}
+                    </p>
+                    <TrackedLink
+                      eventKey="advertise.cta.discuss_idea"
+                      href={contactHref(interest)}
+                      className="text-primary mt-auto pt-4 text-sm font-medium hover:underline"
+                    >
+                      {t("opportunityChoose")}
+                    </TrackedLink>
+                  </article>
+                ),
+              )}
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <RubricExample
+                kicker={t("exampleRubricKicker")}
+                title={t("exampleRubricTitle")}
+                partner={t("exampleRubricPartner")}
+                caption={t("exampleRubricCaption")}
+              />
+              <NearbyExample
+                label={t("exampleNearbyLabel")}
+                title={t("exampleNearbyTitle")}
+                name={t("exampleNearbyName")}
+                meta={t("exampleNearbyMeta")}
+                cta={t("exampleNearbyCta")}
+                caption={t("exampleNearbyCaption")}
+              />
+            </div>
+
+            <div className="mt-8 flex flex-col items-center gap-3 text-center">
+              <p className="text-pretty">{t("opportunitiesOther")}</p>
+              <Button asChild size="lg">
+                <TrackedLink
+                  eventKey="advertise.cta.discuss_idea"
+                  href={CONTACT_HASH}
+                >
+                  <Send className="size-4" aria-hidden />
+                  {t("ctaDiscussIdea")}
+                </TrackedLink>
+              </Button>
+            </div>
+          </AdvertiseSection>
+
+          {/* 4. How it works */}
+          <AdvertiseSection
+            fadeDelay="why-fade-delay-400"
+            className="max-w-4xl"
+            title={t("stepsTitle")}
+          >
+            <ol className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {steps.map((step, index) => (
+                <li
+                  key={step.title}
+                  className="border-border/80 bg-background flex flex-col rounded-xl border p-5"
+                >
+                  <span
+                    className={cn(
+                      "mb-3 flex size-8 items-center justify-center rounded-full text-sm font-extrabold",
+                      "dark:bg-primary bg-[#E05D39] text-white",
+                    )}
+                  >
+                    {index + 1}
+                  </span>
+                  <p className="mb-2 leading-snug font-semibold">
+                    {step.title}
+                  </p>
+                  <p className="text-muted-foreground text-sm leading-relaxed text-pretty">
+                    {step.text}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </AdvertiseSection>
+
+          {/* 5. Organizers — clearly separate from business offers */}
+          <section className="why-fade-in why-fade-delay-500 w-full max-w-3xl">
+            <div className="bg-muted/40 border-border rounded-xl border border-dashed px-5 py-5 sm:px-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <div className="bg-background text-muted-foreground flex size-10 shrink-0 items-center justify-center rounded-lg border">
+                  <Crown className="size-5" aria-hidden />
+                </div>
+                <div className="flex-1">
+                  <Typography.H2 className="mb-2 border-0 pb-0 text-xl">
+                    {t("organizersTitle")}
+                  </Typography.H2>
+                  <p className="text-sm leading-relaxed text-pretty">
+                    {t("organizersText")}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {/* <Button asChild variant="outline">
+                      <TrackedLink
+                        eventKey="advertise.cta.add_event"
+                        href="/create-event"
+                      >
+                        <CalendarDays className="size-4" aria-hidden />
+                        {t("organizersCtaAdd")}
+                      </TrackedLink>
+                    </Button> */}
+                    <Button asChild variant="secondary">
+                      <TrackedLink
+                        eventKey="advertise.cta.ask_premium"
+                        href={contactHref("premium")}
+                      >
+                        {t("organizersCtaPremium")}
+                      </TrackedLink>
+                    </Button>
                   </div>
-                  {/* <p className="text-muted-foreground text-xs">
-                {t("statVisitorsNote")}
-              </p> */}
                 </div>
-              </div>
-
-              {/* Right — visual example of the ad format */}
-              <div className="why-fade-in why-fade-delay-500 w-full max-w-sm shrink-0 lg:max-w-xs xl:max-w-sm">
-                <EventPageAdMockup
-                  label={t("mockupLabel")}
-                  title={t("mockupTitle")}
-                  businessName={t("mockupBusinessName")}
-                  description={t("mockupDescription")}
-                  cta={t("mockupCta")}
-                />
               </div>
             </div>
           </section>
 
-          {/* ── 2. Основно предимство ──────────────────────────────────────── */}
+          {/* 6. Contact form */}
           <AdvertiseSection
-            id="opportunities"
-            fadeDelay="why-fade-delay-300"
-            title={t("opportunitiesTitle")}
-          >
-            <Typography.P className="text-pretty">
-              {t("opportunitiesText")}
-            </Typography.P>
-            <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
-              {opportunities.map(({ icon: Icon, title, text }) => (
-                <div key={title} className={highlightCardClass}>
-                  <Icon className="text-primary mb-2 size-8" aria-hidden />
-                  <Typography.H3 className="mb-2 text-center text-lg">
-                    {title}
-                  </Typography.H3>
-                  <Typography.Small className="text-center leading-snug">
-                    {text}
-                  </Typography.Small>
-                </div>
-              ))}
-            </div>
-          </AdvertiseSection>
-
-          {/* ── 3. Основен рекламен формат ─────────────────────────────────── */}
-          <AdvertiseSection
-            fadeDelay="why-fade-delay-400"
-            title={t("formatTitle")}
-          >
-            <div className="flex flex-col gap-8 lg:flex-row lg:items-center">
-              <div className="flex flex-1 flex-col gap-4">
-                <Typography.P className="text-pretty">
-                  {t("formatText")}
-                </Typography.P>
-                <Typography.P className="text-muted-foreground text-pretty">
-                  {t("formatSubtext")}
-                </Typography.P>
-              </div>
-              <div className="w-full shrink-0 lg:w-72">
-                <EventPageAdMockup
-                  label={t("mockupLabel")}
-                  title={t("mockupTitle")}
-                  businessName={t("mockupBusinessName")}
-                  description={t("mockupDescription")}
-                  cta={t("mockupCta")}
-                  compact
-                />
-              </div>
-            </div>
-            {/* <p className="text-muted-foreground mt-6 text-center text-sm text-pretty">
-          {t("formatNote")}
-        </p> */}
-          </AdvertiseSection>
-
-          {/* ── 4. Профилна страница на бизнеса ────────────────────────────── */}
-          <AdvertiseSection
+            id={ADVERTISE_CONTACT_HASH}
             fadeDelay="why-fade-delay-500"
-            title={t("profileTitle")}
-          >
-            <Typography.P className="text-pretty">
-              {t("profileText")}
-            </Typography.P>
-            <ul className="mt-5 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-              {profileItems.map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm">
-                  <CheckCircle2
-                    className="text-primary mt-0.5 size-4 shrink-0"
-                    aria-hidden
-                  />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-            <Typography.P className="text-muted-foreground mt-6 text-pretty">
-              {t("profileNote")}
-            </Typography.P>
-            {/* <div className="mt-6 flex justify-center">
-          <Button asChild size="lg">
-            <a href={featureBusinessHref}>
-              <Store className="size-4" aria-hidden />
-              {t("profileCta")}
-            </a>
-          </Button>
-        </div> */}
-          </AdvertiseSection>
-
-          {/* ── 5. Допълнително офлайн присъствие (по-малка секция) ────────── */}
-          {/* <AdvertiseSection
-        fadeDelay="why-fade-delay-600"
-        className="max-w-2xl"
-        bgTint="bg-background/70"
-      >
-        <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:text-left">
-          <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
-            <QrCode className="size-5" aria-hidden />
-          </div>
-          <div>
-            <Typography.H3 className="mb-2 text-lg">
-              {t("offlineTitle")}
-            </Typography.H3>
-            <Typography.Small className="block leading-relaxed text-pretty">
-              {t("offlineText")}
-            </Typography.Small>
-            <Typography.Small className="mt-2 block leading-relaxed text-pretty italic">
-              {t("offlineNote")}
-            </Typography.Small>
-          </div>
-        </div>
-      </AdvertiseSection> */}
-
-          {/* ── 6. За кого е подходящо ──────────────────────────────────────── */}
-          <AdvertiseSection
-            fadeDelay="why-fade-delay-700"
-            title={t("audienceTitle")}
-          >
-            <Typography.P className="text-pretty">
-              {t("audienceText")}
-            </Typography.P>
-            <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {audienceCategories.map(({ icon: Icon, text }) => (
-                <li
-                  key={text}
-                  className="border-border/80 bg-background/60 flex items-start gap-3 rounded-lg border p-3"
+            title={t("finalTitle")}
+            subtitle={t.rich("finalText", {
+              email: (chunks) => (
+                <a
+                  href={`mailto:${PARTNERSHIP_EMAIL}`}
+                  className="text-primary font-medium underline"
                 >
-                  <Icon
-                    className="text-primary mt-0.5 size-5 shrink-0"
-                    aria-hidden
-                  />
-                  <span className="text-sm">{text}</span>
-                </li>
-              ))}
-            </ul>
-            <Typography.P className="text-muted-foreground mt-6 text-pretty">
-              {t("audienceNote")}
-            </Typography.P>
-          </AdvertiseSection>
-
-          {/* ── 7. PREMIUM събития (второстепенна секция) ──────────────────── */}
-          <AdvertiseSection
-            fadeDelay="why-fade-delay-800"
-            className="max-w-2xl"
-            bgTint="bg-background/70"
+                  {chunks}
+                </a>
+              ),
+            })}
           >
-            <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:text-left">
-              <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
-                <Crown className="size-5" aria-hidden />
-              </div>
-              <div className="flex-1">
-                <Typography.H3 className="mb-2 text-lg">
-                  {t("premiumTitle")}
-                </Typography.H3>
-                <Typography.Small className="block leading-relaxed text-pretty">
-                  {t("premiumText")}
-                </Typography.Small>
-                <div className="mt-4 flex justify-center sm:justify-start">
-                  <Button asChild variant="secondary">
-                    <TrackedLink
-                      eventKey="advertise.cta.add_event"
-                      href="/create-event"
-                    >
-                      <CalendarDays className="size-4" aria-hidden />
-                      {t("premiumCta")}
-                    </TrackedLink>
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <AdvertiseContactForm defaultInterest={defaultInterest} />
           </AdvertiseSection>
 
-          {/* ── 8. Как започваме ────────────────────────────────────────────── */}
-          {/* <AdvertiseSection fadeDelay="why-fade-delay-800" title={t("stepsTitle")}>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {steps.map(({ icon: Icon, title, text }, index) => (
-            <div key={title} className={highlightCardClass}>
-              <div className="border-primary/40 text-primary mb-3 flex size-8 items-center justify-center rounded-full border text-sm font-bold">
-                {index + 1}
-              </div>
-              <Icon className="text-primary mb-2 size-7" aria-hidden />
-              <Typography.H3 className="mb-2 text-center text-lg">
-                {title}
-              </Typography.H3>
-              <Typography.Small className="text-center leading-snug">
-                {text}
-              </Typography.Small>
-            </div>
-          ))}
-        </div>
-        <div className="mt-8 flex justify-center">
-          <Button asChild size="lg">
-            <a href={inquiryHref}>
-              <Send className="size-4" aria-hidden />
-              {t("stepsCta")}
-            </a>
-          </Button>
-        </div>
-      </AdvertiseSection> */}
-
-          {/* ── 9. Често задавани въпроси ────────────────────────────────────── */}
+          {/* FAQ after the conversation starter */}
           <AdvertiseSection
-            fadeDelay="why-fade-delay-800"
+            fadeDelay="why-fade-delay-600"
             title={
               <span className="flex items-center gap-2">
                 <HelpCircle className="size-6 shrink-0" aria-hidden />
@@ -604,27 +592,6 @@ export default async function AdvertisePage() {
                 </AccordionItem>
               ))}
             </Accordion>
-          </AdvertiseSection>
-
-          {/* ── 10. Контактна форма ──────────────────────────────────────────── */}
-          <AdvertiseSection
-            id={ADVERTISE_CONTACT_HASH}
-            fadeDelay="why-fade-delay-800"
-            title={t("finalTitle")}
-          >
-            <Typography.P className="mb-6 text-pretty">
-              {t.rich("finalText", {
-                email: (chunks) => (
-                  <a
-                    href={`mailto:${PARTNERSHIP_EMAIL}`}
-                    className="text-primary font-medium underline"
-                  >
-                    {chunks}
-                  </a>
-                ),
-              })}
-            </Typography.P>
-            <AdvertiseContactForm />
           </AdvertiseSection>
         </div>
       </div>
