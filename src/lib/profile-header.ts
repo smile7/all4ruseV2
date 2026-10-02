@@ -1,7 +1,8 @@
 import { AVATARS_BUCKET } from "~/constants";
 
 export const MAX_HEADER_BYTES = 5 * 1024 * 1024; // 5 MB
-export const HEADER_INPUT_ACCEPT = "image/jpeg,image/png,image/webp";
+export const HEADER_INPUT_ACCEPT =
+  "image/jpeg,image/png,image/webp,image/heic,image/heif";
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 

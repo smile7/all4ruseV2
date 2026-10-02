@@ -9,7 +9,7 @@ import type { Database } from "~/types/database";
 import {
   applyRememberPolicyToCookieOptions,
   AUTH_REMEMBER_COOKIE,
-  rememberFromCookieValue,
+  rememberPreferenceFromCookie,
 } from "./session-persistence";
 
 export async function createSupabaseServerClient(options?: {
@@ -29,7 +29,7 @@ export async function createSupabaseServerClient(options?: {
           try {
             const remember =
               options?.remember ??
-              rememberFromCookieValue(
+              rememberPreferenceFromCookie(
                 cookieStore.get(AUTH_REMEMBER_COOKIE)?.value,
               );
 

@@ -7,7 +7,7 @@ import { routing } from "~/i18n/routing";
 import {
   applyRememberPolicyToCookieOptions,
   AUTH_REMEMBER_COOKIE,
-  rememberFromCookieValue,
+  rememberPreferenceFromCookie,
 } from "~/lib/supabase/session-persistence";
 import type { Database } from "~/types/database";
 
@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
 
   const response = intlMiddleware(request);
 
-  const remember = rememberFromCookieValue(
+  const remember = rememberPreferenceFromCookie(
     request.cookies.get(AUTH_REMEMBER_COOKIE)?.value,
   );
 

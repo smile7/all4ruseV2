@@ -2,9 +2,16 @@ import { AVATARS_BUCKET } from "~/constants";
 
 export const MAX_PROFILE_GALLERY_IMAGES = 10;
 export const MAX_PROFILE_GALLERY_IMAGE_BYTES = 3 * 1024 * 1024;
-export const PROFILE_GALLERY_INPUT_ACCEPT = "image/jpeg,image/png,image/webp";
+export const PROFILE_GALLERY_INPUT_ACCEPT =
+  "image/jpeg,image/png,image/webp,image/heic,image/heif";
 
-const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+const ALLOWED_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+]);
 
 export type ProfileGalleryFileValidationError = "type" | "size";
 

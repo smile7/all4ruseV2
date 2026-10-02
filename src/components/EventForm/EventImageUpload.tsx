@@ -1,16 +1,17 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { type FileRejection, useDropzone } from "react-dropzone";
 import { useTranslations } from "next-intl";
 
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, Loader2, X } from "lucide-react";
 
 import { Badge } from "~/components/ui/badge";
+import { compressImageForUpload } from "~/lib/images/compress-client";
+import { IMAGE_PICK_MAX_BYTES } from "~/lib/images/upload-limits";
 import { cn } from "~/lib/utils";
 
 const MAX_IMAGES = 10;
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
 
 export type UploadableImage = {
   id: string;
@@ -26,21 +27,37 @@ type Props = {
 
 export function EventImageUpload({ images, onChange }: Props) {
   const t = useTranslations("CreateEvent");
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressFailed, setCompressFailed] = useState(false);
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       const remaining = MAX_IMAGES - images.length;
       if (remaining <= 0) return;
 
-      const newImages: UploadableImage[] = acceptedFiles
-        .slice(0, remaining)
-        .map((file) => ({
-          id: `new-${Math.random().toString(36).slice(2)}`,
-          file,
-          previewUrl: URL.createObjectURL(file),
-        }));
+      setIsCompressing(true);
+      setCompressFailed(false);
+      const next: UploadableImage[] = [];
 
-      onChange([...images, ...newImages]);
+      try {
+        for (const file of acceptedFiles.slice(0, remaining)) {
+          try {
+            const compressed = await compressImageForUpload(file);
+            next.push({
+              id: `new-${Math.random().toString(36).slice(2)}`,
+              file: compressed,
+              previewUrl: URL.createObjectURL(compressed),
+            });
+          } catch {
+            setCompressFailed(true);
+          }
+        }
+        if (next.length > 0) {
+          onChange([...images, ...next]);
+        }
+      } finally {
+        setIsCompressing(false);
+      }
     },
     [images, onChange],
   );
@@ -53,9 +70,12 @@ export function EventImageUpload({ images, onChange }: Props) {
         "image/png": [".png"],
         "image/webp": [".webp"],
         "image/gif": [".gif"],
+        "image/heic": [".heic"],
+        "image/heif": [".heif"],
       },
-      maxSize: MAX_FILE_SIZE,
-      disabled: images.length >= MAX_IMAGES,
+      maxSize: IMAGE_PICK_MAX_BYTES,
+      disabled: images.length >= MAX_IMAGES || isCompressing,
+      useFsAccessApi: false,
     });
 
   const hasSizeError = (fileRejections as FileRejection[]).some((r) =>
@@ -87,12 +107,21 @@ export function EventImageUpload({ images, onChange }: Props) {
             isDragActive
               ? "border-primary bg-primary/5 scale-[1.02]"
               : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30",
+            isCompressing && "pointer-events-none opacity-70",
           )}
         >
           <input {...getInputProps()} />
-          <ImagePlus className="text-muted-foreground mx-auto mb-3 size-8" />
+          {isCompressing ? (
+            <Loader2 className="text-muted-foreground mx-auto mb-3 size-8 animate-spin" />
+          ) : (
+            <ImagePlus className="text-muted-foreground mx-auto mb-3 size-8" />
+          )}
           <p className="text-sm font-medium">
-            {isDragActive ? t("uploadImageDrop") : t("uploadImages")}
+            {isCompressing
+              ? t("imageCompressing")
+              : isDragActive
+                ? t("uploadImageDrop")
+                : t("uploadImages")}
           </p>
           <p className="text-muted-foreground mt-1 text-xs">
             {t("uploadImagesInfo")}
@@ -102,6 +131,9 @@ export function EventImageUpload({ images, onChange }: Props) {
 
       {hasSizeError && (
         <p className="text-destructive text-sm">{t("maxImageSizeExceeded")}</p>
+      )}
+      {compressFailed && (
+        <p className="text-destructive text-sm">{t("imageCompressFailed")}</p>
       )}
       {images.length >= MAX_IMAGES && (
         <p className="text-muted-foreground text-sm">

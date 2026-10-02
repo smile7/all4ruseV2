@@ -10,7 +10,8 @@ const ALLOWED_MIME = new Set([
   "image/gif",
 ]);
 
-export const AVATAR_INPUT_ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
+export const AVATAR_INPUT_ACCEPT =
+  "image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif";
 
 export function buildAvatarPublicUrl(storagePath: string): string {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";

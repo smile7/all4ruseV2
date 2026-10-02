@@ -28,6 +28,11 @@ const failureSchema = z.discriminatedUnion("flow", [
     stage: z.enum(FAILURE_STAGES.auth),
     ...reportFields,
   }),
+  z.object({
+    flow: z.literal("event_create"),
+    stage: z.enum(FAILURE_STAGES.event_create),
+    ...reportFields,
+  }),
 ]);
 
 /**
