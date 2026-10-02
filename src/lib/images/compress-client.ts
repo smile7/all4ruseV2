@@ -1,56 +1,128 @@
-/**
- * Long edge cap for stored images. The widest slot the site renders is a
- * full-bleed hero, so 1600px still covers high-DPI screens while cutting a
- * phone photo to a fraction of its original bytes.
- */
-const MAX_DIMENSION = 1600;
-const WEBP_QUALITY = 0.82;
+import {
+  IMAGE_MAX_DIMENSION,
+  IMAGE_OUTPUT_MAX_BYTES,
+  IMAGE_PICK_MAX_BYTES,
+} from "~/lib/images/upload-limits";
 
-/** Re-encoding an animated GIF through a canvas would keep only the first frame. */
+const WEBP_QUALITIES = [0.82, 0.7, 0.58, 0.45] as const;
+const JPEG_QUALITIES = [0.82, 0.7, 0.58, 0.45] as const;
+const DIMENSION_STEPS = [IMAGE_MAX_DIMENSION, 1280, 1024, 800] as const;
+
 const PASSTHROUGH_TYPES = new Set(["image/gif"]);
 
+export class ImageCompressError extends Error {
+  readonly code = "image_compress_failed";
+
+  constructor(message = "Could not convert image") {
+    super(message);
+    this.name = "ImageCompressError";
+  }
+}
+
+function baseName(file: File): string {
+  return file.name.replace(/\.[^.]+$/, "") || "image";
+}
+
+function isGif(file: File): boolean {
+  return PASSTHROUGH_TYPES.has(file.type) || /\.gif$/i.test(file.name);
+}
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: "image/webp" | "image/jpeg",
+  quality: number,
+): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    canvas.toBlob(resolve, type, quality);
+  });
+}
+
+function scaleToFit(
+  width: number,
+  height: number,
+  maxEdge: number,
+): { width: number; height: number } {
+  const scale = Math.min(1, maxEdge / Math.max(width, height));
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
+}
+
+async function decodeToBitmap(file: File): Promise<ImageBitmap> {
+  try {
+    return await createImageBitmap(file);
+  } catch {
+    // Safari often decodes HEIC natively; other browsers need a WASM fallback.
+  }
+
+  try {
+    const { isHeic, heicTo } = await import("heic-to/next");
+    if (await isHeic(file)) {
+      return await heicTo({ blob: file, type: "bitmap" });
+    }
+  } catch {
+    // Fall through to a single error the form can translate.
+  }
+
+  throw new ImageCompressError("undecodable");
+}
+
+async function encodeSmallest(
+  bitmap: ImageBitmap,
+  type: "image/webp" | "image/jpeg",
+  qualities: readonly number[],
+): Promise<Blob | null> {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  let best: Blob | null = null;
+
+  for (const maxEdge of DIMENSION_STEPS) {
+    const size = scaleToFit(bitmap.width, bitmap.height, maxEdge);
+    canvas.width = size.width;
+    canvas.height = size.height;
+    ctx.drawImage(bitmap, 0, 0, size.width, size.height);
+
+    for (const quality of qualities) {
+      const blob = await canvasToBlob(canvas, type, quality);
+      if (!blob || blob.type !== type) continue;
+      if (!best || blob.size < best.size) best = blob;
+      if (blob.size <= IMAGE_OUTPUT_MAX_BYTES) return blob;
+    }
+  }
+
+  return best;
+}
+
 /**
- * Downscales and re-encodes an image before it is uploaded to Supabase Storage.
- * Returns the original file whenever compression is impossible or would not
- * save bytes, so a browser quirk never blocks an upload.
+ * Downscales and re-encodes an image to WebP (JPEG fallback) before upload.
+ * HEIC/HEIF is decoded natively when the browser can, otherwise via heic-to.
+ * Never returns the original HEIC — that format fails on save in some browsers.
  */
 export async function compressImageForUpload(file: File): Promise<File> {
-  if (!file.type.startsWith("image/") || PASSTHROUGH_TYPES.has(file.type)) {
+  if (isGif(file)) {
+    if (file.size > IMAGE_OUTPUT_MAX_BYTES) {
+      throw new ImageCompressError("gif_too_large");
+    }
     return file;
   }
 
-  let bitmap: ImageBitmap;
+  const bitmap = await decodeToBitmap(file);
   try {
-    bitmap = await createImageBitmap(file);
-  } catch {
-    return file;
-  }
+    const webp = await encodeSmallest(bitmap, "image/webp", WEBP_QUALITIES);
+    if (webp && webp.size <= IMAGE_PICK_MAX_BYTES) {
+      return new File([webp], `${baseName(file)}.webp`, { type: "image/webp" });
+    }
 
-  const scale = Math.min(
-    1,
-    MAX_DIMENSION / Math.max(bitmap.width, bitmap.height),
-  );
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
+    const jpeg = await encodeSmallest(bitmap, "image/jpeg", JPEG_QUALITIES);
+    if (jpeg && jpeg.size <= IMAGE_PICK_MAX_BYTES) {
+      return new File([jpeg], `${baseName(file)}.jpg`, { type: "image/jpeg" });
+    }
+  } finally {
     bitmap.close();
-    return file;
   }
 
-  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-
-  const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, "image/webp", WEBP_QUALITY);
-  });
-
-  // Browsers that cannot encode WebP silently fall back to PNG, which is bigger.
-  if (!blob || blob.type !== "image/webp" || blob.size >= file.size)
-    return file;
-
-  const baseName = file.name.replace(/\.[^.]+$/, "") || "image";
-  return new File([blob], `${baseName}.webp`, { type: "image/webp" });
+  throw new ImageCompressError("still_too_large");
 }

@@ -121,8 +121,8 @@ function LoginForm() {
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    // Staying signed in is what users expect; unchecking it makes the session
-    // cookies expire when the browser closes.
+    // Staying signed in is what users expect. Unchecking still keeps a short
+    // persistent cookie so iOS does not drop the session when opening camera.
     defaultValues: { email: "", password: "", rememberMe: true },
   });
 

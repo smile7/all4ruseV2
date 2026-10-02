@@ -1,7 +1,9 @@
 import sharp from "sharp";
 
+import { IMAGE_MAX_DIMENSION } from "~/lib/images/upload-limits";
+
 /** Keep in step with the client-side cap in `compress-client.ts`. */
-const MAX_DIMENSION = 1600;
+const MAX_DIMENSION = IMAGE_MAX_DIMENSION;
 const WEBP_QUALITY = 82;
 
 export type CompressedImage = {

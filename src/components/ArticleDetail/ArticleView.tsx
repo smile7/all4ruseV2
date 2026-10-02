@@ -89,10 +89,9 @@ export async function ArticleView({ article, locale, linkedEvents }: Props) {
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
           {article.author_name && (
-            <>
-              <span>{t("byAuthor", { author: article.author_name })}</span>
-              <span aria-hidden>·</span>
-            </>
+            <span className="sr-only">
+              {t("byAuthor", { author: article.author_name })}
+            </span>
           )}
           <time dateTime={publishedAt}>{formattedDate}</time>
           {article.reading_minutes ? (

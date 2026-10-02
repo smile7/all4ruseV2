@@ -2,6 +2,8 @@
 export const AUTH_REMEMBER_COOKIE = "a4r-remember";
 
 const PERSISTENT_MAX_AGE = 400 * 24 * 60 * 60;
+/** Used when "remember me" is off. Must not be a session cookie — iOS Safari drops those when the tab is backgrounded (camera, Photos). */
+const SHORT_SESSION_MAX_AGE = 7 * 24 * 60 * 60;
 
 type CookieOptions = {
   path?: string;
@@ -63,9 +65,10 @@ const BASE_COOKIE_OPTIONS: CookieOptions = {
 };
 
 export function getRememberFlagCookieOptions(remember: boolean): CookieOptions {
-  return remember
-    ? { ...BASE_COOKIE_OPTIONS, maxAge: PERSISTENT_MAX_AGE }
-    : BASE_COOKIE_OPTIONS;
+  return {
+    ...BASE_COOKIE_OPTIONS,
+    maxAge: remember ? PERSISTENT_MAX_AGE : SHORT_SESSION_MAX_AGE,
+  };
 }
 
 /**
@@ -83,36 +86,46 @@ export function rememberFromCookieValue(value: string | undefined): boolean {
   return value === "1";
 }
 
+/** Missing cookie means persist — matches the login form default and OAuth callback. */
+export function rememberPreferenceFromCookie(
+  value: string | undefined,
+): boolean {
+  if (value === undefined) return true;
+  return rememberFromCookieValue(value);
+}
+
 export function applyRememberPolicyToCookieOptions<
   T extends { maxAge?: number; expires?: Date },
 >(cookieName: string, options: T, remember: boolean): T {
-  if (!isSupabaseAuthCookie(cookieName) || remember) {
+  if (!isSupabaseAuthCookie(cookieName)) {
+    return options;
+  }
+  if (remember) {
     return options;
   }
 
-  const { maxAge: _maxAge, expires: _expires, ...sessionOptions } = options;
-  return sessionOptions as T;
+  return {
+    ...options,
+    maxAge: SHORT_SESSION_MAX_AGE,
+    expires: undefined,
+  };
 }
 
 export function setAuthRememberPreference(remember: boolean) {
   if (typeof document === "undefined") return;
 
-  const options: CookieOptions = remember
-    ? { ...BASE_COOKIE_OPTIONS, maxAge: PERSISTENT_MAX_AGE }
-    : BASE_COOKIE_OPTIONS;
-
   document.cookie = serializeCookie(
     AUTH_REMEMBER_COOKIE,
     remember ? "1" : "0",
-    options,
+    getRememberFlagCookieOptions(remember),
   );
 }
 
 export function getAuthRememberPreference(): boolean {
-  if (typeof document === "undefined") return false;
+  if (typeof document === "undefined") return true;
 
   const parsed = parseCookies(document.cookie);
-  return rememberFromCookieValue(parsed[AUTH_REMEMBER_COOKIE]);
+  return rememberPreferenceFromCookie(parsed[AUTH_REMEMBER_COOKIE]);
 }
 
 export function clearAuthRememberPreference() {

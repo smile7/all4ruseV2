@@ -43,6 +43,12 @@ export const FAILURE_STAGES = {
     "signup_failed",
     "already_registered",
   ],
+  event_create: [
+    "session_expired",
+    "image_failed",
+    "network_failed",
+    "save_failed",
+  ],
 } as const;
 
 export type FailureFlow = keyof typeof FAILURE_STAGES;

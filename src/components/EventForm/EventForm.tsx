@@ -68,7 +68,12 @@ import { eventsApi } from "~/lib/api/events";
 import {
   plainTextFromHtml,
 } from "~/lib/event-description-html";
+import { classifyEventSaveError, storageUploadError } from "~/lib/event-save-error";
 import { getEventImageUrl, isFreeEventPrice } from "~/lib/event-utils";
+import {
+  getFailureMessage,
+  reportFailure,
+} from "~/lib/failures";
 import {
   coordsFromStoredEvent,
   type EventCoordsWrite,
@@ -77,9 +82,13 @@ import {
   type StashedPlacesCoords,
 } from "~/lib/geocode/event-coords";
 import type { PlaceDetailsResult } from "~/lib/geocode/types";
-import { compressImageForUpload } from "~/lib/images/compress-client";
+import {
+  compressImageForUpload,
+  ImageCompressError,
+} from "~/lib/images/compress-client";
 import { notifyEventIndexed } from "~/lib/seo-notify-client";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
+import { ensureFreshAuthSession } from "~/lib/supabase/ensure-session";
 import { isOptionalWebUrl, normalizeWebUrl } from "~/lib/url-input";
 import { isValidYoutubeUrl } from "~/lib/youtube-url";
 import type { Event, EventDraft, Tag } from "~/types";
@@ -629,8 +638,15 @@ export function EventForm({
   // ── Image upload ──────────────────────────────────────────────────────────
   async function uploadImage(original: File): Promise<string> {
     const supabase = getSupabaseBrowserClient();
-    const file = await compressImageForUpload(original);
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    let file: File;
+    try {
+      file = await compressImageForUpload(original);
+    } catch (error) {
+      throw error instanceof ImageCompressError
+        ? error
+        : new ImageCompressError(getFailureMessage(error) ?? "compress");
+    }
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "webp";
     const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage
       .from(EVENTS_BUCKET)
@@ -638,7 +654,7 @@ export function EventForm({
         cacheControl: UPLOAD_CACHE_CONTROL,
         upsert: false,
       });
-    if (error) throw error;
+    if (error) throw storageUploadError(error.message);
     // Store the full public URL so both the old and new app can display the image
     // without needing to know the Supabase base URL at render time.
     return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${EVENTS_BUCKET}/${path}`;
@@ -721,6 +737,16 @@ export function EventForm({
     setIsSubmitting(true);
     try {
       const supabase = getSupabaseBrowserClient();
+      const sessionState = await ensureFreshAuthSession(supabase);
+      if (sessionState === "expired") {
+        void reportFailure({
+          flow: "event_create",
+          stage: "session_expired",
+          metadata: { mode },
+        });
+        toast.error(t("saveErrorSession"));
+        return;
+      }
       const shouldForceCurrentYear = mode !== "edit";
       const startDate = shouldForceCurrentYear
         ? forceDateToCurrentYear(values.startDate)
@@ -859,8 +885,18 @@ export function EventForm({
       } else {
         router.push("/");
       }
-    } catch {
-      toast.error(t("error"));
+    } catch (error) {
+      const { toastKey, stage } = classifyEventSaveError(error);
+      void reportFailure({
+        flow: "event_create",
+        stage,
+        message: getFailureMessage(error),
+        metadata: {
+          mode,
+          images: String(images.filter((img) => img.file).length),
+        },
+      });
+      toast.error(t(toastKey));
     } finally {
       setIsSubmitting(false);
     }
