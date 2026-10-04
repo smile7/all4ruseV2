@@ -19,6 +19,7 @@ export * from "./Logo";
 export * from "./MobileBackButton";
 export * from "./MobileBottomNav";
 export * from "./MobileCreateEventButton";
+export * from "./PosterScanTracker";
 export * from "./PushNotificationCard";
 export * from "./ScrollToTopOnNavigate";
 export * from "./ThemeToggle";
