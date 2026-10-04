@@ -2,15 +2,28 @@ import { NextResponse } from "next/server";
 
 import { z } from "zod";
 
+import { normalizePosterCampaign } from "~/lib/analytics/poster-campaign";
 import { TRACKED_EVENT_KEYS } from "~/lib/analytics/tracked-events";
 import { clickCountsApi } from "~/lib/api/click-counts";
 import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-const bodySchema = z.object({
-  eventKey: z.enum(TRACKED_EVENT_KEYS),
-});
+const bodySchema = z.union([
+  z.object({ eventKey: z.enum(TRACKED_EVENT_KEYS) }).strict(),
+  z
+    .object({
+      posterCampaign: z.string().transform((value, ctx) => {
+        const campaign = normalizePosterCampaign(value);
+        if (!campaign) {
+          ctx.addIssue({ code: "custom", message: "invalid campaign" });
+          return z.NEVER;
+        }
+        return campaign;
+      }),
+    })
+    .strict(),
+]);
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 40;
@@ -49,10 +62,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    await clickCountsApi.incrementClick(
-      createSupabaseAdminClient(),
-      parsed.data.eventKey,
-    );
+    const client = createSupabaseAdminClient();
+    if ("posterCampaign" in parsed.data) {
+      await clickCountsApi.incrementPosterScan(
+        client,
+        parsed.data.posterCampaign,
+      );
+    } else {
+      await clickCountsApi.incrementClick(client, parsed.data.eventKey);
+    }
     return new NextResponse(null, { status: 204 });
   } catch (err: unknown) {
     console.error("[api/track] increment failed:", err);

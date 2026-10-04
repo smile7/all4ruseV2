@@ -11,6 +11,7 @@ import {
   Footer,
   Header,
   MobileBottomNav,
+  PosterScanTracker,
   ScrollToTopOnNavigate,
   TrackingScripts,
 } from "~/components/layout";
@@ -97,6 +98,7 @@ export default async function LocaleLayout({ children, params }: Props) {
                     <Footer />
                     <MobileBottomNav />
                     <TrackingScripts />
+                    <PosterScanTracker />
                   </CookieConsentProvider>
                 </AuthProvider>
               </AppSerwistProvider>
