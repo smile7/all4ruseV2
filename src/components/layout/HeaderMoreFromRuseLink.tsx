@@ -7,21 +7,23 @@ import { Gem } from "lucide-react";
 import { TrackedLink } from "~/components/TrackedLink";
 import { Button } from "~/components/ui/button";
 import { usePathname } from "~/i18n/navigation";
+import { FEATURED_HEADER_ARTICLE_SLUG } from "~/lib/articles/featured-header";
 import { ARTICLES_PATH } from "~/lib/seo";
 import { cn } from "~/lib/utils";
-
-const FEATURED_ARTICLE_SLUG = "kakvo-da-pravim-s-detsata-v-ruse-tozi-uikend";
 
 type Props = {
   variant?: "mobile" | "desktop";
 };
 
-/** Header entry point to the currently featured article. */
+/**
+ * Header entry point to the featured article.
+ * The parent only mounts this while that article's promo is on and unexpired.
+ */
 export function HeaderMoreFromRuseLink({ variant = "desktop" }: Props) {
   const t = useTranslations("HomePage");
   const pathname = usePathname();
 
-  const href = `${ARTICLES_PATH}/${FEATURED_ARTICLE_SLUG}`;
+  const href = `${ARTICLES_PATH}/${FEATURED_HEADER_ARTICLE_SLUG}`;
   if (pathname === href) return null;
 
   const isMobile = variant === "mobile";

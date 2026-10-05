@@ -14,13 +14,14 @@ type Client = SupabaseClient<Database>;
  */
 const PUBLISHED = "published";
 
-function isEventTagPromoLive(
+/** Inclusive through the expiry date. `today` is a Sofia calendar day, YYYY-MM-DD. */
+export function isEventTagPromoLive(
   row: Pick<Article, "event_tag_is_active" | "event_tag_expires_on">,
   today: string,
 ): boolean {
   if (!row.event_tag_is_active) return false;
   if (!row.event_tag_expires_on) return true;
-  return row.event_tag_expires_on >= today;
+  return row.event_tag_expires_on.slice(0, 10) >= today;
 }
 
 export type ArticleSitemapEntry = {

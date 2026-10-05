@@ -37,6 +37,7 @@ import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { Link, useRouter } from "~/i18n/navigation";
 import type { ArticleEventOption, ArticleGroupOption } from "~/lib/api";
 import { buildArticleSlugFromTitle } from "~/lib/article-slug";
+import { FEATURED_HEADER_ARTICLE_SLUG } from "~/lib/articles/featured-header";
 import { todayInSofia } from "~/lib/event-utils";
 import { ARTICLES_PATH } from "~/lib/seo";
 import {
@@ -463,6 +464,9 @@ export function ArticleForm({ initialData, groups, tags, events }: Props) {
                   </SelectContent>
                 </Select>
                 <FormDescription>{t("eventTagHint")}</FormDescription>
+                {slug === FEATURED_HEADER_ARTICLE_SLUG ? (
+                  <FormDescription>{t("eventTagHeaderNote")}</FormDescription>
+                ) : null}
                 <FormMessage />
               </FormItem>
             )}
