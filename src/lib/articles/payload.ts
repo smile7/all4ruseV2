@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { ARTICLES_BUCKET } from "~/constants";
 import {
@@ -6,6 +6,10 @@ import {
   estimateReadingMinutes,
   sanitizeArticleHtml,
 } from "~/lib/article-html";
+import {
+  FEATURED_HEADER_ARTICLE_SLUG,
+  FEATURED_HEADER_CACHE_TAG,
+} from "~/lib/articles/featured-header";
 import { ARTICLES_PATH } from "~/lib/seo";
 import type { Article, ArticleFormValues } from "~/types";
 import type { TablesInsert } from "~/types/database";
@@ -69,6 +73,11 @@ export function revalidateArticle(locale: string, slugs: string[]) {
   revalidatePath("/[locale]/[slug]", "page");
   for (const slug of new Set(slugs)) {
     revalidatePath(`/${locale}${ARTICLES_PATH}/${slug}`);
+  }
+  // The header button is rendered from the locale layout on every page.
+  if (slugs.includes(FEATURED_HEADER_ARTICLE_SLUG)) {
+    revalidateTag(FEATURED_HEADER_CACHE_TAG, { expire: 0 });
+    revalidatePath("/[locale]", "layout");
   }
 }
 

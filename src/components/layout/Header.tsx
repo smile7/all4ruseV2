@@ -1,3 +1,7 @@
+import { isEventTagPromoLive } from "~/lib/api/articles";
+import { getFeaturedHeaderPromo } from "~/lib/articles/featured-header-promo";
+import { todayInSofia } from "~/lib/event-utils";
+
 import { HeaderAuthButton } from "./HeaderAuthButton";
 import { HeaderInnerContainer } from "./HeaderInnerContainer";
 import { HeaderMoreFromRuseLink } from "./HeaderMoreFromRuseLink";
@@ -7,7 +11,9 @@ import { MobileBackButton } from "./MobileBackButton";
 import { MobileCreateEventButton } from "./MobileCreateEventButton";
 import { ThemeToggle } from "./ThemeToggle";
 
-export function Header() {
+export async function Header() {
+  const showFeaturedLink = await isFeaturedHeaderLinkVisible();
+
   return (
     <header className="border-border/60 bg-secondary/85 sticky top-0 z-50 w-full backdrop-blur-md">
       {/* ── Mobile (<md) ──────────────────────────────────────────────── */}
@@ -28,7 +34,7 @@ export function Header() {
         </div>
 
         {/* Row 2: full-width link to the featured article */}
-        <HeaderMoreFromRuseLink variant="mobile" />
+        {showFeaturedLink ? <HeaderMoreFromRuseLink variant="mobile" /> : null}
       </div>
 
       {/* ── Desktop (md+) — 3-column grid: left | center | right ──────── */}
@@ -40,7 +46,7 @@ export function Header() {
 
         {/* Center — featured article, exactly centered */}
         <div className="flex items-center justify-center">
-          <HeaderMoreFromRuseLink />
+          {showFeaturedLink ? <HeaderMoreFromRuseLink /> : null}
         </div>
 
         {/* Right — controls */}
@@ -53,4 +59,16 @@ export function Header() {
       </HeaderInnerContainer>
     </header>
   );
+}
+
+/** Hidden when the featured article is unpublished, paused, or past its last day. */
+async function isFeaturedHeaderLinkVisible(): Promise<boolean> {
+  try {
+    const promo = await getFeaturedHeaderPromo();
+    if (!promo) return false;
+    return isEventTagPromoLive(promo, todayInSofia());
+  } catch (error) {
+    console.error("Failed to load featured header article", error);
+    return false;
+  }
 }

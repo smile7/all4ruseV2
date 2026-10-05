@@ -852,6 +852,7 @@
       "eventTagLabel": "Event tag",
       "eventTagNone": "No tag",
       "eventTagHint": "The article is promoted on event pages with this tag.",
+      "eventTagHeaderNote": "This article is the header button. If the promo is off or the end date has passed, the button is hidden.",
       "eventTagActiveLabel": "Show promo",
       "eventTagActiveHint": "Turn off to hide the article on event pages without removing the tag.",
       "eventTagExpiresLabel": "Expires on",

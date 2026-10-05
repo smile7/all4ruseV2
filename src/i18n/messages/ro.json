@@ -852,6 +852,7 @@
       "eventTagLabel": "Etichetă de evenimente",
       "eventTagNone": "Fără etichetă",
       "eventTagHint": "Articolul este promovat pe paginile evenimentelor cu această etichetă.",
+      "eventTagHeaderNote": "Acest articol este butonul din antet. Dacă promoția este oprită sau termenul a trecut, butonul este ascuns.",
       "eventTagActiveLabel": "Afișează promoția",
       "eventTagActiveHint": "Dezactivează pentru a ascunde articolul de pe paginile evenimentelor, fără a scoate eticheta.",
       "eventTagExpiresLabel": "Expiră pe",
