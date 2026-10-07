@@ -1,22 +1,22 @@
 import type { Metadata } from "next";
-import { getLocale, getTranslations } from "next-intl/server";
-
-import { buildAlternates } from "~/lib/seo";
+import { getTranslations } from "next-intl/server";
 
 import HomePage from "../page";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const [t, locale] = await Promise.all([
-    getTranslations("HomePage"),
-    getLocale(),
-  ]);
+type Props = {
+  params: Promise<{ locale: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "HomePage" });
 
   return {
     title: t("pageTitle"),
     description: t("pageDescription"),
-    // Poster QR landing — keep it out of search, canonical is the real homepage.
-    robots: "noindex, follow",
-    alternates: buildAlternates(locale),
+    // Poster QR landing. noindex only — a canonical pointing at the homepage
+    // would let Google consolidate the two and treat the homepage as noindex.
+    robots: { index: false, follow: true },
   };
 }
 

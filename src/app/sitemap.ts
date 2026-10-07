@@ -64,6 +64,11 @@ const STATIC_PATHS = [
     changeFrequency: "monthly" as const,
     lastModified: new Date("2026-08-06"),
   },
+];
+
+// The legal copy is Bulgarian only, same as event pages. The other locales are
+// noindex, so they must not be listed here.
+const BULGARIAN_ONLY_PATHS = [
   {
     path: "/legal/terms",
     priority: 0.3,
@@ -125,16 +130,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })),
   );
 
-  const staticEntries: MetadataRoute.Sitemap = STATIC_PATHS.flatMap(
-    ({ path, priority, changeFrequency, lastModified }) =>
-      LOCALES.map((locale) => ({
-        url: `${siteUrl}/${locale}${path}`,
+  const staticEntries: MetadataRoute.Sitemap = [
+    ...STATIC_PATHS.flatMap(
+      ({ path, priority, changeFrequency, lastModified }) =>
+        LOCALES.map((locale) => ({
+          url: `${siteUrl}/${locale}${path}`,
+          lastModified,
+          changeFrequency,
+          priority,
+          alternates: localeAlternates(path),
+        })),
+    ),
+    ...BULGARIAN_ONLY_PATHS.map(
+      ({ path, priority, changeFrequency, lastModified }) => ({
+        url: `${siteUrl}/${DEFAULT_LOCALE}${path}`,
         lastModified,
         changeFrequency,
         priority,
-        alternates: localeAlternates(path),
-      })),
-  );
+      }),
+    ),
+  ];
 
   // Upcoming events are the pages worth recrawling daily. Events that already
   // happened stay in the sitemap — they hold the rankings and links they earned

@@ -132,14 +132,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const absoluteImageUrl = imageUrl.startsWith("/")
       ? `${siteUrl}${imageUrl}`
       : imageUrl;
-    const eventUrl = buildEventUrl(locale, slug);
     const isCanonicalLocale = locale === DEFAULT_LOCALE;
 
     return {
       title: seoTitle,
       description,
-      // Non-BG event URLs canonicalize to Bulgarian; indexing them splits
-      // ranking across four near-duplicate pages.
+      // Event copy is Bulgarian only. Every locale declares the Bulgarian URL
+      // as canonical; the others are noindex so they are not a second indexable
+      // copy. og:url must match that canonical, not the locale URL.
       ...(!isCanonicalLocale
         ? { robots: { index: false, follow: true } }
         : {}),
@@ -147,7 +147,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title: seoTitle,
         description,
-        url: eventUrl,
+        url: buildEventUrl(DEFAULT_LOCALE, slug),
         siteName: "All4Ruse",
         images: absoluteImageUrl
           ? [
@@ -210,13 +210,11 @@ export default async function EventDetailPage({ params }: Props) {
         ? profilesApi
             .getProfile(publicClient, event.createdBy)
             .then((r) => r.data)
+            .catch(() => null)
         : Promise.resolve(null),
-      eventsApi.getRelatedEvents(
-        publicClient,
-        event.id,
-        eventTagIds,
-        event.title,
-      ),
+      eventsApi
+        .getRelatedEvents(publicClient, event.id, eventTagIds, event.title)
+        .catch(() => []),
       articlesApi
         .getLatestArticleForEventTags(publicClient, eventTagIds, locale)
         .catch(() => null),

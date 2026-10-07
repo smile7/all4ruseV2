@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import {
   ArrowRight,
@@ -36,9 +36,10 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { ADVERTISE_CONTACT_HASH } from "~/constants";
+import { routing } from "~/i18n/routing";
 import { eventsApi } from "~/lib/api";
 import { buildAlternates } from "~/lib/seo";
-import { createSupabaseServerClient } from "~/lib/supabase/server";
+import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 import { cn } from "~/lib/utils";
 
 const PARTNERSHIP_EMAIL = "silvena@all4ruse.com";
@@ -51,11 +52,19 @@ const sectionContentPadAfterHeader = "px-6 pb-6 pt-0 sm:px-8 sm:pb-8";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
-export async function generateMetadata() {
-  const [t, locale] = await Promise.all([
-    getTranslations("Advertise"),
-    getLocale(),
-  ]);
+export const revalidate = 300;
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+type Props = {
+  params: Promise<{ locale: string }>;
+};
+
+export async function generateMetadata({ params }: Props) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Advertise" });
   const title = t("pageTitle");
   const description = t("pageDescription");
   const alternates = buildAlternates(locale, "/advertise");
@@ -225,10 +234,12 @@ function EventPageAdMockup({
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 
-export default async function AdvertisePage() {
-  const t = await getTranslations("Advertise");
+export default async function AdvertisePage({ params }: Props) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "Advertise" });
 
-  const client = await createSupabaseServerClient();
+  const client = createSupabasePublicServerClient();
   const upcomingEvents = await eventsApi.getActiveEvents(client);
   const upcomingEventsCount = upcomingEvents.length;
 

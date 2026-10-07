@@ -50,7 +50,8 @@ export const metadata: Metadata = {
   openGraph: {
     title: "All4Ruse – всички събития в Русе",
     description: "Всички събития в Русе на едно място.",
-    url: siteUrl,
+    // No url. This object is inherited by every page that does not set its
+    // own, and an og:url of the site origin disagrees with that page's canonical.
     siteName: "All4Ruse",
     locale: "bg_BG",
     type: "website",

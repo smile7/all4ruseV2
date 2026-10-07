@@ -76,14 +76,16 @@ export async function generateMetadata({
   const description =
     profile.bio?.slice(0, 160) ?? `${name} — профил в All4Ruse`;
   const ogImage = profile.header_url ?? profile.avatar_url ?? undefined;
+  const alternates = buildProfileAlternates(username);
 
   return {
     title: `${name} | All4Ruse`,
     description,
-    alternates: buildProfileAlternates(username),
+    alternates,
     openGraph: {
       title: `${name} | All4Ruse`,
       description,
+      url: alternates.canonical,
       ...(ogImage && { images: [{ url: ogImage }] }),
       type: "profile",
     },
