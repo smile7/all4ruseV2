@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { Badge } from "~/components/ui/badge";
 import { FALLBACK_IMAGE } from "~/constants";
 import { Link } from "~/i18n/navigation";
+import { articleDisplayDate } from "~/lib/articles/display-date";
 import { getIntlLocale } from "~/lib/event-utils";
 import { ARTICLES_PATH } from "~/lib/seo";
 import type { Article, ArticleCategory } from "~/types";
@@ -28,12 +29,12 @@ export async function ArticleCard({
   const t = await getTranslations({ locale, namespace: "MoreFromRuse" });
 
   const href = `${ARTICLES_PATH}/${article.slug}`;
-  const publishedAt = article.published_at ?? article.created_at;
+  const displayDate = articleDisplayDate(article);
   const formattedDate = new Intl.DateTimeFormat(getIntlLocale(locale), {
     day: "numeric",
     month: "long",
     year: "numeric",
-  }).format(new Date(publishedAt));
+  }).format(new Date(displayDate));
 
   return (
     <article className="group border-border/60 bg-card relative flex h-full flex-col overflow-hidden rounded-xl border transition-shadow hover:shadow-md">
@@ -64,7 +65,7 @@ export async function ArticleCard({
 
       <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
-          <time dateTime={publishedAt}>{formattedDate}</time>
+          <time dateTime={displayDate}>{formattedDate}</time>
           {article.reading_minutes ? (
             <>
               <span aria-hidden>·</span>

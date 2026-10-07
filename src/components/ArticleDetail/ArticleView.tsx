@@ -18,6 +18,7 @@ import {
   extractArticleHeadings,
   sanitizeArticleHtml,
 } from "~/lib/article-html";
+import { articleDisplayDate } from "~/lib/articles/display-date";
 import { getIntlLocale } from "~/lib/event-utils";
 import { ARTICLES_PATH } from "~/lib/seo";
 import type { Article, ArticleCategory } from "~/types";
@@ -46,12 +47,12 @@ export async function ArticleView({ article, locale, linkedEvents }: Props) {
   const headings = extractArticleHeadings(sanitizedBody);
   const tocHeadings = headings.filter((heading) => heading.level === 2);
 
-  const publishedAt = article.published_at ?? article.created_at;
+  const displayDate = articleDisplayDate(article);
   const formattedDate = new Intl.DateTimeFormat(getIntlLocale(locale), {
     day: "numeric",
     month: "long",
     year: "numeric",
-  }).format(new Date(publishedAt));
+  }).format(new Date(displayDate));
 
   return (
     <article className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
@@ -93,7 +94,7 @@ export async function ArticleView({ article, locale, linkedEvents }: Props) {
               {t("byAuthor", { author: article.author_name })}
             </span>
           )}
-          <time dateTime={publishedAt}>{formattedDate}</time>
+          <time dateTime={displayDate}>{formattedDate}</time>
           {article.reading_minutes ? (
             <>
               <span aria-hidden>·</span>
