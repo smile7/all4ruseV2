@@ -19,9 +19,23 @@ import {
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { ADVERTISE_CONTACT_HASH, type Locale,LOCALES } from "~/constants";
+import { ADVERTISE_CONTACT_HASH, type Locale, LOCALES } from "~/constants";
 import { Link } from "~/i18n/navigation";
-import { ADVERTISE_INQUIRY_LIMITS } from "~/types";
+import { cn } from "~/lib/utils";
+import {
+  ADVERTISE_INQUIRY_LIMITS,
+  ADVERTISE_INTERESTS,
+  type AdvertiseInterest,
+} from "~/types";
+
+const INTEREST_LABEL_KEYS = {
+  rubric: "formInterestRubric",
+  nearby: "formInterestNearby",
+  sponsored: "formInterestSponsored",
+  premium: "formInterestPremium",
+  unsure: "formInterestUnsure",
+  other: "formInterestOther",
+} as const;
 
 function makeSchema(t: ReturnType<typeof useTranslations<"Advertise">>) {
   return z.object({
@@ -38,6 +52,9 @@ function makeSchema(t: ReturnType<typeof useTranslations<"Advertise">>) {
       .trim()
       .min(1, t("formBusinessNameRequired"))
       .max(ADVERTISE_INQUIRY_LIMITS.businessName),
+    interest: z.enum(ADVERTISE_INTERESTS, {
+      error: t("formInterestRequired"),
+    }),
     message: z
       .string()
       .trim()
@@ -53,7 +70,13 @@ function isLocale(value: string): value is Locale {
   return (LOCALES as readonly string[]).includes(value);
 }
 
-export function AdvertiseContactForm() {
+type AdvertiseContactFormProps = {
+  defaultInterest?: AdvertiseInterest;
+};
+
+export function AdvertiseContactForm({
+  defaultInterest = "unsure",
+}: AdvertiseContactFormProps) {
   const t = useTranslations("Advertise");
   const locale = useLocale();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -66,10 +89,15 @@ export function AdvertiseContactForm() {
       name: "",
       email: "",
       businessName: "",
+      interest: defaultInterest,
       message: "",
       website: "",
     },
   });
+
+  useEffect(() => {
+    form.setValue("interest", defaultInterest);
+  }, [defaultInterest, form]);
 
   useEffect(() => {
     if (window.location.hash !== `#${ADVERTISE_CONTACT_HASH}`) return;
@@ -81,6 +109,12 @@ export function AdvertiseContactForm() {
   async function onSubmit(values: FormValues) {
     setSubmitError(null);
 
+    const interestLine = `${t("formInterestLabel")} ${t(INTEREST_LABEL_KEYS[values.interest])}`;
+    const message = `${interestLine}\n\n${values.message}`.slice(
+      0,
+      ADVERTISE_INQUIRY_LIMITS.message,
+    );
+
     try {
       const res = await fetch("/api/advertise/inquiries", {
         method: "POST",
@@ -89,7 +123,7 @@ export function AdvertiseContactForm() {
           name: values.name,
           email: values.email,
           businessName: values.businessName,
-          message: values.message,
+          message,
           website: values.website,
           locale: isLocale(locale) ? locale : undefined,
         }),
@@ -202,15 +236,58 @@ export function AdvertiseContactForm() {
 
         <FormField
           control={form.control}
+          name="interest"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("formInterestLabel")}</FormLabel>
+              <div
+                role="radiogroup"
+                aria-label={t("formInterestLabel")}
+                className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+              >
+                {ADVERTISE_INTERESTS.map((value) => {
+                  const selected = field.value === value;
+                  return (
+                    <label
+                      key={value}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm leading-snug transition-colors",
+                        selected
+                          ? "border-primary bg-primary/5"
+                          : "border-border bg-background hover:bg-muted/60",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name={field.name}
+                        value={value}
+                        checked={selected}
+                        onBlur={field.onBlur}
+                        onChange={() => field.onChange(value)}
+                        className="accent-primary size-4 shrink-0"
+                      />
+                      <span>{t(INTEREST_LABEL_KEYS[value])}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="message"
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("formMessageLabel")}</FormLabel>
               <FormControl>
                 <Textarea
-                  rows={5}
+                  rows={4}
                   maxLength={ADVERTISE_INQUIRY_LIMITS.message}
-                  className="min-h-32"
+                  className="min-h-28"
+                  placeholder={t("formMessagePlaceholder")}
                   {...field}
                 />
               </FormControl>
