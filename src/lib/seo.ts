@@ -50,7 +50,8 @@ export function buildAlternates(locale: string, path: string = "") {
  * and bios are never translated, so declaring en/ua/ro as language versions
  * tells Google they are translations when they are near-identical duplicates,
  * and splits ranking across four URLs. Canonical and hreflang both point at
- * Bulgarian, matching how article translations already work.
+ * Bulgarian. Emit this on every locale URL so Google can report the others as
+ * alternates with a proper canonical.
  */
 export function buildDefaultLocaleAlternates(path: string) {
   const canonical = `${SITE_URL}/${DEFAULT_LOCALE}${path}`;

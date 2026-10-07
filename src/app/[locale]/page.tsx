@@ -103,7 +103,9 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: alternates.canonical,
+      // og:url is a canonical hint. On a noindex filtered URL it must not
+      // point at the clean homepage.
+      ...(filtered ? {} : { url: alternates.canonical }),
       siteName: "All4Ruse",
       type: "website",
     },

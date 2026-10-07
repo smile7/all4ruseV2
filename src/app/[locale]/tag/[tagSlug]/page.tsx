@@ -1,6 +1,6 @@
 import { cache } from "react";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import {
   getMessages,
   getTranslations,
@@ -59,6 +59,16 @@ export async function generateStaticParams() {
   }
 }
 
+function redirectLooseTagSlug(locale: string, tagSlug: string, title: string) {
+  const canonicalSlug = eventTagSlug(title);
+  // `/tag/MUSIC` and `/tag/puppettheatre` both resolve, but each must 301 to
+  // the one slug in the sitemap. Two 200s with a different rel=canonical is
+  // why Google reports that it chose a different canonical than the user.
+  if (canonicalSlug && tagSlug !== canonicalSlug) {
+    permanentRedirect(`/${locale}/tag/${canonicalSlug}`);
+  }
+}
+
 async function resolve(locale: string, tagSlug: string) {
   const tags = await getTagsCached();
   const tag = findEventTagBySlug(tags, tagSlug);
@@ -82,6 +92,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, tagSlug } = await params;
   const resolved = await resolve(locale, tagSlug);
   if (!resolved) return {};
+  redirectLooseTagSlug(locale, tagSlug, resolved.tag.title ?? "");
 
   const t = await getTranslations({ locale, namespace: "EventTagPage" });
   const { label, events } = resolved;
@@ -116,6 +127,7 @@ export default async function EventTagPage({ params }: Props) {
 
   const resolved = await resolve(locale, tagSlug);
   if (!resolved) notFound();
+  redirectLooseTagSlug(locale, tagSlug, resolved.tag.title ?? "");
 
   const { tag, tags, events, label, eventTagLabels } = resolved;
   const t = await getTranslations({ locale, namespace: "EventTagPage" });

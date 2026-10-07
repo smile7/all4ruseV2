@@ -1,12 +1,24 @@
 import type { Metadata } from "next";
 
 import { Typography } from "~/components/layout";
+import { DEFAULT_LOCALE } from "~/constants";
+import { buildDefaultLocaleAlternates } from "~/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Политика за бисквитки",
-  description:
-    "Политика за бисквитките на All4Ruse — необходими, аналитични и маркетингови cookies, управление и съгласие.",
+type Props = {
+  params: Promise<{ locale: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: "Политика за бисквитки",
+    description:
+      "Политика за бисквитките на All4Ruse — необходими, аналитични и маркетингови cookies, управление и съгласие.",
+    ...(locale === DEFAULT_LOCALE
+      ? { alternates: buildDefaultLocaleAlternates("/legal/cookies") }
+      : { robots: { index: false, follow: true } }),
+  };
+}
 
 export default function CookiesPage() {
   return (

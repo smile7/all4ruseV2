@@ -1,13 +1,25 @@
 import type { Metadata } from "next";
 
 import { Typography } from "~/components/layout";
+import { DEFAULT_LOCALE } from "~/constants";
 import { Link } from "~/i18n/navigation";
+import { buildDefaultLocaleAlternates } from "~/lib/seo";
 
-export const metadata: Metadata = {
-  title: "GDPR",
-  description:
-    "Информация за обработката на лични данни по GDPR на all4ruse.com — пълни правила в Политиката за поверителност.",
+type Props = {
+  params: Promise<{ locale: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: "GDPR",
+    description:
+      "Информация за обработката на лични данни по GDPR на all4ruse.com — пълни правила в Политиката за поверителност.",
+    ...(locale === DEFAULT_LOCALE
+      ? { alternates: buildDefaultLocaleAlternates("/legal/gdpr") }
+      : { robots: { index: false, follow: true } }),
+  };
+}
 
 export default function GdprPage() {
   return (

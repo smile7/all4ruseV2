@@ -1,28 +1,39 @@
 import { Suspense } from "react";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Loader2 } from "lucide-react";
 
 import { EventsMapView } from "~/components/EventsMap/EventsMapView";
+import { routing } from "~/i18n/routing";
 import { eventsApi } from "~/lib/api";
-import { buildAlternates } from "~/lib/seo";
-import { createSupabaseServerClient } from "~/lib/supabase/server";
+import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
-export async function generateMetadata() {
-  const [t, locale] = await Promise.all([
-    getTranslations("HomePage"),
-    getLocale(),
-  ]);
+export const revalidate = 300;
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+type Props = {
+  params: Promise<{ locale: string }>;
+};
+
+export async function generateMetadata({ params }: Props) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "HomePage" });
   return {
     title: t("mapView"),
-    // Not a landing page, but it links to every event — let crawlers follow through.
-    robots: "noindex, follow",
-    alternates: buildAlternates(locale),
+    // Not a landing page, but it links to every event — let crawlers follow
+    // through. No canonical: this URL is noindex, and pointing it at the
+    // homepage asks Google to consolidate the two.
+    robots: { index: false, follow: true },
   };
 }
 
-export default async function MapPage() {
-  const client = await createSupabaseServerClient();
+export default async function MapPage({ params }: Props) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const client = createSupabasePublicServerClient();
   // Fetch active events just like the home page
   const events = await eventsApi.getActiveEvents(client, {});
 

@@ -2,12 +2,24 @@ import type { Metadata } from "next";
 
 import { Typography } from "~/components/layout";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
+import { DEFAULT_LOCALE } from "~/constants";
+import { buildDefaultLocaleAlternates } from "~/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Общи условия",
-  description:
-    "Общи условия за ползване на платформата All4Ruse — информационен агрегатор на събития в град Русе.",
+type Props = {
+  params: Promise<{ locale: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: "Общи условия",
+    description:
+      "Общи условия за ползване на платформата All4Ruse — информационен агрегатор на събития в град Русе.",
+    ...(locale === DEFAULT_LOCALE
+      ? { alternates: buildDefaultLocaleAlternates("/legal/terms") }
+      : { robots: { index: false, follow: true } }),
+  };
+}
 
 export default function LegalTermsPage() {
   return (

@@ -7,11 +7,25 @@ import { routing } from "~/i18n/routing";
 import {
   applyRememberPolicyToCookieOptions,
   AUTH_REMEMBER_COOKIE,
+  isSupabaseAuthCookie,
   rememberPreferenceFromCookie,
 } from "~/lib/supabase/session-persistence";
 import type { Database } from "~/types/database";
 
 const intlMiddleware = createIntlMiddleware(routing);
+
+function hasAuthSessionCookie(request: NextRequest): boolean {
+  return request.cookies
+    .getAll()
+    .some((cookie) => isSupabaseAuthCookie(cookie.name));
+}
+
+function loginRedirect(request: NextRequest, pathname: string) {
+  const locale = pathname.split("/")[1] ?? routing.defaultLocale;
+  const loginUrl = new URL(`/${locale}/auth/login`, request.url);
+  loginUrl.searchParams.set("next", pathname);
+  return NextResponse.redirect(loginUrl);
+}
 
 // Routes that require the user to be authenticated
 const AUTH_REQUIRED = [
@@ -36,40 +50,50 @@ export async function middleware(request: NextRequest) {
 
   const response = intlMiddleware(request);
 
+  // Googlebot and other anonymous requests have no session. Refreshing one
+  // anyway calls Supabase Auth on every public page, so an Auth timeout or
+  // outage becomes a 5xx for the URL Google was trying to index.
+  if (!hasAuthSessionCookie(request)) {
+    return needsAuth ? loginRedirect(request, pathname) : response;
+  }
+
   const remember = rememberPreferenceFromCookie(
     request.cookies.get(AUTH_REMEMBER_COOKIE)?.value,
   );
 
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
-    {
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value);
-            response.cookies.set(
-              name,
-              value,
-              applyRememberPolicyToCookieOptions(name, options, remember),
-            );
-          });
+  try {
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
+      {
+        cookies: {
+          getAll: () => request.cookies.getAll(),
+          setAll: (cookiesToSet) => {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value);
+              response.cookies.set(
+                name,
+                value,
+                applyRememberPolicyToCookieOptions(name, options, remember),
+              );
+            });
+          },
         },
       },
-    },
-  );
+    );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (needsAuth && !user) {
-    const locale = pathname.split("/")[1] ?? routing.defaultLocale;
-    const loginUrl = new URL(`/${locale}/auth/login`, request.url);
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+    if (needsAuth && !user) {
+      return loginRedirect(request, pathname);
+    }
+  } catch {
+    // A failed refresh must not take down a public page. Protected routes
+    // fail closed.
+    if (needsAuth) return loginRedirect(request, pathname);
   }
 
   return response;

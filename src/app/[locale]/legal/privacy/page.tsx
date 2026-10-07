@@ -2,12 +2,24 @@ import type { Metadata } from "next";
 
 import { Typography } from "~/components/layout";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
+import { DEFAULT_LOCALE } from "~/constants";
+import { buildDefaultLocaleAlternates } from "~/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Политика за поверителност",
-  description:
-    "Политика за поверителност и защита на личните данни (GDPR) на All4Ruse, включително използването на Google Analytics и Meta Pixel със съгласие.",
+type Props = {
+  params: Promise<{ locale: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: "Политика за поверителност",
+    description:
+      "Политика за поверителност и защита на личните данни (GDPR) на All4Ruse, включително използването на Google Analytics и Meta Pixel със съгласие.",
+    ...(locale === DEFAULT_LOCALE
+      ? { alternates: buildDefaultLocaleAlternates("/legal/privacy") }
+      : { robots: { index: false, follow: true } }),
+  };
+}
 
 export default function PrivacyPage() {
   return (
