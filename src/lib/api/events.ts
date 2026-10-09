@@ -271,7 +271,8 @@ function compareEmbedEvents(a: Event, b: Event) {
   const aPremium = a.isEventPremium === true ? 1 : 0;
   const bPremium = b.isEventPremium === true ? 1 : 0;
   if (aPremium !== bPremium) return bPremium - aPremium;
-  if (a.startDate !== b.startDate) return a.startDate.localeCompare(b.startDate);
+  if (a.startDate !== b.startDate)
+    return a.startDate.localeCompare(b.startDate);
   return a.startTime.localeCompare(b.startTime);
 }
 
@@ -550,15 +551,20 @@ async function getEventsByMonthRange(
   return (data ?? []).map(mapEvent);
 }
 
-// Returns all active event slugs — used by generateStaticParams on the detail page.
+// Returns event slugs to pre-render in `generateStaticParams` on the detail page.
+// Capped and limited to events that have not ended: past events still resolve via
+// ISR on first request, and pre-rendering thousands of them is pure build cost.
 // Returns [] on error (rather than throwing) so a DB hiccup at build time does not
-// prevent the app from deploying; ISR handles any slugs that weren't pre-rendered.
-async function getAllSlugs(client: Client): Promise<string[]> {
+// prevent the app from deploying.
+async function getAllSlugs(client: Client, limit = 400): Promise<string[]> {
   const { data, error } = await client
     .from("events")
     .select("slug")
     .eq("isEventActive", true)
-    .not("slug", "is", null);
+    .not("slug", "is", null)
+    .gte("endDate", todayInSofia())
+    .order("startDate", { ascending: true })
+    .limit(limit);
 
   if (error) {
     console.error("[getAllSlugs]", error);

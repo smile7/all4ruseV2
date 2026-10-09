@@ -24,7 +24,8 @@ import {
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 import type { ArticleCategory } from "~/types";
 
-export const revalidate = 300;
+// Saving an article revalidates this path on demand.
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   const entries = await articlesApi.getArticleSitemapEntries(
@@ -141,10 +142,7 @@ export default async function ArticleDetailPage({ params }: Props) {
       article.id,
       ARTICLES_RELATED_COUNT,
     ),
-    eventsApi.getEventsByIds(
-      client,
-      extractArticleEventIds(article.body_html),
-    ),
+    eventsApi.getEventsByIds(client, extractArticleEventIds(article.body_html)),
   ]);
 
   const url = buildArticleUrl(locale, article.slug);

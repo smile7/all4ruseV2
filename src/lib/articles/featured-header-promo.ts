@@ -33,5 +33,7 @@ export const getFeaturedHeaderPromo = unstable_cache(
     };
   },
   ["featured-header-promo"],
-  { revalidate: 300, tags: [FEATURED_HEADER_CACHE_TAG] },
+  // Saving the article busts FEATURED_HEADER_CACHE_TAG, so the long window only
+  // caps how stale an untouched promo can get.
+  { revalidate: 86400, tags: [FEATURED_HEADER_CACHE_TAG] },
 );

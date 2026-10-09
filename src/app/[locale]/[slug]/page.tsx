@@ -74,7 +74,9 @@ const getEventBySlugCached = cache((slug: string) =>
 
 // Statically rendered + revalidated. Nothing on this page may read cookies:
 // the signed-in-only actions are gated client-side in ~/components/EventUserActions.
-export const revalidate = 300;
+// A day is safe because every create/edit/delete pings /api/seo/notify, which
+// revalidates this path immediately.
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   const slugs = await eventsApi.getAllSlugs(createSupabasePublicServerClient());
@@ -140,9 +142,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       // Event copy is Bulgarian only. Every locale declares the Bulgarian URL
       // as canonical; the others are noindex so they are not a second indexable
       // copy. og:url must match that canonical, not the locale URL.
-      ...(!isCanonicalLocale
-        ? { robots: { index: false, follow: true } }
-        : {}),
+      ...(!isCanonicalLocale ? { robots: { index: false, follow: true } } : {}),
       alternates: buildEventAlternates(locale, slug),
       openGraph: {
         title: seoTitle,
@@ -204,21 +204,20 @@ export default async function EventDetailPage({ params }: Props) {
   const eventTagIds = (event.tags ?? []).map((tag) => tag.id);
 
   // Run all remaining independent fetches in parallel.
-  const [hostProfileResult, relatedEvents, promoArticle] =
-    await Promise.all([
-      event.createdBy && event.createdBy !== adminUserId
-        ? profilesApi
-            .getProfile(publicClient, event.createdBy)
-            .then((r) => r.data)
-            .catch(() => null)
-        : Promise.resolve(null),
-      eventsApi
-        .getRelatedEvents(publicClient, event.id, eventTagIds, event.title)
-        .catch(() => []),
-      articlesApi
-        .getLatestArticleForEventTags(publicClient, eventTagIds, locale)
-        .catch(() => null),
-    ]);
+  const [hostProfileResult, relatedEvents, promoArticle] = await Promise.all([
+    event.createdBy && event.createdBy !== adminUserId
+      ? profilesApi
+          .getProfile(publicClient, event.createdBy)
+          .then((r) => r.data)
+          .catch(() => null)
+      : Promise.resolve(null),
+    eventsApi
+      .getRelatedEvents(publicClient, event.id, eventTagIds, event.title)
+      .catch(() => []),
+    articlesApi
+      .getLatestArticleForEventTags(publicClient, eventTagIds, locale)
+      .catch(() => null),
+  ]);
 
   const hostProfile = hostProfileResult;
 
@@ -347,7 +346,7 @@ export default async function EventDetailPage({ params }: Props) {
               {formattedTitle}
             </h1>
             {event.isEventCancelled && (
-              <p className="mb-3 text-center text-base font-bold tracking-[0.22em] text-destructive uppercase">
+              <p className="text-destructive mb-3 text-center text-base font-bold tracking-[0.22em] uppercase">
                 {t("cancelled")}
               </p>
             )}
@@ -513,10 +512,7 @@ export default async function EventDetailPage({ params }: Props) {
 
               {promoArticle && (
                 <div className="lg:hidden">
-                  <EventArticlePromo
-                    article={promoArticle}
-                    locale={locale}
-                  />
+                  <EventArticlePromo article={promoArticle} locale={locale} />
                 </div>
               )}
 
@@ -590,10 +586,7 @@ export default async function EventDetailPage({ params }: Props) {
             {/* ── Desktop sidebar (hidden on mobile) ──────────────────── */}
             <div className="hidden lg:sticky lg:top-20 lg:flex lg:w-52 lg:shrink-0 lg:flex-col lg:gap-3">
               {promoArticle && (
-                <EventArticlePromo
-                  article={promoArticle}
-                  locale={locale}
-                />
+                <EventArticlePromo article={promoArticle} locale={locale} />
               )}
               <EventActionButtons
                 locale={locale}

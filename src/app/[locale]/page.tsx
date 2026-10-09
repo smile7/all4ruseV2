@@ -26,7 +26,9 @@ import type { Event, GetEventsParams } from "~/types";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 const HOME_LIST_JSON_LD_LIMIT = 30;
 
-export const revalidate = 300;
+// Reading `searchParams` below already makes this route dynamic, so this value
+// is only a floor if the filters ever move out of the query string.
+export const revalidate = 10800;
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -97,9 +99,7 @@ export async function generateMetadata({
     // a canonical pointing at a different URL lets Google consolidate the two
     // and apply the noindex to the clean homepage, so the two never ship
     // together.
-    ...(filtered
-      ? { robots: { index: false, follow: true } }
-      : { alternates }),
+    ...(filtered ? { robots: { index: false, follow: true } } : { alternates }),
     openGraph: {
       title,
       description,

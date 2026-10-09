@@ -29,7 +29,7 @@ import { ProfileSectionHeader } from "./ProfileSectionHeader";
 import { ProfileSocialLinks } from "./ProfileSocialLinks";
 import { RevealOnScroll } from "./RevealOnScroll";
 
-export const revalidate = 300;
+export const revalidate = 86400;
 
 /**
  * Fetch the public profile once per request and share the result between

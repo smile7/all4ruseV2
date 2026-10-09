@@ -63,14 +63,20 @@ export function buildArticleRow(
 }
 
 /**
- * Both pages are ISR with a 300 s window, so without this an edit would sit
- * invisible for up to five minutes. The homepage teaser is revalidated too.
+ * Article surfaces are cached for a day, so an edit has to be pushed out here.
+ * `eventPages` purges every event detail page at once — pass it only when the
+ * article is wired to an event tag and can show up there as a promo.
  */
-export function revalidateArticle(locale: string, slugs: string[]) {
+export function revalidateArticle(
+  locale: string,
+  slugs: string[],
+  options: { eventPages?: boolean } = {},
+) {
   revalidatePath(`/${locale}${ARTICLES_PATH}`);
   revalidatePath(`/${locale}`);
-  // Event pages may show this article as a tag promo (ISR 300s).
-  revalidatePath("/[locale]/[slug]", "page");
+  if (options.eventPages) {
+    revalidatePath("/[locale]/[slug]", "page");
+  }
   for (const slug of new Set(slugs)) {
     revalidatePath(`/${locale}${ARTICLES_PATH}/${slug}`);
   }

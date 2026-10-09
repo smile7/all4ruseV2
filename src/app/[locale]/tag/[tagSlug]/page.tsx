@@ -14,7 +14,6 @@ import { Button } from "~/components/ui/button";
 import { DEFAULT_LOCALE, MIN_INDEXABLE_TAG_EVENTS } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { Link } from "~/i18n/navigation";
-import { routing } from "~/i18n/routing";
 import { eventsApi, tagsApi } from "~/lib/api";
 import { buildBreadcrumbJsonLd, serializeJsonLd } from "~/lib/article-jsonld";
 import { buildEventCollectionJsonLd } from "~/lib/event-jsonld";
@@ -24,7 +23,7 @@ import { formatEventTitle } from "~/lib/event-utils";
 import { buildAlternates, truncateForMeta } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
-export const revalidate = 300;
+export const revalidate = 43200;
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
@@ -48,11 +47,14 @@ type Props = {
 export async function generateStaticParams() {
   try {
     const tags = await getTagsCached();
-    return routing.locales.flatMap((locale) =>
-      tags
-        .map((tag) => ({ locale, tagSlug: eventTagSlug(tag.title) }))
-        .filter((entry) => entry.tagSlug !== ""),
-    );
+    // Bulgarian only — pre-rendering the tag vocabulary in all four locales
+    // quadrupled build time for pages the other locales barely get crawled on.
+    return tags
+      .map((tag) => ({
+        locale: DEFAULT_LOCALE,
+        tagSlug: eventTagSlug(tag.title),
+      }))
+      .filter((entry) => entry.tagSlug !== "");
   } catch {
     // A DB hiccup at build time must not fail the deploy; ISR fills these in.
     return [];

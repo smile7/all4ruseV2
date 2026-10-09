@@ -9,8 +9,6 @@ All4Ruse aggregates and publishes upcoming, live, and past public events in the 
 ## Key pages
 
 - Homepage (upcoming events): https://all4ruse.com/bg
-- Past events: https://all4ruse.com/bg/past
-- Current / live events: https://all4ruse.com/bg/current
 - More from Ruse (editorial city guides): https://all4ruse.com/bg/more-from-ruse
 - Why All4Ruse: https://all4ruse.com/bg/why-all4ruse
 - Advertise: https://all4ruse.com/bg/advertise

@@ -36,7 +36,9 @@ export async function POST(request: Request) {
       created_by: guard.user.id,
     });
 
-    revalidateArticle(article.locale, [article.slug]);
+    revalidateArticle(article.locale, [article.slug], {
+      eventPages: article.event_tag_id !== null,
+    });
     return NextResponse.json({ article }, { status: 201 });
   } catch (error) {
     console.error("[api/articles] create failed:", error);

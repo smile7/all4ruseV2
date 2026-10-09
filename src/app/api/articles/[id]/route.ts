@@ -57,9 +57,15 @@ export async function PATCH(request: Request, { params }: Params) {
       buildArticleRow(values, existing),
     );
 
-    revalidateArticle(article.locale, [article.slug, existing.slug]);
+    // Either side of the edit can have carried the event-tag promo.
+    const eventPages =
+      article.event_tag_id !== null || existing.event_tag_id !== null;
+
+    revalidateArticle(article.locale, [article.slug, existing.slug], {
+      eventPages,
+    });
     if (existing.locale !== article.locale) {
-      revalidateArticle(existing.locale, [existing.slug]);
+      revalidateArticle(existing.locale, [existing.slug], { eventPages });
     }
     return NextResponse.json({ article });
   } catch (error) {
@@ -94,7 +100,9 @@ export async function DELETE(_request: Request, { params }: Params) {
       }
     }
 
-    revalidateArticle(existing.locale, [existing.slug]);
+    revalidateArticle(existing.locale, [existing.slug], {
+      eventPages: existing.event_tag_id !== null,
+    });
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("[api/articles] delete failed:", error);

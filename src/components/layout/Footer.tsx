@@ -3,11 +3,11 @@
 import { useTranslations } from "next-intl";
 
 import {
-  CalendarClock,
+  // CalendarClock, — retired with /current
   CalendarDays,
   ChevronUp,
   Cookie,
-  History,
+  // History, — retired with /past
   Info,
   Megaphone,
   Newspaper,
@@ -121,6 +121,7 @@ export function Footer() {
                 {t("menuEvents")}
               </Link>
             </DropdownMenuItem>
+            {/* Retired with /current — restore together with src/app/[locale]/_current
             <DropdownMenuItem asChild>
               <Link
                 href="/current"
@@ -130,6 +131,7 @@ export function Footer() {
                 {t("menuCurrentEvents")}
               </Link>
             </DropdownMenuItem>
+            */}
             <DropdownMenuItem asChild>
               <Link
                 href="/free"
@@ -139,6 +141,7 @@ export function Footer() {
                 {t("menuFreeEvents")}
               </Link>
             </DropdownMenuItem>
+            {/* Retired with /past — restore together with src/app/[locale]/_past
             <DropdownMenuItem asChild>
               <Link
                 href="/past"
@@ -148,6 +151,7 @@ export function Footer() {
                 {t("menuPastEvents")}
               </Link>
             </DropdownMenuItem>
+            */}
             <DropdownMenuItem asChild>
               <Link
                 href="/more-from-ruse"

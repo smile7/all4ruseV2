@@ -8,11 +8,11 @@ import type { User } from "@supabase/supabase-js";
 import {
   Bookmark,
   Calendar,
-  CalendarClock,
+  // CalendarClock, — retired with /current
   CalendarDays,
   Cookie,
   ExternalLink,
-  History,
+  // History, — retired with /past
   Info,
   Loader2,
   LogOut,
@@ -362,6 +362,8 @@ export function MobileBottomNav() {
               <CalendarDays className="text-muted-foreground size-4 shrink-0" />
               <span>{t("menuEvents")}</span>
             </Link>
+            {/* Retired with /current and /past — restore together with
+                src/app/[locale]/_current and _past
             <Link
               href="/current"
               onClick={handleRouteStart("/current", {
@@ -384,6 +386,7 @@ export function MobileBottomNav() {
               <History className="text-muted-foreground size-4 shrink-0" />
               <span>{t("menuPastEvents")}</span>
             </Link>
+            */}
             <Link
               href="/more-from-ruse"
               onClick={handleRouteStart("/more-from-ruse", {

@@ -15,7 +15,9 @@ import { formatEventTitle } from "~/lib/event-utils";
 import { buildAlternates, truncateForMeta } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
-export const revalidate = 300;
+// Edits arrive instantly via /api/seo/notify; this only bounds how long a
+// finished event can linger after the Sofia date rolls over.
+export const revalidate = 43200;
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 

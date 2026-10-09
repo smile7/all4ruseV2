@@ -10,7 +10,8 @@ import { eventsApi } from "~/lib/api";
 import { buildAlternates } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
-export const revalidate = 300;
+// An archive — its contents only change as events roll past their end date.
+export const revalidate = 21600;
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -22,23 +23,24 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "CurrentEvents" });
+  const t = await getTranslations({ locale, namespace: "PastEvents" });
   return {
     title: t("pageTitle"),
     description: t("pageDescription"),
-    alternates: buildAlternates(locale, "/current"),
+    alternates: buildAlternates(locale, "/past"),
   };
 }
 
-export default async function CurrentEventsPage({ params }: Props) {
+export default async function PastEventsPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const t = await getTranslations({ locale, namespace: "CurrentEvents" });
+  const t = await getTranslations({ locale, namespace: "PastEvents" });
 
   // Public client, not the cookie-bound one: reading cookies here would opt the
-  // page out of static rendering, and nothing on it is user-specific.
-  const initialData = await eventsApi.getCurrentEvents(
+  // page out of static rendering, and nothing on it is user-specific. This page
+  // is also the crawl entry point for the event archive, so it must stay cheap.
+  const initialData = await eventsApi.getPastEvents(
     createSupabasePublicServerClient(),
     {},
   );
@@ -47,7 +49,7 @@ export default async function CurrentEventsPage({ params }: Props) {
     <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-2 px-4 py-8 text-center sm:px-6 lg:px-8">
       <Typography.H1 className="text-center">{t("pageTitle")}</Typography.H1>
       <Suspense fallback={<EventsGridSkeleton />}>
-        <EventsList initialData={initialData} variant="current" />
+        <EventsList initialData={initialData} variant="past" />
       </Suspense>
     </div>
   );

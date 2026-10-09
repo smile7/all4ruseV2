@@ -43,7 +43,8 @@ const accentNumber = "text-[#E05D39] dark:text-primary";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
-export const revalidate = 300;
+// Static marketing copy — changes only on deploy.
+export const revalidate = 86400;
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -168,7 +169,12 @@ function RubricExample({
           </span>
         </div>
         <div className="flex flex-col gap-3 p-4">
-          <p className={cn("text-lg leading-snug font-semibold text-pretty", navyText)}>
+          <p
+            className={cn(
+              "text-lg leading-snug font-semibold text-pretty",
+              navyText,
+            )}
+          >
             {title}
           </p>
           <div className="border-primary/30 bg-primary/5 flex items-start gap-3 rounded-lg border px-3 py-2.5">
