@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { z } from "zod";
 
-import { DEFAULT_LOCALE, LOCALES } from "~/constants";
+import { LOCALES } from "~/constants";
 import { eventIndexUrl, submitIndexNow } from "~/lib/indexnow";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
@@ -16,11 +16,23 @@ const bodySchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i),
 });
 
+/**
+ * Public surfaces now sit behind long ISR windows, so every surface an event
+ * can appear on has to be busted here rather than waiting for a timer.
+ */
 function revalidateEventSurfaces(slug: string) {
-  revalidatePath(`/${DEFAULT_LOCALE}/${slug}`);
   for (const locale of LOCALES) {
+    revalidatePath(`/${locale}/${slug}`);
     revalidatePath(`/${locale}`);
+    revalidatePath(`/${locale}/free`);
+    revalidatePath(`/${locale}/map`);
+    // Retired: revalidatePath(`/${locale}/current`) and `/past`.
   }
+  // Period and tag listings are a bounded set (a handful of periods, the tag
+  // vocabulary), so busting the whole route is cheaper than resolving which
+  // ones this event belongs to.
+  revalidatePath("/[locale]/events/[period]", "page");
+  revalidatePath("/[locale]/tag/[tagSlug]", "page");
   revalidatePath("/sitemap.xml");
   revalidatePath("/feed.xml");
   revalidatePath("/events.ics");

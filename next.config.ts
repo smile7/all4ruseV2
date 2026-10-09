@@ -48,7 +48,22 @@ const nextConfig: NextConfig = {
     ];
   },
   async redirects() {
-    return nextConfigArticleRedirects();
+    return [
+      ...nextConfigArticleRedirects(),
+      // `/current` and `/past` are retired (see src/app/[locale]/_current and
+      // _past). They were indexed, so send their traffic to the homepage
+      // instead of serving 404s. Delete this block to bring them back.
+      {
+        source: "/:locale(bg|en|ua|ro)/current",
+        destination: "/:locale",
+        permanent: true,
+      },
+      {
+        source: "/:locale(bg|en|ua|ro)/past",
+        destination: "/:locale",
+        permanent: true,
+      },
+    ];
   },
   experimental: {
     viewTransition: true,
@@ -58,6 +73,13 @@ const nextConfig: NextConfig = {
     // 75 is the Next default; 90 is used for the logo, where JPEG/WebP
     // artifacts around thin lettering are visible at small sizes.
     qualities: [75, 90],
+    // Each width here is a separately billed image transformation, and `sizes`
+    // with vw units emits the whole deviceSizes list as one srcSet. Trimmed to
+    // the widths this layout actually lands on — nothing renders wider than the
+    // 1280px hero, and no fixed slot is under 56px. A visitor between two steps
+    // just downloads the next size up.
+    deviceSizes: [640, 1080, 1440],
+    imageSizes: [64, 128, 256, 384],
     // Stored images never change in place (each upload gets a unique path), so
     // the optimizer can keep an optimized variant for a month instead of
     // re-fetching the original from Supabase Storage as its short

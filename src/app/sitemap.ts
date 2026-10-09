@@ -44,8 +44,10 @@ function addIsoDays(isoDate: string, days: number): string {
 // Dynamic listing pages: content changes daily so lastModified = now is accurate.
 const DYNAMIC_PATHS = [
   { path: "", priority: 1.0, changeFrequency: "daily" as const },
-  { path: "/current", priority: 0.85, changeFrequency: "daily" as const },
-  { path: "/past", priority: 0.85, changeFrequency: "daily" as const },
+  // Retired — /current and /past now 308 to the homepage. Restore together
+  // with src/app/[locale]/_current and _past.
+  // { path: "/current", priority: 0.85, changeFrequency: "daily" as const },
+  // { path: "/past", priority: 0.85, changeFrequency: "daily" as const },
   { path: "/free", priority: 0.9, changeFrequency: "daily" as const },
 ];
 
@@ -189,8 +191,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       if (!period) return [];
 
       const count = upcomingEvents.filter(
-        (event) =>
-          event.endDate >= period.from && event.startDate <= period.to,
+        (event) => event.endDate >= period.from && event.startDate <= period.to,
       ).length;
       if (count < MIN_INDEXABLE_PERIOD_EVENTS) return [];
 

@@ -15,7 +15,8 @@ import {
 } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
-export const revalidate = 300;
+// Saving an article revalidates this path on demand.
+export const revalidate = 86400;
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 

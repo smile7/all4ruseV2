@@ -38,9 +38,10 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-// The header campaign button is rendered here and must drop off after its
-// Sofia end date without a new deploy. Matches the ISR window of public pages.
-export const revalidate = 300;
+// No `revalidate` here on purpose: a layout value becomes the floor for every
+// page beneath it, so a short window would force all of them to regenerate at
+// that rate. The header campaign button handles its own expiry client-side and
+// content edits arrive through revalidateTag.
 
 export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;

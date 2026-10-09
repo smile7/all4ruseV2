@@ -13,7 +13,7 @@ import { DEFAULT_LOCALE, type Locale, LOCALES } from "~/constants";
 import { eventsApi } from "~/lib/api";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
-export const revalidate = 300;
+export const revalidate = 43200;
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 

@@ -1,5 +1,8 @@
 import { isEventTagPromoLive } from "~/lib/api/articles";
-import { getFeaturedHeaderPromo } from "~/lib/articles/featured-header-promo";
+import {
+  type FeaturedHeaderPromo,
+  getFeaturedHeaderPromo,
+} from "~/lib/articles/featured-header-promo";
 import { todayInSofia } from "~/lib/event-utils";
 
 import { HeaderAuthButton } from "./HeaderAuthButton";
@@ -12,7 +15,7 @@ import { MobileCreateEventButton } from "./MobileCreateEventButton";
 import { ThemeToggle } from "./ThemeToggle";
 
 export async function Header() {
-  const showFeaturedLink = await isFeaturedHeaderLinkVisible();
+  const featuredPromo = await liveFeaturedHeaderPromo();
 
   return (
     <header className="border-border/60 bg-secondary/85 sticky top-0 z-50 w-full backdrop-blur-md">
@@ -34,7 +37,12 @@ export async function Header() {
         </div>
 
         {/* Row 2: full-width link to the featured article */}
-        {showFeaturedLink ? <HeaderMoreFromRuseLink variant="mobile" /> : null}
+        {featuredPromo ? (
+          <HeaderMoreFromRuseLink
+            variant="mobile"
+            expiresOn={featuredPromo.event_tag_expires_on}
+          />
+        ) : null}
       </div>
 
       {/* ── Desktop (md+) — 3-column grid: left | center | right ──────── */}
@@ -46,7 +54,11 @@ export async function Header() {
 
         {/* Center — featured article, exactly centered */}
         <div className="flex items-center justify-center">
-          {showFeaturedLink ? <HeaderMoreFromRuseLink /> : null}
+          {featuredPromo ? (
+            <HeaderMoreFromRuseLink
+              expiresOn={featuredPromo.event_tag_expires_on}
+            />
+          ) : null}
         </div>
 
         {/* Right — controls */}
@@ -61,14 +73,18 @@ export async function Header() {
   );
 }
 
-/** Hidden when the featured article is unpublished, paused, or past its last day. */
-async function isFeaturedHeaderLinkVisible(): Promise<boolean> {
+/**
+ * Null when the featured article is unpublished, paused, or past its last day.
+ * The expiry is re-checked in the browser so a long-lived cached page still
+ * drops the button on the right Sofia day.
+ */
+async function liveFeaturedHeaderPromo(): Promise<FeaturedHeaderPromo | null> {
   try {
     const promo = await getFeaturedHeaderPromo();
-    if (!promo) return false;
-    return isEventTagPromoLive(promo, todayInSofia());
+    if (!promo) return null;
+    return isEventTagPromoLive(promo, todayInSofia()) ? promo : null;
   } catch (error) {
     console.error("Failed to load featured header article", error);
-    return false;
+    return null;
   }
 }

@@ -33,38 +33,41 @@ We add dependencies only when there is a clear need. Nothing is pre-installed "j
 
 All pages live inside the `[locale]` segment so next-intl routing works out of the box, except locale-free routes such as `/auth/callback` and `/embed/events`. Visiting `all4ruse.com` redirects to `all4ruse.com/bg/` (Bulgarian default). The user can switch language from the header.
 
-| URL                                      | Page                           | Notes                                             |
-| ---------------------------------------- | ------------------------------ | ------------------------------------------------- |
-| `/[locale]`                              | Upcoming events                | Home page — grid / calendar / map tabs            |
-| `/[locale]/current`                      | Current events                 | Events happening right now                        |
-| `/[locale]/past`                         | Past events                    | Archive                                           |
-| `/[locale]/[slug]`                       | Event detail                   | SSR                                               |
-| `/[locale]/more-from-ruse`               | „Още от Русе" index            | ISR (300 s); `noindex` while a locale is empty    |
-| `/[locale]/more-from-ruse/[articleSlug]` | Article detail                 | ISR (300 s); 404 when untranslated in this locale |
-| `/[locale]/advertise`                    | Advertising & partnerships     | SSR; public contact form at `#contact`            |
-| `/[locale]/create-article`               | Create / edit article          | Admin only — `notFound()` for everyone else       |
-| `/[locale]/why-all4ruse`                 | Why All4Ruse                   | Static content page                               |
-| `/[locale]/legal/cookies`                | Cookies policy                 | Static                                            |
-| `/[locale]/legal/gdpr`                   | GDPR                           | Static                                            |
-| `/[locale]/legal/privacy`                | Privacy policy                 | Static                                            |
-| `/[locale]/auth/login`                   | Login                          |                                                   |
-| `/[locale]/auth/signup`                  | Sign up                        |                                                   |
-| `/[locale]/auth/signup-success`          | Sign up success                |                                                   |
-| `/[locale]/auth/forgot-password`         | Forgot password                |                                                   |
-| `/[locale]/auth/update-password`         | Update password                | Requires session                                  |
-| `/[locale]/create-event`                 | Create event                   | Requires auth                                     |
-| `/[locale]/profile`                      | Profile                        | Requires auth                                     |
-| `/[locale]/my-events`                    | My events                      | Requires auth                                     |
-| `/[locale]/admin`                        | Admin dashboard                | Admin role only                                   |
-| `/[locale]/admin/events`                 | Admin event list               | Admin role only                                   |
-| `/[locale]/admin/events/new`             | Create event (admin)           | Admin role only                                   |
-| `/[locale]/admin/events/[id]`            | Edit event                     | Admin role only                                   |
-| `/[locale]/admin/tags`                   | Manage tags                    | Admin role only                                   |
-| `/[locale]/map`                          | Playgrounds & fitness map (V2) | Public read; admin-only add/edit/delete           |
-| `/auth/callback`                         | OAuth callback                 | Outside `[locale]` — Supabase redirects here      |
+| URL                                      | Page                           | Notes                                               |
+| ---------------------------------------- | ------------------------------ | --------------------------------------------------- |
+| `/[locale]`                              | Upcoming events                | Home page — grid / calendar / map tabs              |
+| `/[locale]/free`                         | Free events                    | Upcoming events with no ticket price                |
+| `/[locale]/[slug]`                       | Event detail                   | SSR                                                 |
+| `/[locale]/more-from-ruse`               | „Още от Русе" index            | ISR (1 d); `noindex` while a locale is empty        |
+| `/[locale]/more-from-ruse/[articleSlug]` | Article detail                 | ISR (1 d); 404 when untranslated in this locale     |
+| `/[locale]/advertise`                    | Advertising & partnerships     | SSR; public contact form at `#contact`              |
+| `/[locale]/create-article`               | Create / edit article          | Admin only — `notFound()` for everyone else         |
+| `/[locale]/why-all4ruse`                 | Why All4Ruse                   | Static content page                                 |
+| `/[locale]/legal/cookies`                | Cookies policy                 | Static                                              |
+| `/[locale]/legal/gdpr`                   | GDPR                           | Static                                              |
+| `/[locale]/legal/privacy`                | Privacy policy                 | Static                                              |
+| `/[locale]/auth/login`                   | Login                          |                                                     |
+| `/[locale]/auth/signup`                  | Sign up                        |                                                     |
+| `/[locale]/auth/signup-success`          | Sign up success                |                                                     |
+| `/[locale]/auth/forgot-password`         | Forgot password                |                                                     |
+| `/[locale]/auth/update-password`         | Update password                | Requires session                                    |
+| `/[locale]/create-event`                 | Create event                   | Requires auth                                       |
+| `/[locale]/profile`                      | Profile                        | Requires auth                                       |
+| `/[locale]/my-events`                    | My events                      | Requires auth                                       |
+| `/[locale]/admin`                        | Admin dashboard                | Admin role only                                     |
+| `/[locale]/admin/events`                 | Admin event list               | Admin role only                                     |
+| `/[locale]/admin/events/new`             | Create event (admin)           | Admin role only                                     |
+| `/[locale]/admin/events/[id]`            | Edit event                     | Admin role only                                     |
+| `/[locale]/admin/tags`                   | Manage tags                    | Admin role only                                     |
+| `/[locale]/map`                          | Playgrounds & fitness map (V2) | Public read; admin-only add/edit/delete             |
+| `/auth/callback`                         | OAuth callback                 | Outside `[locale]` — Supabase redirects here        |
 | `/embed/events`                          | Partner events iframe          | Locale-free; next 3 Sofia days; `noindex`; framable |
 
 Events are grouped and filtered by **tags** (a separate `tags` table joined via `event_tags`).
+
+### Retired routes
+
+`/[locale]/current` and `/[locale]/past` are **switched off**. Their folders are prefixed with `_` (`src/app/[locale]/_current`, `_past`), which opts them out of routing while keeping the code intact, and `next.config.ts` 308s both to the locale homepage so the indexed URLs do not turn into 404s. To bring either back: rename the folder, drop the redirect, and restore the commented links in `Footer.tsx` / `MobileBottomNav.tsx`, the `DYNAMIC_PATHS` entry in `sitemap.ts`, and the `revalidatePath` call in `/api/seo/notify`.
 
 ### Partner embed
 
@@ -80,9 +83,9 @@ src/
 │   ├── [locale]/                    # All user-facing pages live here
 │   │   ├── layout.tsx               # Root layout for locale: Header, Footer, providers
 │   │   ├── page.tsx                 # Home — upcoming events
-│   │   ├── current/
+│   │   ├── _current/                # RETIRED — `_` keeps it out of routing
 │   │   │   └── page.tsx             # Current events
-│   │   ├── past/
+│   │   ├── _past/                   # RETIRED — `_` keeps it out of routing
 │   │   │   └── page.tsx             # Past events
 │   │   ├── [slug]/
 │   │   │   └── page.tsx             # Event detail
@@ -184,18 +187,39 @@ src/
 
 **Server Components are the default.** Data fetching happens on the server unless there is a concrete reason to move it to the client. This gives us SEO, fast first paint, and zero client-side loading spinners for content the user is just reading.
 
-| Page                             | Default Strategy          | Primary Data fetching                                           |
-| -------------------------------- | ------------------------- | --------------------------------------------------------------- |
-| Upcoming / current / past events | SSR                       | Server Component → Supabase server client                       |
-| Event detail `[slug]`            | SSR                       | Server Component → Supabase public server client                |
-| Why All4Ruse, legal pages        | Static                    | No data fetching                                                |
+| Page                             | Default Strategy          | Primary Data fetching                                                  |
+| -------------------------------- | ------------------------- | ---------------------------------------------------------------------- |
+| Upcoming / free events           | SSR                       | Server Component → Supabase server client                              |
+| Event detail `[slug]`            | SSR                       | Server Component → Supabase public server client                       |
+| Why All4Ruse, legal pages        | Static                    | No data fetching                                                       |
 | Advertise                        | SSR                       | Upcoming event count; contact form posts to `/api/advertise/inquiries` |
-| Partner embed `/embed/events`    | ISR (300 s)               | Server Component → `eventsApi.getEmbedUpcomingEvents` (public client) |
-| Profile, my events, create event | SSR                       | Server Component reads session + data                           |
-| Admin pages                      | SSR + client interactions | Server Component for initial load; TanStack Query for mutations |
-| Auth pages                       | Client-only               | Supabase browser client directly                                |
+| Partner embed `/embed/events`    | ISR (12 h)                | Server Component → `eventsApi.getEmbedUpcomingEvents` (public client)  |
+| Profile, my events, create event | SSR                       | Server Component reads session + data                                  |
+| Admin pages                      | SSR + client interactions | Server Component for initial load; TanStack Query for mutations        |
+| Auth pages                       | Client-only               | Supabase browser client directly                                       |
 
 These are default route-level strategies. Individual client components or dynamic imports may still be used inside a route when interactivity or browser-only behavior is needed.
+
+### Cache windows and on-demand revalidation
+
+ISR regeneration is billed per write on Vercel, and a short window multiplied by four locales and every event URL is the single largest cost driver the project has had. So **freshness comes from on-demand revalidation, not from short timers**. `revalidate` is a plain expiry timer — it never reacts to an edit; it only bounds how stale a page can get from changes the app does not know about (an admin flipping `isEventActive` in Supabase, or the Sofia date rolling over).
+
+| Surface                                                           | `revalidate` |
+| ----------------------------------------------------------------- | ------------ |
+| Event detail `[slug]`, articles, `/advertise`, `/user/[username]` | 1 d          |
+| `/free`, `/tag/[tagSlug]`, `/map`, `/embed/events`                | 12 h         |
+| Home, `/events/[period]`                                          | 3 h          |
+| `feed.xml`, `events.ics`                                          | 1 h          |
+
+The date-sensitive listings cannot go to a full day: `/events/today` generated at 14:00 would still be serving yesterday's list at 09:00 the next morning. They are also only a few dozen paths, so the write cost is negligible — the thousands-of-paths routes are the ones at 1 d.
+
+Rules that keep this safe:
+
+- `[locale]/layout.tsx` must **not** export `revalidate`. A layout value is the floor for every page beneath it, so it silently overrides all of the above.
+- Every event create / edit / delete pings `POST /api/seo/notify`, which `revalidatePath`s the event in all four locales plus every listing it can appear on. Any new event-listing surface has to be added there.
+- Article writes call `revalidateArticle`; it only purges the whole `/[locale]/[slug]` route when the article carries an `event_tag_id` and can therefore appear as a promo on event pages.
+- The header campaign button checks its own expiry date in the browser, so the locale layout does not need an ISR timer to drop it on the right Sofia day.
+- `generateStaticParams` is a build-CPU cost: event detail pre-renders at most 400 upcoming BG slugs, tag pages only BG. Everything else fills in through ISR on first request.
 
 ### When TanStack Query is used
 
@@ -211,7 +235,7 @@ Everywhere else — Server Components fetch directly and render. No hook, no cac
 
 ### The initialData bridge (event listing pages)
 
-The upcoming / current / past events pages are SSR but filters (tag, date range, search) are interactive. The pattern is:
+The upcoming / free events pages are SSR but filters (tag, date range, search) are interactive. The pattern is:
 
 ```
 page.tsx (Server Component)
@@ -1346,7 +1370,7 @@ Unique on `(locale, slug)` and `(group_id, locale)`. `updated_at` is maintained 
 
 ### Admin write path
 
-Same single-admin pattern as the map (`ADMIN_USER_ID` + service-role client), via `requireArticleAdmin` in `src/lib/articles/admin-guard.ts`: `POST /api/articles`, `PATCH|DELETE /api/articles/[id]`, `POST /api/articles/image`, `GET /api/articles/slug-available`. `PATCH` **rejects a slug change on a published row** — the site has no redirect table, so renaming a live URL would silently discard its ranking. Every mutation calls `revalidatePath` for the article, the locale index, and the homepage, since all three are ISR with a 300 s window.
+Same single-admin pattern as the map (`ADMIN_USER_ID` + service-role client), via `requireArticleAdmin` in `src/lib/articles/admin-guard.ts`: `POST /api/articles`, `PATCH|DELETE /api/articles/[id]`, `POST /api/articles/image`, `GET /api/articles/slug-available`. `PATCH` **rejects a slug change on a published row** — the site has no redirect table, so renaming a live URL would silently discard its ranking. Every mutation calls `revalidateArticle`, which busts the article, the locale index, and the homepage; it additionally purges every event detail page only when the article is wired to an `event_tag_id`, since those pages are cached for a day.
 
 ### Storage
 

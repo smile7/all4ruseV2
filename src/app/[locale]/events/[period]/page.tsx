@@ -28,7 +28,9 @@ import {
 import { buildAlternates, truncateForMeta } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
-export const revalidate = 300;
+// "today" and "weekend" shift with the Sofia calendar day, so this one cannot
+// go to a full day. Event edits arrive instantly via /api/seo/notify.
+export const revalidate = 10800;
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
