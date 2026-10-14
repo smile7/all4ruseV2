@@ -600,17 +600,21 @@ export function getEventImageUrl(image: string | null): string {
 
 // ─── Price helpers ────────────────────────────────────────────────────────────
 
+const FREE_PRICE_WORDS = ["безплатно", "вход свободен"] as const;
+
 /**
- * The single definition of "free" across the app. An empty `price` means free,
- * not unknown: the event form writes `null` when the organiser ticks the free
- * checkbox, and the `isFree` filter selects on `price.is.null` for the same
- * reason. The detail page and the Event JSON-LD must agree with that, otherwise
- * the markup claims a price the visible page never shows.
+ * Explicitly free admission. A blank price is unknown: the organiser did not
+ * say whether entry costs anything, so it must not be advertised as free.
+ * The event form stores `"0"` when the free switch is on. Legacy rows may
+ * also say "безплатно" or "вход свободен".
  */
 export function isFreeEventPrice(price: string | null | undefined): boolean {
-  const trimmed = price?.trim();
-  if (!trimmed) return true;
-  return Number(trimmed.replace(",", ".")) === 0;
+  const trimmed = price?.trim().toLowerCase().replace(/\s+/g, " ");
+  if (!trimmed) return false;
+  if (FREE_PRICE_WORDS.some((word) => trimmed === word)) return true;
+  const normalized = trimmed.replace(",", ".");
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return false;
+  return Number(normalized) === 0;
 }
 
 // ─── Host helpers ─────────────────────────────────────────────────────────────

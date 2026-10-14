@@ -432,7 +432,9 @@ function buildDefaultValues(
       address: initialData.address ?? "",
       town: initialData.town ?? "",
       place: initialData.place ?? "",
-      price: initialData.price ?? "",
+      price: isFreeEventPrice(initialData.price)
+        ? ""
+        : (initialData.price ?? ""),
       ticketsLink: initialData.ticketsLink ?? "",
       fbLink: initialData.fbLink ?? "",
       youtubeUrl: initialData.youtubeUrl ?? "",
@@ -790,7 +792,7 @@ export function EventForm({
         address: locationFields.address,
         town: locationFields.town,
         place: locationFields.place,
-        price: isFree ? null : values.price || null,
+        price: isFree ? "0" : values.price?.trim() || null,
         ticketsLink: normalizeWebUrl(values.ticketsLink),
         fbLink: normalizeWebUrl(values.fbLink),
         youtubeUrl: values.youtubeUrl || null,
@@ -947,6 +949,12 @@ export function EventForm({
       if (value !== undefined && value !== "") {
         form.setValue(field as keyof FormValues, value, { shouldDirty: true });
       }
+    }
+
+    if (draft.price?.trim()) {
+      const free = isFreeEventPrice(draft.price);
+      setIsFree(free);
+      if (free) form.setValue("price", "", { shouldDirty: true });
     }
 
     // Organizers — replace the full list when multiple hosts are scraped

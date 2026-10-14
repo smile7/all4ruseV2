@@ -204,8 +204,18 @@ async function applyFilters(
     query = query.lte("startDate", to);
   }
 
+  // Blank price is unknown, not free. Match the same explicit values as
+  // `isFreeEventPrice`: numeric zero, and the legacy free-entry phrases.
   if (isFree) {
-    query = query.or("price.is.null,price.eq.0,price.eq.0.00");
+    query = query.or(
+      [
+        "price.eq.0",
+        "price.eq.0.0",
+        "price.eq.0.00",
+        "price.ilike.*безплатно*",
+        "price.ilike.*вход*свободен*",
+      ].join(","),
+    );
   }
 
   // host is filtered in JS post-fetch (see filterByHost below).

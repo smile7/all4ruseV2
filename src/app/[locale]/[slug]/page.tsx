@@ -235,6 +235,12 @@ export default async function EventDetailPage({ params }: Props) {
   const formattedTitle = formatEventTitle(event.title);
   const imageUrl = getEventImageUrl(event.image);
   const isFree = isFreeEventPrice(event.price);
+  const knownPrice = event.price?.trim() ?? "";
+  const priceLabel = isFree
+    ? t("free")
+    : knownPrice
+      ? `${knownPrice} ${t("euros")}`
+      : null;
   const live = isLiveNow(event);
   const startTime = formatTime(event.startTime);
   const endTime = formatTime(event.endTime);
@@ -437,17 +443,16 @@ export default async function EventDetailPage({ params }: Props) {
                       </EventDetailRow>
                     )}
 
-                    {/* Price — always shown. An empty price means free (see
-                        isFreeEventPrice), and the Event JSON-LD states that as a
-                        €0 offer, so the page has to say it too. */}
-                    <EventDetailRow
-                      icon={<Ticket className="size-4" />}
-                      label={t("price")}
-                    >
-                      <p className="text-sm font-semibold">
-                        {isFree ? t("free") : `${event.price} ${t("euros")}`}
-                      </p>
-                    </EventDetailRow>
+                    {/* Price is shown only when we know it. A blank price is
+                        unknown, not free — the JSON-LD omits the offer too. */}
+                    {priceLabel && (
+                      <EventDetailRow
+                        icon={<Ticket className="size-4" />}
+                        label={t("price")}
+                      >
+                        <p className="text-sm font-semibold">{priceLabel}</p>
+                      </EventDetailRow>
+                    )}
 
                     {/* Hosts */}
                     {hosts.length > 0 && (

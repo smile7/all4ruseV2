@@ -70,8 +70,8 @@ export type EventJsonLdInput = {
  * Google Event `Offer.price` must be a number. Imported Grabо prices like
  * `"8–15"` fail Rich Results and can disqualify the whole Event markup.
  *
- * Handles real price strings only. Use `resolveEventOfferPrice` for the app's
- * "empty means free" rule.
+ * Handles real price strings only. A blank price is unknown and is not an
+ * offer; `resolveEventOfferPrice` turns only an explicit free price into €0.
  */
 export function parseEventOfferPrice(
   price: string | null | undefined,
@@ -104,9 +104,9 @@ export function parseEventOfferPrice(
 const FREE_PRICE: ParsedEventPrice = { kind: "free", low: 0, high: 0 };
 
 /**
- * Most listings carry no price because the organiser marked the event free, and
- * an Event with no `offers` loses the price line Google shows in the event card.
- * Mirrors what the detail page renders for the same event.
+ * Unknown price (null or blank) is omitted. Only an explicit free price becomes
+ * a €0 offer, matching the detail page. Advertising a missing price as free
+ * tells Google — and visitors — something the organiser never confirmed.
  */
 function resolveEventOfferPrice(
   price: string | null | undefined,
