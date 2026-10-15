@@ -4,6 +4,7 @@ import { ArticleEditButton } from "~/components/ArticleDetail/ArticleEditButton"
 import { ArticleHeroGallery } from "~/components/ArticleDetail/ArticleHeroGallery";
 import { ArticleImageLightbox } from "~/components/ArticleDetail/ArticleImageLightbox";
 import { ArticleSiteLinks } from "~/components/ArticleDetail/ArticleSiteLinks";
+import { ArticleStayTracker } from "~/components/ArticleDetail/ArticleStayTracker";
 import { ArticleTableOfContents } from "~/components/ArticleDetail/ArticleTableOfContents";
 import { Typography } from "~/components/layout";
 import { Badge } from "~/components/ui/badge";
@@ -19,6 +20,7 @@ import {
   sanitizeArticleHtml,
 } from "~/lib/article-html";
 import { articleDisplayDate } from "~/lib/articles/display-date";
+import { FEATURED_HEADER_ARTICLE_SLUG } from "~/lib/articles/featured-header";
 import { getIntlLocale } from "~/lib/event-utils";
 import { ARTICLES_PATH } from "~/lib/seo";
 import type { Article, ArticleCategory } from "~/types";
@@ -56,6 +58,9 @@ export async function ArticleView({ article, locale, linkedEvents }: Props) {
 
   return (
     <article className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+      {article.slug === FEATURED_HEADER_ARTICLE_SLUG ? (
+        <ArticleStayTracker />
+      ) : null}
       <nav aria-label="Breadcrumb" className="mb-6">
         <ol className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-xs">
           <li>

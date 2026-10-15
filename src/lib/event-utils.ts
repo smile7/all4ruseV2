@@ -99,6 +99,9 @@ export function getIntlLocale(locale: string): string {
   return localeMap[locale] ?? "bg-BG";
 }
 
+/** Europe/Sofia — event dates and times are Bulgarian wall-clock values. */
+const APP_TIMEZONE = "Europe/Sofia";
+
 /** Bulgarian detail-page dates: lowercase labels and "2026г." without a space. */
 function normalizeFullDateDisplay(formatted: string, locale: string): string {
   if (locale !== "bg") return formatted;
@@ -106,16 +109,19 @@ function normalizeFullDateDisplay(formatted: string, locale: string): string {
   return formatted.replace(/(\d+)\s+г\./g, "$1г.").toLocaleLowerCase("bg-BG");
 }
 
-function startOfLocalDay(date: Date): Date {
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
-  return start;
-}
-
-function getCalendarDayDiff(date: Date, now: Date): number {
+/**
+ * Whole calendar days from today in Europe/Sofia to `dateStr` (YYYY-MM-DD).
+ * Event dates are Sofia wall-clock dates. Local midnights are wrong on Vercel
+ * (UTC) and for visitors outside Bulgaria: after midnight in Sofia the server
+ * can still be on the previous UTC day, so an event today renders as tomorrow.
+ */
+function getCalendarDayDiff(dateStr: string, now: Date): number {
+  const todayYmd = new Intl.DateTimeFormat("en-CA", {
+    timeZone: APP_TIMEZONE,
+  }).format(now);
   const msPerDay = 24 * 60 * 60 * 1000;
   return Math.round(
-    (startOfLocalDay(date).getTime() - startOfLocalDay(now).getTime()) /
+    (parseLocalDate(dateStr).getTime() - parseLocalDate(todayYmd).getTime()) /
       msPerDay,
   );
 }
@@ -129,7 +135,7 @@ function formatRelativeDateLabel(
   if (!labels) return null;
 
   const date = parseLocalDate(dateStr);
-  const dayDiff = getCalendarDayDiff(date, now);
+  const dayDiff = getCalendarDayDiff(dateStr, now);
 
   if (dayDiff === 0) return labels.today;
   if (dayDiff === 1) return labels.tomorrow;
@@ -160,7 +166,7 @@ export function formatDateBadge(
 
   // Today / tomorrow: single uppercase label, no weekday line
   if (labels) {
-    const dayDiff = getCalendarDayDiff(date, new Date());
+    const dayDiff = getCalendarDayDiff(dateStr, new Date());
     if (dayDiff === 0)
       return {
         primary: labels.today.toLocaleUpperCase(intlLocale),
@@ -211,7 +217,7 @@ export function formatFullDate(
     return normalizeFullDateDisplay(fullDate, locale);
   }
 
-  const dayDiff = getCalendarDayDiff(date, new Date());
+  const dayDiff = getCalendarDayDiff(dateStr, new Date());
   if (dayDiff === 0 || dayDiff === 1) {
     const dateOnly = new Intl.DateTimeFormat(intlLocale, {
       day: "numeric",
@@ -292,13 +298,6 @@ export function formatEventTitle(title: string): string {
     );
 }
 
-/**
- * The timezone all events are anchored to — Bulgaria year-round.
- * Using Intl instead of setHours() makes the comparison timezone-agnostic:
- * Vercel servers run in UTC, but event times are entered as Sofia wall-clock times.
- */
-const APP_TIMEZONE = "Europe/Sofia";
-
 /** Today's date as YYYY-MM-DD in Europe/Sofia (Vercel runs in UTC). */
 export function todayInSofia(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: APP_TIMEZONE }).format(
@@ -306,6 +305,10 @@ export function todayInSofia(): string {
   );
 }
 
+/**
+ * Using Intl instead of setHours() makes the comparison timezone-agnostic:
+ * Vercel servers run in UTC, but event times are entered as Sofia wall-clock times.
+ */
 function parseClockOnLocalDate(dateStr: string, timeStr: string): Date {
   // Strip timezone offset returned by Supabase timetz columns (e.g. "13:00:00+00" → "13:00:00")
   const clean = timeStr.replace(/[+-]\d{2}(:\d{2})?$/, "");

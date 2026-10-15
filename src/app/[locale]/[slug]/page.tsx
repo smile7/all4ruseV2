@@ -21,6 +21,7 @@ import { EventArticlePromo } from "~/components/EventArticlePromo";
 import { EventTag } from "~/components/EventTag";
 import {
   EventActionButtons,
+  EventDetailDate,
   EventDetailRow,
   EventHeroGallery,
   EventImagesGallery,
@@ -74,8 +75,10 @@ const getEventBySlugCached = cache((slug: string) =>
 
 // Statically rendered + revalidated. Nothing on this page may read cookies:
 // the signed-in-only actions are gated client-side in ~/components/EventUserActions.
-// A day is safe because every create/edit/delete pings /api/seo/notify, which
-// revalidates this path immediately.
+// A day is safe for event content because every create/edit/delete pings
+// /api/seo/notify, which revalidates this path immediately. "Today" / "tomorrow"
+// still change at midnight with no edit, so EventDetailDate applies them in
+// the browser against the Sofia calendar day.
 export const revalidate = 86400;
 
 export async function generateStaticParams() {
@@ -248,15 +251,7 @@ export default async function EventDetailPage({ params }: Props) {
     today: tHome("today"),
     tomorrow: tHome("tomorrow"),
   };
-  const fullDate = formatFullDate(
-    event.startDate,
-    safeLocale,
-    relativeDateLabels,
-  );
   const isMultiDay = event.startDate !== event.endDate;
-  const fullEndDate = isMultiDay
-    ? formatFullDate(event.endDate, safeLocale, relativeDateLabels)
-    : null;
 
   const hosts = (
     Array.isArray(event.organizers) ? event.organizers : []
@@ -392,19 +387,24 @@ export default async function EventDetailPage({ params }: Props) {
                       icon={<Calendar className="size-4" />}
                       label={t("date")}
                     >
-                      <time
-                        dateTime={event.startDate}
+                      <EventDetailDate
+                        dateStr={event.startDate}
+                        locale={safeLocale}
+                        calendarDate={formatFullDate(event.startDate, safeLocale)}
+                        today={relativeDateLabels.today}
+                        tomorrow={relativeDateLabels.tomorrow}
                         className="text-sm font-semibold"
-                      >
-                        {fullDate}
-                      </time>
-                      {fullEndDate && (
-                        <time
-                          dateTime={event.endDate}
+                      />
+                      {isMultiDay && (
+                        <EventDetailDate
+                          dateStr={event.endDate}
+                          locale={safeLocale}
+                          calendarDate={formatFullDate(event.endDate, safeLocale)}
+                          today={relativeDateLabels.today}
+                          tomorrow={relativeDateLabels.tomorrow}
                           className="text-muted-foreground text-sm"
-                        >
-                          → {fullEndDate}
-                        </time>
+                          prefix="→ "
+                        />
                       )}
                     </EventDetailRow>
 
