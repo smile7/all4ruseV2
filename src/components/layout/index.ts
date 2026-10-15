@@ -4,6 +4,7 @@ export * from "./DatePopover";
 export * from "./DatePopoverRange";
 export * from "./DrawerDialog";
 export * from "./EventActionButtons";
+export * from "./EventDetailDate";
 export * from "./EventDetailRow";
 export * from "./EventHeroGallery";
 export * from "./EventImagesGallery";

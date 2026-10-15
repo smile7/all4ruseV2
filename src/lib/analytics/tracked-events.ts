@@ -35,6 +35,8 @@ export const TRACKED_EVENT_KEYS = [
   "home.create_event",
   "header.create_event",
   "header.featured_article",
+  // Family-weekend article: a click that opens another page on this site.
+  "article.family_weekend.stayed",
   "auth.signup.from_save",
   "auth.login.from_save",
   "reminders.enable",
