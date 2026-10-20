@@ -67,6 +67,8 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     viewTransition: true,
+    // A single prerender 502 used to abort the whole build on the first try.
+    staticGenerationRetryCount: 3,
   },
   serverExternalPackages: ["sanitize-html"],
   images: {

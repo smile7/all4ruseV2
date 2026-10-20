@@ -360,22 +360,53 @@ async function getPastEvents(
   return filterByHost(ended, params.host);
 }
 
+function isTransientGatewayError(error: {
+  code?: string;
+  message?: string;
+}): boolean {
+  if (error.code === "PGRST116") return false;
+  return /502|503|504|bad gateway|service unavailable|gateway time-?out/i.test(
+    error.message ?? "",
+  );
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+// Cloudflare sometimes answers a single event read with a 502 while the rest
+// of the build is fine. Retry that blip here so one page does not fail the
+// deploy. A missing row (PGRST116) is not retried.
 async function getEventBySlug(
   client: Client,
   slug: string,
 ): Promise<Event | null> {
-  const { data, error } = await client
-    .from("events")
-    .select("*, event_tags(tags(id, title))")
-    .eq("slug", slug)
-    .eq("isEventActive", true)
-    .single();
+  const maxAttempts = 3;
 
-  if (error) {
-    if (error.code === "PGRST116") return null; // No rows found
-    throw error;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const { data, error } = await client
+      .from("events")
+      .select("*, event_tags(tags(id, title))")
+      .eq("slug", slug)
+      .eq("isEventActive", true)
+      .single();
+
+    if (!error) return data ? mapEvent(data) : null;
+    if (error.code === "PGRST116") return null;
+
+    const canRetry =
+      isTransientGatewayError(error) && attempt < maxAttempts - 1;
+    if (!canRetry) throw error;
+
+    console.error(
+      `[getEventBySlug] gateway error for ${slug}, retrying (${attempt + 1}/${maxAttempts})`,
+    );
+    await wait(400 * (attempt + 1));
   }
-  return data ? mapEvent(data) : null;
+
+  return null;
 }
 
 async function getRelatedEvents(
