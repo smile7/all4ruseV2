@@ -3,6 +3,8 @@
 import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 
+import { Download } from "lucide-react";
+
 import { Button } from "~/components/ui/button";
 import { detectStandaloneApp } from "~/lib/analytics/track-pwa";
 
@@ -117,11 +119,11 @@ export function PwaInstallOffer({ children }: PwaInstallOfferProps) {
         {showButton && (
           <Button
             type="button"
-            variant="outline"
             aria-expanded={promptEvent ? undefined : hintOpen}
-            className="shrink-0 px-2.5 whitespace-nowrap"
+            className="shrink-0 px-2 whitespace-nowrap"
             onClick={() => void install()}
           >
+            <Download aria-hidden />
             {t("install")}
           </Button>
         )}
