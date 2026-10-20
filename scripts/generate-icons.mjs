@@ -21,11 +21,6 @@ const FAVICON_SRC = path.join(
   assets,
   "favicon-67426ee6-f6c2-44dc-9c39-202a1f375013.png",
 );
-const OG_SRC = path.join(
-  assets,
-  "og-home-5de6962c-2554-41ce-be3d-e00fdb02430b.png",
-);
-
 /** Creates a square PNG: logo fitted inside (size - 2*padding) on a white background */
 async function makeSquareIcon(srcPath, size, paddingRatio = 0.12) {
   const padding = Math.round(size * paddingRatio);
@@ -97,12 +92,8 @@ async function run() {
     await makeSquareIcon(WORDMARK_SRC, 512)
   ).toFile(path.join(publicDir, "android-chrome-512x512.png"));
 
-  // --- OG image ---
-  console.log("og-home.png");
-  await sharp(OG_SRC)
-    .resize(1200, 630, { fit: "cover" })
-    .jpeg({ quality: 90 })
-    .toFile(path.join(publicDir, "og-home.png"));
+  // public/og-home.jpg is the hand-made share image. Do not regenerate it
+  // from the wordmark — that is what made link previews show the logo.
 
   console.log("\nDone. Files written to public/:");
   const files = [
@@ -112,7 +103,6 @@ async function run() {
     "apple-touch-icon.png",
     "android-chrome-192x192.png",
     "android-chrome-512x512.png",
-    "og-home.png",
   ];
   for (const f of files) {
     const p = path.join(publicDir, f);

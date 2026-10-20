@@ -26,7 +26,7 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import { ADVERTISE_CONTACT_HASH } from "~/constants";
+import { ADVERTISE_CONTACT_HASH, OG_IMAGE_PATH } from "~/constants";
 import { routing } from "~/i18n/routing";
 import { eventsApi } from "~/lib/api";
 import { buildAlternates } from "~/lib/seo";
@@ -40,8 +40,6 @@ const CONTACT_HASH = `#${ADVERTISE_CONTACT_HASH}`;
 const sectionCardClass = cn("border-border/80 shadow-sm", "why-fade-in");
 const navyText = "text-[#1B2333] dark:text-foreground";
 const accentNumber = "text-[#E05D39] dark:text-primary";
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
 
 // Static marketing copy — changes only on deploy.
 export const revalidate = 86400;
@@ -75,10 +73,11 @@ export async function generateMetadata({ params }: Props) {
       type: "website",
       images: [
         {
-          url: "/og-home.png?v=2",
+          url: OG_IMAGE_PATH,
           width: 1200,
           height: 630,
           alt: title,
+          type: "image/jpeg",
         },
       ],
     },
@@ -86,7 +85,7 @@ export async function generateMetadata({ params }: Props) {
       card: "summary_large_image" as const,
       title,
       description,
-      images: [`${siteUrl}/og-home.png?v=2`],
+      images: [OG_IMAGE_PATH],
     },
   };
 }
