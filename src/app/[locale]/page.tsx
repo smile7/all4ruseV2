@@ -182,7 +182,7 @@ export default async function HomePage({ params, searchParams }: Props) {
       </Typography.H1>
 
       <PwaInstallOffer>
-        <Button asChild variant="outline" className="shrink-0 px-2 md:px-4">
+        <Button asChild variant="secondary" className="px-3 md:px-4">
           <TrackedLink eventKey="home.create_event" href="/create-event">
             <Plus className="size-4" />
             {t("createEvent")}
