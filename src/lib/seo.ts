@@ -229,9 +229,7 @@ export function jsonLdImages(
       }),
     ),
   ].slice(0, 6);
-  return unique.length > 0
-    ? unique
-    : [`${SITE_URL}${SCHEMA_FALLBACK_IMAGE}`];
+  return unique.length > 0 ? unique : [`${SITE_URL}${SCHEMA_FALLBACK_IMAGE}`];
 }
 
 /**

@@ -903,6 +903,9 @@
       "editingNow": "Редактираш сега"
     }
   },
+  "PwaInstall": {
+    "install": "Инсталирай приложението"
+  },
   "EventPeriodPage": {
     "breadcrumbHome": "Начало",
     "browseAll": "Всички събития",

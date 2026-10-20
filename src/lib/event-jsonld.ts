@@ -251,8 +251,8 @@ function buildLocation(input: EventJsonLdInput) {
 }
 
 function buildOrganizer(hosts: Host[]) {
-  const named = hosts.filter(
-    (host): host is Host & { name: string } => Boolean(host.name),
+  const named = hosts.filter((host): host is Host & { name: string } =>
+    Boolean(host.name),
   );
   if (named.length === 0) {
     return {

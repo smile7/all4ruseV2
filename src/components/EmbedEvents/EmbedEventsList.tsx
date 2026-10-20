@@ -127,7 +127,9 @@ export async function EmbedEventsList({
                 "flex items-center gap-3 px-3 py-2.5 transition-colors",
                 isPremium && "bg-amber-500/10",
                 href && "hover:bg-accent/60 focus-visible:bg-accent/60",
-                href && isPremium && "hover:bg-amber-500/15 focus-visible:bg-amber-500/15",
+                href &&
+                  isPremium &&
+                  "hover:bg-amber-500/15 focus-visible:bg-amber-500/15",
               );
 
               const content = (

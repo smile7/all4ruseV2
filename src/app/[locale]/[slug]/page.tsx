@@ -390,7 +390,10 @@ export default async function EventDetailPage({ params }: Props) {
                       <EventDetailDate
                         dateStr={event.startDate}
                         locale={safeLocale}
-                        calendarDate={formatFullDate(event.startDate, safeLocale)}
+                        calendarDate={formatFullDate(
+                          event.startDate,
+                          safeLocale,
+                        )}
                         today={relativeDateLabels.today}
                         tomorrow={relativeDateLabels.tomorrow}
                         className="text-sm font-semibold"
@@ -399,7 +402,10 @@ export default async function EventDetailPage({ params }: Props) {
                         <EventDetailDate
                           dateStr={event.endDate}
                           locale={safeLocale}
-                          calendarDate={formatFullDate(event.endDate, safeLocale)}
+                          calendarDate={formatFullDate(
+                            event.endDate,
+                            safeLocale,
+                          )}
                           today={relativeDateLabels.today}
                           tomorrow={relativeDateLabels.tomorrow}
                           className="text-muted-foreground text-sm"

@@ -7,5 +7,8 @@ import {
 } from "~/lib/cookie-consent";
 
 export function useCookieConsent() {
-  return useLocalStorage<CookieConsent | null>(COOKIE_CONSENT_STORAGE_KEY, null);
+  return useLocalStorage<CookieConsent | null>(
+    COOKIE_CONSENT_STORAGE_KEY,
+    null,
+  );
 }

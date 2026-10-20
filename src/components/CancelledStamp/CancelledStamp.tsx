@@ -17,7 +17,7 @@ export function CancelledStamp({ label, size = "lg", className }: Props) {
   return (
     <span
       className={cn(
-        "pointer-events-none inline-block -rotate-12 rounded-sm border-[3px] border-destructive font-black uppercase text-destructive shadow-[0_2px_18px_rgba(0,0,0,0.35)]",
+        "border-destructive text-destructive pointer-events-none inline-block -rotate-12 rounded-sm border-[3px] font-black uppercase shadow-[0_2px_18px_rgba(0,0,0,0.35)]",
         "bg-background/70 backdrop-blur-[2px]",
         size === "lg" && "border-[5px]",
         sizeClasses[size],

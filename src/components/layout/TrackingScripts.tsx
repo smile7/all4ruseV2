@@ -4,10 +4,7 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
 import { useCookieConsent } from "~/hooks/useCookieConsent";
-import {
-  hasAnalyticsConsent,
-  hasMarketingConsent,
-} from "~/lib/cookie-consent";
+import { hasAnalyticsConsent, hasMarketingConsent } from "~/lib/cookie-consent";
 
 const googleAnalyticsId = process.env.NEXT_PUBLIC_GA_ID;
 const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;

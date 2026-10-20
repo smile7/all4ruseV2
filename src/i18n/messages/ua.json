@@ -906,6 +906,9 @@
       "editingNow": "Редагується зараз"
     }
   },
+  "PwaInstall": {
+    "install": "Встановити застосунок"
+  },
   "EventPeriodPage": {
     "breadcrumbHome": "Головна",
     "browseAll": "Усі події",

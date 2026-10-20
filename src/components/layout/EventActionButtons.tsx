@@ -1,12 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-import {
-  CalendarPlus,
-  ExternalLink,
-  Share2,
-  Ticket,
-  User,
-} from "lucide-react";
+import { CalendarPlus, ExternalLink, Share2, Ticket, User } from "lucide-react";
 
 import { EventSaveButton } from "~/components/EventCard";
 import {

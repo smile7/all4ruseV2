@@ -535,48 +535,18 @@ export type Database = {
       pwa_events: {
         Row: {
           counted_on: string
-          created_at: string
-          dedupe_key: string
-          display_mode: string
-          duration_seconds: number | null
-          event_name: string
-          hit_count: number
-          id: string
-          launch_source: string | null
-          platform: string
-          updated_at: string
-          user_agent: string | null
-          visitor_id: string
+          event_count: number
+          event_key: string
         }
         Insert: {
           counted_on: string
-          created_at?: string
-          dedupe_key: string
-          display_mode: string
-          duration_seconds?: number | null
-          event_name: string
-          hit_count?: number
-          id?: string
-          launch_source?: string | null
-          platform: string
-          updated_at?: string
-          user_agent?: string | null
-          visitor_id: string
+          event_count?: number
+          event_key: string
         }
         Update: {
           counted_on?: string
-          created_at?: string
-          dedupe_key?: string
-          display_mode?: string
-          duration_seconds?: number | null
-          event_name?: string
-          hit_count?: number
-          id?: string
-          launch_source?: string | null
-          platform?: string
-          updated_at?: string
-          user_agent?: string | null
-          visitor_id?: string
+          event_count?: number
+          event_key?: string
         }
         Relationships: []
       }
@@ -693,19 +663,8 @@ export type Database = {
         Args: { p_event_key: string }
         Returns: undefined
       }
+      increment_pwa_count: { Args: { p_event_key: string }; Returns: undefined }
       is_valid_push_endpoint: { Args: { endpoint: string }; Returns: boolean }
-      record_pwa_event: {
-        Args: {
-          p_display_mode: string
-          p_duration_seconds?: number
-          p_event_name: string
-          p_launch_source?: string
-          p_platform: string
-          p_user_agent?: string
-          p_visitor_id: string
-        }
-        Returns: undefined
-      }
       refund_smart_fill_import: {
         Args: { p_feature: string; p_usage_date: string; p_user_id: string }
         Returns: undefined
