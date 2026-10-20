@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
 
+import { OG_IMAGE_PATH } from "~/constants";
+
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
@@ -57,10 +59,11 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-home.png?v=2",
+        url: OG_IMAGE_PATH,
         width: 1200,
         height: 630,
         alt: "All4Ruse – събития в Русе",
+        type: "image/jpeg",
       },
     ],
   },
@@ -68,7 +71,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "All4Ruse – всички събития в Русе",
     description: "Всички събития в Русе на едно място.",
-    images: ["/og-home.png?v=2"],
+    images: [OG_IMAGE_PATH],
   },
 };
 
