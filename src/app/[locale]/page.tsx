@@ -13,7 +13,7 @@ import { EventTagHubNav } from "~/components/EventTagHubNav";
 import { Typography } from "~/components/layout";
 import { TrackedLink } from "~/components/TrackedLink";
 import { Button } from "~/components/ui/button";
-import { ARTICLES_TEASER_COUNT, DEFAULT_LOCALE } from "~/constants";
+import { ARTICLES_TEASER_COUNT, DEFAULT_LOCALE, OG_IMAGE } from "~/constants";
 import { routing } from "~/i18n/routing";
 import { articlesApi, eventsApi } from "~/lib/api";
 import { serializeJsonLd } from "~/lib/article-jsonld";
@@ -108,6 +108,7 @@ export async function generateMetadata({
       ...(filtered ? {} : { url: alternates.canonical }),
       siteName: "All4Ruse",
       type: "website",
+      images: [OG_IMAGE],
     },
   };
 }

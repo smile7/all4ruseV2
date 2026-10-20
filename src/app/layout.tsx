@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
 
-import { OG_IMAGE_PATH } from "~/constants";
+import { OG_IMAGE, OG_IMAGE_PATH } from "~/constants";
 
 import "./globals.css";
 
@@ -57,15 +57,7 @@ export const metadata: Metadata = {
     siteName: "All4Ruse",
     locale: "bg_BG",
     type: "website",
-    images: [
-      {
-        url: OG_IMAGE_PATH,
-        width: 1200,
-        height: 630,
-        alt: "All4Ruse – събития в Русе",
-        type: "image/jpeg",
-      },
-    ],
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",

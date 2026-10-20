@@ -5,7 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { EventCard } from "~/components/EventCard";
 import { Typography } from "~/components/layout";
 import { Button } from "~/components/ui/button";
-import { DEFAULT_LOCALE } from "~/constants";
+import { DEFAULT_LOCALE, OG_IMAGE } from "~/constants";
 import { Link } from "~/i18n/navigation";
 import { routing } from "~/i18n/routing";
 import { eventsApi } from "~/lib/api";
@@ -54,6 +54,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `${siteUrl}/${locale}${FREE_EVENTS_PATH}`,
       siteName: "All4Ruse",
       type: "website",
+      images: [OG_IMAGE],
     },
   };
 }

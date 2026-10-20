@@ -34,7 +34,7 @@ import { PartnerNearby } from "~/components/PartnerNearby";
 import { PremiumBadge } from "~/components/PremiumBadge";
 import { Card, CardContent } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
-import { DEFAULT_LOCALE, type Locale } from "~/constants";
+import { DEFAULT_LOCALE, type Locale, OG_IMAGE } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { articlesApi, eventsApi, profilesApi } from "~/lib/api";
 import { buildBreadcrumbJsonLd, serializeJsonLd } from "~/lib/article-jsonld";
@@ -161,7 +161,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
                 alt: formattedTitle,
               },
             ]
-          : [],
+          : [OG_IMAGE],
         type: "article",
         publishedTime: event.created_at,
         modifiedTime: event.updated_at ?? event.created_at,
@@ -174,7 +174,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: "summary_large_image",
         title: seoTitle,
         description,
-        images: absoluteImageUrl ? [absoluteImageUrl] : [],
+        images: absoluteImageUrl ? [absoluteImageUrl] : [OG_IMAGE.url],
       },
     };
   } catch {

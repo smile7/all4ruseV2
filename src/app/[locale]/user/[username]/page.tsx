@@ -15,7 +15,7 @@ import {
 
 import { EventCard } from "~/components/EventCard/EventCard";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { DEFAULT_PROFILE_COLOR } from "~/constants";
+import { DEFAULT_PROFILE_COLOR, OG_IMAGE } from "~/constants";
 import { profilesApi } from "~/lib/api";
 import { parseProfileGallery } from "~/lib/profile-gallery";
 import { buildProfileAlternates } from "~/lib/seo";
@@ -86,14 +86,14 @@ export async function generateMetadata({
       title: `${name} | All4Ruse`,
       description,
       url: alternates.canonical,
-      ...(ogImage && { images: [{ url: ogImage }] }),
+      images: ogImage ? [{ url: ogImage }] : [OG_IMAGE],
       type: "profile",
     },
     twitter: {
       card: "summary_large_image",
       title: `${name} | All4Ruse`,
       description,
-      ...(ogImage && { images: [ogImage] }),
+      images: ogImage ? [ogImage] : [OG_IMAGE.url],
     },
   };
 }

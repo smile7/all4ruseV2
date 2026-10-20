@@ -26,7 +26,7 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import { ADVERTISE_CONTACT_HASH, OG_IMAGE_PATH } from "~/constants";
+import { ADVERTISE_CONTACT_HASH, OG_IMAGE } from "~/constants";
 import { routing } from "~/i18n/routing";
 import { eventsApi } from "~/lib/api";
 import { buildAlternates } from "~/lib/seo";
@@ -71,21 +71,13 @@ export async function generateMetadata({ params }: Props) {
       siteName: "All4Ruse",
       locale: "bg_BG",
       type: "website",
-      images: [
-        {
-          url: OG_IMAGE_PATH,
-          width: 1200,
-          height: 630,
-          alt: title,
-          type: "image/jpeg",
-        },
-      ],
+      images: [{ ...OG_IMAGE, alt: title }],
     },
     twitter: {
       card: "summary_large_image" as const,
       title,
       description,
-      images: [OG_IMAGE_PATH],
+      images: [OG_IMAGE.url],
     },
   };
 }

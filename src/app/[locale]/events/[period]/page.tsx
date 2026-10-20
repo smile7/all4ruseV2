@@ -7,7 +7,11 @@ import { EventCard } from "~/components/EventCard";
 import { EventPeriodNav } from "~/components/EventPeriodNav";
 import { Typography } from "~/components/layout";
 import { Button } from "~/components/ui/button";
-import { DEFAULT_LOCALE, MIN_INDEXABLE_PERIOD_EVENTS } from "~/constants";
+import {
+  DEFAULT_LOCALE,
+  MIN_INDEXABLE_PERIOD_EVENTS,
+  OG_IMAGE,
+} from "~/constants";
 import { Link } from "~/i18n/navigation";
 import { routing } from "~/i18n/routing";
 import { eventsApi } from "~/lib/api";
@@ -99,6 +103,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `${siteUrl}/${locale}${eventPeriodPath(slug)}`,
       siteName: "All4Ruse",
       type: "website",
+      images: [OG_IMAGE],
     },
   };
 }

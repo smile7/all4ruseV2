@@ -43,6 +43,13 @@ export const THEME_STORE_KEY = "theme";
 export const FALLBACK_IMAGE = "/no_image_available.jpg";
 /** Site share image, 1200×630. Open Graph, Twitter, and JSON-LD when a page has no own photo. */
 export const OG_IMAGE_PATH = "/og-home.jpg";
+export const OG_IMAGE = {
+  url: OG_IMAGE_PATH,
+  width: 1200,
+  height: 630,
+  alt: "Русе се случва – всички събития на едно място",
+  type: "image/jpeg",
+} as const;
 export const SCHEMA_FALLBACK_IMAGE = OG_IMAGE_PATH;
 export const DEFAULT_AVATAR = "/cat.png";
 export const DEBOUNCE_MS = 400;
