@@ -181,15 +181,14 @@ export default async function HomePage({ params, searchParams }: Props) {
         {t("pageTitle")}
       </Typography.H1>
 
-      <div className="mt-2 flex w-full flex-col items-center gap-2">
-        <PwaInstallOffer />
-        <Button asChild variant="outline">
+      <PwaInstallOffer>
+        <Button asChild variant="outline" className="shrink-0 px-2.5 md:px-4">
           <TrackedLink eventKey="home.create_event" href="/create-event">
             <Plus className="size-4" />
             {t("createEvent")}
           </TrackedLink>
         </Button>
-      </div>
+      </PwaInstallOffer>
 
       {/*
         Suspense is required because the filter bar and EventsList internally call

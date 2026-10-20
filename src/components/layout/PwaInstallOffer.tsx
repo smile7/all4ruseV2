@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "~/components/ui/button";
@@ -44,13 +44,17 @@ function installOfferAvailable(): boolean {
   return isPhone() && !detectStandaloneApp();
 }
 
+type PwaInstallOfferProps = {
+  children: ReactNode;
+};
+
 /**
- * Text install control under the home title, phones only.
- * Hidden once the site is already running as the installed app.
+ * Home title actions. On a phone that has not installed the app, the install
+ * control sits on the same row as `children` (the create-event button).
  * Browsers that expose an install dialog open it. Every other browser gets
  * a short instruction for its own menu.
  */
-export function PwaInstallOffer() {
+export function PwaInstallOffer({ children }: PwaInstallOfferProps) {
   const t = useTranslations("PwaInstall");
   const [promptEvent, setPromptEvent] =
     useState<BeforeInstallPromptEvent | null>(null);
@@ -87,7 +91,7 @@ export function PwaInstallOffer() {
     };
   }, []);
 
-  if (hidden || !offer) return null;
+  const showButton = !hidden && offer;
 
   async function install() {
     const event = promptEvent;
@@ -95,30 +99,39 @@ export function PwaInstallOffer() {
       setHintOpen((open) => !open);
       return;
     }
-    setPromptEvent(null);
     setHintOpen(false);
-    setHidden(true);
     try {
       await event.prompt();
+      const choice = await event.userChoice;
+      setPromptEvent(null);
+      if (choice.outcome === "accepted") setHidden(true);
     } catch {
-      setHidden(false);
+      setPromptEvent(null);
       setHintOpen(true);
     }
   }
 
   return (
-    <div className="flex w-full flex-col gap-2 md:hidden">
-      <Button
-        type="button"
-        variant="outline"
-        aria-expanded={promptEvent ? undefined : hintOpen}
-        className="h-auto w-full text-center whitespace-normal"
-        onClick={() => void install()}
-      >
-        {t("install")}
-      </Button>
-      {hintOpen && (
-        <p role="status" className="text-muted-foreground max-w-sm text-sm">
+    <div className="mt-2 flex w-full flex-col items-center gap-2">
+      <div className="flex items-center justify-center gap-1.5">
+        {showButton && (
+          <Button
+            type="button"
+            variant="outline"
+            aria-expanded={promptEvent ? undefined : hintOpen}
+            className="shrink-0 px-2.5 whitespace-nowrap"
+            onClick={() => void install()}
+          >
+            {t("install")}
+          </Button>
+        )}
+        {children}
+      </div>
+      {showButton && hintOpen && (
+        <p
+          role="status"
+          className="text-muted-foreground max-w-sm text-center text-sm"
+        >
           {isIos() ? t("iosHint") : t("menuHint")}
         </p>
       )}
