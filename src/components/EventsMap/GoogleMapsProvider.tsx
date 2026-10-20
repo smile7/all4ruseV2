@@ -64,7 +64,11 @@ function subscribeToNothing(): () => void {
  * run while Next is prerendering locale pages in one process.
  */
 function useIsClient(): boolean {
-  return useSyncExternalStore(subscribeToNothing, () => true, () => false);
+  return useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
 }
 
 /**

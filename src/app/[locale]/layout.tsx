@@ -12,6 +12,7 @@ import {
   Header,
   MobileBottomNav,
   PosterScanTracker,
+  PwaInstallOffer,
   PwaTracker,
   ScrollToTopOnNavigate,
   TrackingScripts,
@@ -105,6 +106,7 @@ export default async function LocaleLayout({ children, params }: Props) {
                     <MobileBottomNav />
                     <TrackingScripts />
                     <PosterScanTracker />
+                    <PwaInstallOffer />
                     <PwaTracker />
                   </CookieConsentProvider>
                 </AuthProvider>

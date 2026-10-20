@@ -125,9 +125,7 @@ export function buildEventsIcs(events: Event[]): string {
         `DTSTART:${icsUtc(getEventStartMs(event))}`,
         `DTEND:${icsUtc(getEventEndMs(event))}`,
         foldIcsLine(`SUMMARY:${icsEscape(title)}`),
-        ...(location
-          ? [foldIcsLine(`LOCATION:${icsEscape(location)}`)]
-          : []),
+        ...(location ? [foldIcsLine(`LOCATION:${icsEscape(location)}`)] : []),
         foldIcsLine(`URL:${url}`),
         "END:VEVENT",
       ];

@@ -115,7 +115,7 @@ export function computeWeekSlots(week: Date[], events: Event[]): WeekData {
     const aMs = aStart.getTime();
     const bMs = bStart.getTime();
     if (aMs !== bMs) return aMs - bMs;
-    return (bEffEnd.getTime() - bMs) - (aEffEnd.getTime() - aMs);
+    return bEffEnd.getTime() - bMs - (aEffEnd.getTime() - aMs);
   });
 
   // trackCols[t] = set of column indices (0–6) already claimed in track t.
@@ -222,7 +222,7 @@ export function computeColumnarSlots(
     const aMs = aStart.getTime();
     const bMs = bStart.getTime();
     if (aMs !== bMs) return aMs - bMs;
-    return (bEffEnd.getTime() - bMs) - (aEffEnd.getTime() - aMs);
+    return bEffEnd.getTime() - bMs - (aEffEnd.getTime() - aMs);
   });
 
   const trackCols: Set<number>[] = [];

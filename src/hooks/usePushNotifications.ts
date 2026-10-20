@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { trackPwaEvent } from "~/lib/analytics/track-pwa";
 import {
   reportPushEnableFailure,
   urlBase64ToUint8Array,
@@ -148,11 +147,6 @@ export async function enablePushNotifications(): Promise<EnablePushResult> {
     }
 
     const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-      trackPwaEvent({ eventName: "push_granted" });
-    } else if (permission === "denied") {
-      trackPwaEvent({ eventName: "push_denied" });
-    }
     if (permission !== "granted") {
       await reportPushEnableFailure("permission_denied");
       return {

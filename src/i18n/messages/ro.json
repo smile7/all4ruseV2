@@ -906,6 +906,9 @@
       "editingNow": "În curs de editare"
     }
   },
+  "PwaInstall": {
+    "install": "Instalează aplicația"
+  },
   "EventPeriodPage": {
     "breadcrumbHome": "Acasă",
     "browseAll": "Toate evenimentele",

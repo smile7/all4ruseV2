@@ -26,7 +26,10 @@ async function handle(request: Request) {
   }
 
   const from = todayInSofia();
-  const to = format(addDays(parseLocalDate(from), LOOKAHEAD_DAYS), "yyyy-MM-dd");
+  const to = format(
+    addDays(parseLocalDate(from), LOOKAHEAD_DAYS),
+    "yyyy-MM-dd",
+  );
 
   const events = await eventsApi.getActiveEvents(
     createSupabasePublicServerClient(),
@@ -35,7 +38,9 @@ async function handle(request: Request) {
 
   const urls = events
     .map((event) => event.slug)
-    .filter((slug): slug is string => typeof slug === "string" && slug.length > 0)
+    .filter(
+      (slug): slug is string => typeof slug === "string" && slug.length > 0,
+    )
     .map(eventIndexUrl);
 
   try {

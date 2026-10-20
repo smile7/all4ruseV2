@@ -381,7 +381,11 @@ function enhanceListItems(html: string): string {
       if (!split) return full;
 
       const href = singleHref(inner);
-      const enhanced = buildScheduleContent(split.leadHtml, split.restHtml, href);
+      const enhanced = buildScheduleContent(
+        split.leadHtml,
+        split.restHtml,
+        href,
+      );
       const liAttrs = withClass(rawAttrs, scheduleBlockClasses(href));
 
       if (/^\s*<p[\s>]/i.test(inner.trim())) {

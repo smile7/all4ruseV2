@@ -362,7 +362,7 @@ export async function extractDraftFromImageBytes(
 ): Promise<EventDraft> {
   const trimmedText = additionalText?.trim();
   const instruction = trimmedText
-        ? `Extract visible event details from this poster. The user also provided this additional context — use it to fill in or correct details that aren't clear from the image alone, then write the full public description as specified:\n"""${trimmedText}"""\nReturn JSON only.`
+    ? `Extract visible event details from this poster. The user also provided this additional context — use it to fill in or correct details that aren't clear from the image alone, then write the full public description as specified:\n"""${trimmedText}"""\nReturn JSON only.`
     : "Extract visible event details from this poster, then write the full public description as specified. Return JSON only.";
 
   return generateDraftFromContent(

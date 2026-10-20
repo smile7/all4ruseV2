@@ -12,7 +12,15 @@ import { flushSync } from "react-dom";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 
-import { ChevronLeft, ChevronRight, LayoutGrid, Loader2, Maximize2, TableProperties, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid,
+  Loader2,
+  Maximize2,
+  TableProperties,
+  X,
+} from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { useCalendarMonthEvents } from "~/hooks/query/events";
@@ -159,7 +167,7 @@ const WeekRow = forwardRef<HTMLDivElement, WeekRowProps>(function WeekRow(
       }
     >
       {/* Day cells — borders, backgrounds, and (when not the topmost visible week) date numbers */}
-      <div className="absolute inset-0 grid grid-cols-7 divide-x-2 divide-border">
+      <div className="divide-border absolute inset-0 grid grid-cols-7 divide-x-2">
         {days.map((day, i) => {
           const isToday = isSameDay(day, today);
           const inMonth = isSameMonth(day, year, month);
@@ -397,15 +405,19 @@ function HorizontalEventBar({
         />
       </div>
       <div className="flex min-w-0 flex-1 items-start overflow-hidden px-1.5 pt-1">
-        <span className="line-clamp-4 w-full text-sm font-semibold leading-tight">
-          {formatEventTitleWithDateRange(event.title, event.startDate, event.endDate)}
+        <span className="line-clamp-4 w-full text-sm leading-tight font-semibold">
+          {formatEventTitleWithDateRange(
+            event.title,
+            event.startDate,
+            event.endDate,
+          )}
         </span>
       </div>
     </>
   ) : (
     /* Continuation bar — no image, title only */
     <div className="flex min-w-0 flex-1 items-center px-2 py-1">
-      <span className="line-clamp-4 w-full text-sm font-semibold leading-tight">
+      <span className="line-clamp-4 w-full text-sm leading-tight font-semibold">
         {event.title}
       </span>
     </div>
@@ -613,9 +625,7 @@ export function EventsCalendarView({ events, calendarHeight, onClose }: Props) {
     const frame = requestAnimationFrame(() => {
       const containerWidth = container.clientWidth;
       const scrollLeft =
-        todayIdx * H_COL_WIDTH_PX -
-        containerWidth / 2 +
-        H_COL_WIDTH_PX / 2;
+        todayIdx * H_COL_WIDTH_PX - containerWidth / 2 + H_COL_WIDTH_PX / 2;
       container.scrollTo({
         left: Math.max(0, scrollLeft),
         behavior: "smooth",
@@ -671,12 +681,14 @@ export function EventsCalendarView({ events, calendarHeight, onClose }: Props) {
       className={cn(
         "w-full",
         isFullscreen
-          ? "fixed inset-0 z-50 flex flex-col bg-background p-3 sm:p-4"
+          ? "bg-background fixed inset-0 z-50 flex flex-col p-3 sm:p-4"
           : isHeightConstrained
             ? "flex flex-col"
             : "mt-4",
       )}
-      style={!isFullscreen && calendarHeight ? { height: calendarHeight } : undefined}
+      style={
+        !isFullscreen && calendarHeight ? { height: calendarHeight } : undefined
+      }
     >
       {/* Month navigation */}
       <div
@@ -763,7 +775,7 @@ export function EventsCalendarView({ events, calendarHeight, onClose }: Props) {
             {/* Sticky 2-row header: day names + dates of the current visible week */}
             <div className="sticky top-0 z-10 border-b">
               {/* Row 1 — weekday labels */}
-              <div className="bg-muted/90 dark:bg-muted/70 grid grid-cols-7 divide-x-2 divide-border border-b backdrop-blur-sm">
+              <div className="bg-muted/90 dark:bg-muted/70 divide-border grid grid-cols-7 divide-x-2 border-b backdrop-blur-sm">
                 {weekdayLabels.map((label, i) => (
                   <div
                     key={i}
@@ -774,7 +786,7 @@ export function EventsCalendarView({ events, calendarHeight, onClose }: Props) {
                 ))}
               </div>
               {/* Row 2 — dates for the topmost visible week */}
-              <div className="bg-background/95 dark:bg-background/90 grid grid-cols-7 divide-x-2 divide-border backdrop-blur-sm">
+              <div className="bg-background/95 dark:bg-background/90 divide-border grid grid-cols-7 divide-x-2 backdrop-blur-sm">
                 {(weeks[visibleWeekIndex] ?? weeks[0])?.map((day, i) => {
                   const isDayToday = isSameDay(day, now);
                   const dayInMonth = isSameMonth(day, year, month);
@@ -853,21 +865,21 @@ export function EventsCalendarView({ events, calendarHeight, onClose }: Props) {
                   <div
                     key={i}
                     className={cn(
-                      "flex flex-col items-center justify-center border-r-2 border-border/80 pb-2 pt-3 last:border-r-0",
+                      "border-border/80 flex flex-col items-center justify-center border-r-2 pt-3 pb-2 last:border-r-0",
                       isToday
                         ? "bg-primary/10 dark:bg-primary/15"
                         : isWeekend
                           ? "bg-muted/60 dark:bg-muted/40"
                           : undefined,
-                      isFirstOfWeek && i > 0 && "border-l-[3px] border-l-border",
+                      isFirstOfWeek &&
+                        i > 0 &&
+                        "border-l-border border-l-[3px]",
                     )}
                   >
                     <span
                       className={cn(
                         "text-[9px] font-semibold tracking-wider uppercase",
-                        isToday
-                          ? "text-primary"
-                          : "text-muted-foreground",
+                        isToday ? "text-primary" : "text-muted-foreground",
                       )}
                     >
                       {label}
@@ -914,13 +926,15 @@ export function EventsCalendarView({ events, calendarHeight, onClose }: Props) {
                     <div
                       key={i}
                       className={cn(
-                        "border-r-2 border-border/80 last:border-r-0",
+                        "border-border/80 border-r-2 last:border-r-0",
                         isToday
                           ? "bg-primary/5 dark:bg-primary/10"
                           : isWeekend
                             ? "bg-muted/20 dark:bg-muted/10"
                             : undefined,
-                        isFirstOfWeek && i > 0 && "border-l-[3px] border-l-border",
+                        isFirstOfWeek &&
+                          i > 0 &&
+                          "border-l-border border-l-[3px]",
                       )}
                     />
                   );

@@ -65,15 +65,13 @@ import { EVENTS_BUCKET, UPLOAD_CACHE_CONTROL } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { useRouter } from "~/i18n/navigation";
 import { eventsApi } from "~/lib/api/events";
+import { plainTextFromHtml } from "~/lib/event-description-html";
 import {
-  plainTextFromHtml,
-} from "~/lib/event-description-html";
-import { classifyEventSaveError, storageUploadError } from "~/lib/event-save-error";
+  classifyEventSaveError,
+  storageUploadError,
+} from "~/lib/event-save-error";
 import { getEventImageUrl, isFreeEventPrice } from "~/lib/event-utils";
-import {
-  getFailureMessage,
-  reportFailure,
-} from "~/lib/failures";
+import { getFailureMessage, reportFailure } from "~/lib/failures";
 import {
   coordsFromStoredEvent,
   type EventCoordsWrite,
@@ -281,11 +279,9 @@ function makeFormSchema(t: ReturnType<typeof useTranslations<"CreateEvent">>) {
       title: z.string().min(3, t("requiredField")),
       description: z
         .string()
-        .refine(
-          (html) =>
-            plainTextFromHtml(html).length >= 10,
-          { message: t("requiredField") },
-        ),
+        .refine((html) => plainTextFromHtml(html).length >= 10, {
+          message: t("requiredField"),
+        }),
       startDate: z.string().min(1, t("requiredField")),
       endDate: z.string().min(1, t("requiredField")),
       startTime: z.string().min(1, t("requiredField")),

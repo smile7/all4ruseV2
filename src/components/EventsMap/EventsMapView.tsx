@@ -15,7 +15,15 @@ import type {
   Clusterer,
   ClusterIconInfo,
 } from "@react-google-maps/marker-clusterer";
-import { Calendar, ChevronRight, Clock, Loader2, LocateFixed, MapPin, X } from "lucide-react";
+import {
+  Calendar,
+  ChevronRight,
+  Clock,
+  Loader2,
+  LocateFixed,
+  MapPin,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useTheme } from "~/components/ThemeProvider";
@@ -85,7 +93,13 @@ function userLocationIcon(): google.maps.Symbol {
   };
 }
 
-function EventsMapCanvas({ events, from, to, isLoaded, loadError }: CanvasProps) {
+function EventsMapCanvas({
+  events,
+  from,
+  to,
+  isLoaded,
+  loadError,
+}: CanvasProps) {
   const t = useTranslations("HomePage");
   const locale = useLocale();
   const { resolvedTheme } = useTheme();
@@ -465,31 +479,35 @@ function CustomPopup({
       onPointerDown={(e) => e.stopPropagation()}
       className={cn(
         "absolute left-1/2 z-50 flex w-max -translate-x-1/2 flex-col items-center drop-shadow-2xl",
-        verticalAlign === "bottom" ? "bottom-full mb-2" : "top-full mt-2"
+        verticalAlign === "bottom" ? "bottom-full mb-2" : "top-full mt-2",
       )}
     >
       {verticalAlign === "top" && (
-        <div className="absolute top-[-9.5px] h-0 w-0 border-x-[10px] border-b-[10px] border-x-transparent border-b-border">
-          <div className="absolute -left-[9px] top-[1px] h-0 w-0 border-x-[9px] border-b-[9px] border-x-transparent border-b-background" />
+        <div className="border-b-border absolute top-[-9.5px] h-0 w-0 border-x-[10px] border-b-[10px] border-x-transparent">
+          <div className="border-b-background absolute top-[1px] -left-[9px] h-0 w-0 border-x-[9px] border-b-[9px] border-x-transparent" />
         </div>
       )}
-      <div className="relative rounded-xl border bg-background p-1.5 shadow-lg">
+      <div className="bg-background relative rounded-xl border p-1.5 shadow-lg">
         <button
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             onClose();
           }}
-          className="absolute right-3 top-3 z-10 flex size-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-muted hover:text-foreground"
+          className="bg-background/80 text-muted-foreground hover:bg-muted hover:text-foreground absolute top-3 right-3 z-10 flex size-7 items-center justify-center rounded-full shadow-sm backdrop-blur-md transition-colors"
           aria-label="Close"
         >
           <X className="size-4" />
         </button>
-        <EventInfoContent events={events} locale={locale} openLabel={openLabel} />
+        <EventInfoContent
+          events={events}
+          locale={locale}
+          openLabel={openLabel}
+        />
       </div>
       {verticalAlign === "bottom" && (
-        <div className="absolute bottom-[-9.5px] h-0 w-0 border-x-[10px] border-t-[10px] border-x-transparent border-t-border">
-          <div className="absolute -left-[9px] bottom-[1px] h-0 w-0 border-x-[9px] border-t-[9px] border-x-transparent border-t-background" />
+        <div className="border-t-border absolute bottom-[-9.5px] h-0 w-0 border-x-[10px] border-t-[10px] border-x-transparent">
+          <div className="border-t-background absolute bottom-[1px] -left-[9px] h-0 w-0 border-x-[9px] border-t-[9px] border-x-transparent" />
         </div>
       )}
     </div>
@@ -506,13 +524,16 @@ function EventInfoContent({
   openLabel: string;
 }) {
   return (
-    <div className="flex max-h-85 w-64 flex-col gap-4 overflow-x-hidden overflow-y-auto p-1 text-left text-sm text-popover-foreground scrollbar-thin">
+    <div className="text-popover-foreground scrollbar-thin flex max-h-85 w-64 flex-col gap-4 overflow-x-hidden overflow-y-auto p-1 text-left text-sm">
       {events.map((event) => {
         const href = eventListHref(event);
         const imageUrl = getEventImageUrl(event.image);
         return (
-          <div key={event.id} className="group flex flex-col gap-2.5 border-b pb-4 last:border-0 last:pb-1">
-            <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-md bg-muted">
+          <div
+            key={event.id}
+            className="group flex flex-col gap-2.5 border-b pb-4 last:border-0 last:pb-1"
+          >
+            <div className="bg-muted relative h-28 w-full shrink-0 overflow-hidden rounded-md">
               <Image
                 src={imageUrl}
                 alt=""
@@ -522,19 +543,25 @@ function EventInfoContent({
               />
             </div>
             <div className="flex flex-col gap-1.5 px-0.5">
-              <h3 className="line-clamp-2 font-semibold leading-tight" title={event.title}>
+              <h3
+                className="line-clamp-2 leading-tight font-semibold"
+                title={event.title}
+              >
                 {event.title}
               </h3>
-              <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+              <div className="text-muted-foreground flex flex-col gap-1 text-xs">
                 <div className="flex items-start gap-1.5">
                   <Calendar className="mt-0.5 size-3.5 shrink-0" />
-                  <span className="line-clamp-1">{formatFullDate(event.startDate, locale)}</span>
+                  <span className="line-clamp-1">
+                    {formatFullDate(event.startDate, locale)}
+                  </span>
                 </div>
                 {event.startTime && (
                   <div className="flex items-start gap-1.5">
                     <Clock className="mt-0.5 size-3.5 shrink-0" />
                     <span className="line-clamp-1">
-                      {event.startTime.slice(0, 5)} {event.endTime ? `— ${event.endTime.slice(0, 5)}` : ""}
+                      {event.startTime.slice(0, 5)}{" "}
+                      {event.endTime ? `— ${event.endTime.slice(0, 5)}` : ""}
                     </span>
                   </div>
                 )}
@@ -547,10 +574,10 @@ function EventInfoContent({
               </div>
             </div>
             {href && (
-              <div className="pt-0.5 px-0.5">
+              <div className="px-0.5 pt-0.5">
                 <Link
                   href={href}
-                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                  className="bg-primary/10 text-primary hover:bg-primary/20 inline-flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
                 >
                   {openLabel}
                   <ChevronRight className="size-3.5" />

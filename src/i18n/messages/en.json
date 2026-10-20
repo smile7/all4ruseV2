@@ -906,6 +906,9 @@
       "editingNow": "Editing now"
     }
   },
+  "PwaInstall": {
+    "install": "Install the app"
+  },
   "EventPeriodPage": {
     "breadcrumbHome": "Home",
     "browseAll": "All events",

@@ -22,6 +22,7 @@ export * from "./MobileBottomNav";
 export * from "./MobileCreateEventButton";
 export * from "./PosterScanTracker";
 export * from "./PushNotificationCard";
+export * from "./PwaInstallOffer";
 export * from "./PwaTracker";
 export * from "./ScrollToTopOnNavigate";
 export * from "./ThemeToggle";

@@ -117,7 +117,7 @@ export function EventCard({
         "bg-card text-card-foreground group-focus-visible:ring-ring relative flex h-full flex-col overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg group-focus-visible:ring-2",
         !showManageActions &&
           event.isEventPremium &&
-          "ring-1 ring-amber-400 shadow-amber-500/20",
+          "ring-1 shadow-amber-500/20 ring-amber-400",
       )}
     >
       {/* ── Image ──────────────────────────────────────────────────────── */}

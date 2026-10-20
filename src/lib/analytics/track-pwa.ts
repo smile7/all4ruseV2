@@ -1,37 +1,6 @@
-import {
-  PWA_OPEN_QUERY_PARAM,
-  type PwaDisplayMode,
-  type PwaEventName,
-  type PwaLaunchSource,
-  type PwaPlatform,
-} from "~/lib/analytics/pwa-events";
+import type { PwaCountKey } from "~/lib/analytics/pwa-events";
 
-const VISITOR_KEY = "a4r-visitor-id";
 const SENT_PREFIX = "a4r-pwa-sent:";
-const SESSION_START_KEY = "a4r-pwa-session-start";
-
-const ONCE_EVENTS = new Set<PwaEventName>([
-  "prompt_eligible",
-  "prompt_accepted",
-  "prompt_dismissed",
-  "installed",
-  "push_granted",
-  "push_denied",
-]);
-
-const DAILY_EVENTS = new Set<PwaEventName>([
-  "related_installed",
-  "standalone_open",
-]);
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-type TrackPwaEventInput = {
-  eventName: PwaEventName;
-  durationSeconds?: number;
-  launchSource?: PwaLaunchSource | null;
-};
 
 function productionHost(): string {
   try {
@@ -64,116 +33,46 @@ function sofiaDate(now = new Date()): string {
   }).format(now);
 }
 
-function readStorage(storage: Storage, key: string): string | null {
-  try {
-    return storage.getItem(key);
-  } catch {
-    return null;
+function dedupeStorageKey(eventKey: PwaCountKey): string {
+  // Keep the keys the first version wrote, so a browser that already
+  // counted today does not add itself again after this change.
+  if (eventKey === "icon_open") {
+    return `${SENT_PREFIX}standalone_open:${sofiaDate()}`;
   }
+  return `${SENT_PREFIX}installed`;
 }
 
-function writeStorage(storage: Storage, key: string, value: string): void {
-  try {
-    storage.setItem(key, value);
-  } catch {
-    // Private mode can block storage. The server still dedupes.
-  }
-}
-
-function visitorId(): string | null {
-  const existing = readStorage(localStorage, VISITOR_KEY);
-  if (existing && UUID_RE.test(existing)) return existing;
-  if (typeof crypto.randomUUID !== "function") return null;
-  const id = crypto.randomUUID();
-  writeStorage(localStorage, VISITOR_KEY, id);
-  return UUID_RE.test(id) ? id : null;
-}
-
-function dedupeStorageKey(eventName: PwaEventName): string | null {
-  if (ONCE_EVENTS.has(eventName)) return `${SENT_PREFIX}${eventName}`;
-  if (DAILY_EVENTS.has(eventName)) {
-    return `${SENT_PREFIX}${eventName}:${sofiaDate()}`;
-  }
-  return null;
-}
-
-export function detectPwaPlatform(): PwaPlatform {
-  const nav = navigator as Navigator & {
-    userAgentData?: { mobile?: boolean };
-  };
-  if (nav.userAgentData?.mobile === true) return "mobile";
-  if (nav.userAgentData?.mobile === false) return "desktop";
-
-  const ua = navigator.userAgent;
-  if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return "mobile";
-  if (/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return "mobile";
-  if (/Macintosh|Windows NT|Linux|CrOS|X11/i.test(ua)) return "desktop";
-  return "unknown";
-}
-
-export function detectPwaDisplayMode(): PwaDisplayMode {
-  const modes = ["standalone", "fullscreen", "minimal-ui"] as const;
-  for (const mode of modes) {
-    if (window.matchMedia(`(display-mode: ${mode})`).matches) return mode;
-  }
+export function detectStandaloneApp(): boolean {
+  if (window.matchMedia("(display-mode: standalone)").matches) return true;
+  if (window.matchMedia("(display-mode: fullscreen)").matches) return true;
   const nav = navigator as Navigator & { standalone?: boolean };
-  if (nav.standalone === true) return "standalone";
-  return "browser";
+  return nav.standalone === true;
 }
 
-/** Reads `a4r_open` and removes it so shared URLs stay clean. */
-export function consumePwaLaunchSource(): PwaLaunchSource | null {
+/** Removes a leftover install-tracking query param from older app launches. */
+export function stripPwaOpenParam(): void {
   const url = new URL(window.location.href);
-  const value = url.searchParams.get(PWA_OPEN_QUERY_PARAM);
-  const launch = value === "icon" || value === "notification" ? value : null;
-  if (value === null) return null;
-
-  url.searchParams.delete(PWA_OPEN_QUERY_PARAM);
+  if (!url.searchParams.has("a4r_open")) return;
+  url.searchParams.delete("a4r_open");
   const next = `${url.pathname}${url.search}${url.hash}`;
   window.history.replaceState(window.history.state, "", next);
-  return launch;
 }
 
-export function markStandaloneSession(): void {
-  if (readStorage(sessionStorage, SESSION_START_KEY)) return;
-  writeStorage(sessionStorage, SESSION_START_KEY, String(Date.now()));
-}
-
-export function standaloneSessionDurationSeconds(): number | null {
-  const raw = readStorage(sessionStorage, SESSION_START_KEY);
-  if (!raw) return null;
-  const start = Number(raw);
-  if (!Number.isFinite(start)) return null;
-  const seconds = Math.round((Date.now() - start) / 1000);
-  if (seconds < 1) return null;
-  return Math.min(seconds, 86_400);
-}
-
-export function trackPwaEvent(input: TrackPwaEventInput): void {
+export function trackPwaCount(eventKey: PwaCountKey): void {
   if (!pwaTrackingEnabled()) return;
 
-  const id = visitorId();
-  if (!id) return;
-
-  const isDurationUpdate =
-    input.eventName === "standalone_open" && input.durationSeconds != null;
-  const dedupeKey = isDurationUpdate ? null : dedupeStorageKey(input.eventName);
-  if (dedupeKey && readStorage(localStorage, dedupeKey)) return;
-  if (dedupeKey) writeStorage(localStorage, dedupeKey, "1");
-
-  const body = JSON.stringify({
-    visitorId: id,
-    eventName: input.eventName,
-    platform: detectPwaPlatform(),
-    displayMode: detectPwaDisplayMode(),
-    launchSource: input.launchSource ?? null,
-    durationSeconds: input.durationSeconds ?? null,
-  });
+  const storageKey = dedupeStorageKey(eventKey);
+  try {
+    if (localStorage.getItem(storageKey)) return;
+    localStorage.setItem(storageKey, "1");
+  } catch {
+    // Private mode can block storage. Still count this occurrence.
+  }
 
   void fetch("/api/pwa-events", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body,
+    body: JSON.stringify({ eventKey }),
     keepalive: true,
   }).catch(() => {
     // Tracking must never surface to the user.

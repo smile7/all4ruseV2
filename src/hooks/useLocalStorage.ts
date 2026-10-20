@@ -31,8 +31,7 @@ function readStorage<T>(key: string, initialValue: T): T {
       return entry.cachedValue as T;
     }
     entry.cachedRaw = raw;
-    entry.cachedValue =
-      raw !== null ? (JSON.parse(raw) as T) : initialValue;
+    entry.cachedValue = raw !== null ? (JSON.parse(raw) as T) : initialValue;
     return entry.cachedValue as T;
   } catch {
     entry.cachedRaw = null;

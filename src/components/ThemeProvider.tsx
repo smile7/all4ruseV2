@@ -9,10 +9,7 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 
-import {
-  THEME_MEDIA_QUERY,
-  THEME_STORAGE_KEY,
-} from "~/lib/theme-script";
+import { THEME_MEDIA_QUERY, THEME_STORAGE_KEY } from "~/lib/theme-script";
 
 type Theme = "light" | "dark" | "system";
 type ResolvedTheme = Exclude<Theme, "system">;

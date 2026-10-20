@@ -1,7 +1,4 @@
-import {
-  type FailureStage,
-  getFailureMessage,
-} from "~/lib/failures";
+import { type FailureStage, getFailureMessage } from "~/lib/failures";
 import { ImageCompressError } from "~/lib/images/compress-client";
 
 export type EventSaveToastKey =
@@ -30,10 +27,7 @@ export function classifyEventSaveError(error: unknown): {
     return { toastKey: "saveErrorSession", stage: "session_expired" };
   }
 
-  if (
-    error instanceof Error &&
-    error.name === "StorageUploadError"
-  ) {
+  if (error instanceof Error && error.name === "StorageUploadError") {
     return { toastKey: "saveErrorImage", stage: "image_failed" };
   }
 

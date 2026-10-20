@@ -14,11 +14,7 @@ type Props = {
 
 export function ArticleImageLightbox({ children }: Props) {
   return (
-    <LightGallery
-      plugins={[lgZoom]}
-      speed={400}
-      selector="a.article-lightbox"
-    >
+    <LightGallery plugins={[lgZoom]} speed={400} selector="a.article-lightbox">
       {children}
     </LightGallery>
   );
