@@ -1,12 +1,20 @@
 "use client";
 
-import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  type ReactNode,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useTranslations } from "next-intl";
 
 import { Download } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { detectStandaloneApp } from "~/lib/analytics/track-pwa";
+import { cn } from "~/lib/utils";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -44,6 +52,13 @@ function subscribeToPhoneWidth(onChange: () => void): () => void {
 
 function installOfferAvailable(): boolean {
   return isPhone() && !detectStandaloneApp();
+}
+
+function shareRow(child: ReactNode): ReactNode {
+  if (!isValidElement<{ className?: string }>(child)) return child;
+  return cloneElement(child, {
+    className: cn("min-w-0 flex-1", child.props.className),
+  });
 }
 
 type PwaInstallOfferProps = {
@@ -115,19 +130,25 @@ export function PwaInstallOffer({ children }: PwaInstallOfferProps) {
 
   return (
     <div className="mt-2 flex w-full flex-col items-center gap-2">
-      <div className="flex items-center justify-center gap-1.5">
+      <div
+        className={cn(
+          "flex w-full items-stretch gap-2",
+          showButton ? "justify-between" : "justify-center",
+        )}
+      >
         {showButton && (
           <Button
             type="button"
+            variant="secondary"
             aria-expanded={promptEvent ? undefined : hintOpen}
-            className="shrink-0 px-2 whitespace-nowrap"
+            className="h-auto min-w-0 flex-1 px-3 whitespace-normal"
             onClick={() => void install()}
           >
             <Download aria-hidden />
             {t("install")}
           </Button>
         )}
-        {children}
+        {showButton ? shareRow(children) : children}
       </div>
       {showButton && hintOpen && (
         <p
