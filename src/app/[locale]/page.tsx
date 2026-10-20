@@ -10,7 +10,7 @@ import { EventFiltersBar } from "~/components/EventFilters";
 import { EventPeriodNav } from "~/components/EventPeriodNav";
 import { EventsList } from "~/components/EventsList";
 import { EventTagHubNav } from "~/components/EventTagHubNav";
-import { Typography } from "~/components/layout";
+import { PwaInstallOffer, Typography } from "~/components/layout";
 import { TrackedLink } from "~/components/TrackedLink";
 import { Button } from "~/components/ui/button";
 import { ARTICLES_TEASER_COUNT, DEFAULT_LOCALE, OG_IMAGE } from "~/constants";
@@ -181,7 +181,8 @@ export default async function HomePage({ params, searchParams }: Props) {
         {t("pageTitle")}
       </Typography.H1>
 
-      <div className="mt-2 flex justify-center">
+      <div className="mt-2 flex w-full flex-col items-center gap-2">
+        <PwaInstallOffer />
         <Button asChild variant="outline">
           <TrackedLink eventKey="home.create_event" href="/create-event">
             <Plus className="size-4" />
