@@ -9,6 +9,10 @@ import {
 } from "serwist";
 
 import {
+  PWA_NOTIFICATION_OPEN_MESSAGE,
+  PWA_OPEN_QUERY_PARAM,
+} from "~/lib/analytics/pwa-events";
+import {
   reportPushEnableFailure,
   urlBase64ToUint8Array,
   VAPID_PUBLIC_KEY,
@@ -101,6 +105,16 @@ self.addEventListener("push", (event: PushEvent) => {
   );
 });
 
+function withNotificationOpen(url: string): string {
+  try {
+    const next = new URL(url, self.location.origin);
+    next.searchParams.set(PWA_OPEN_QUERY_PARAM, "notification");
+    return next.href;
+  } catch {
+    return url;
+  }
+}
+
 self.addEventListener("notificationclick", (event: NotificationEvent) => {
   event.notification.close();
 
@@ -111,8 +125,11 @@ self.addEventListener("notificationclick", (event: NotificationEvent) => {
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
         const existing = clientList.find((c) => c.url === url && "focus" in c);
-        if (existing) return existing.focus();
-        return self.clients.openWindow(url);
+        if (existing) {
+          existing.postMessage({ type: PWA_NOTIFICATION_OPEN_MESSAGE });
+          return existing.focus();
+        }
+        return self.clients.openWindow(withNotificationOpen(url));
       }),
   );
 });
