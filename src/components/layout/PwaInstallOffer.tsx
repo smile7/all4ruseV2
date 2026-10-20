@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
-
-import { Download } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { detectStandaloneApp } from "~/lib/analytics/track-pwa";
@@ -13,40 +11,62 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
+type NavigatorWithClientHints = Navigator & {
+  userAgentData?: { platform?: string; mobile?: boolean };
+};
+
 function isInstallPrompt(event: Event): event is BeforeInstallPromptEvent {
   return "prompt" in event && typeof event.prompt === "function";
 }
 
-function isAndroidPhone(): boolean {
-  const nav = navigator as Navigator & {
-    userAgentData?: { platform?: string; mobile?: boolean };
-  };
-  const android =
-    nav.userAgentData?.platform === "Android" || /Android/i.test(nav.userAgent);
-  if (!android) return false;
+function isIos(): boolean {
+  const nav = navigator as NavigatorWithClientHints;
+  if (nav.userAgentData?.platform === "iOS") return true;
+  if (/iPhone|iPad|iPod/i.test(nav.userAgent)) return true;
+  return nav.platform === "MacIntel" && nav.maxTouchPoints > 1;
+}
+
+function isPhone(): boolean {
+  if (!window.matchMedia("(max-width: 767px)").matches) return false;
+  const nav = navigator as NavigatorWithClientHints;
   if (nav.userAgentData?.mobile === false) return false;
-  return window.matchMedia("(max-width: 767px)").matches;
+  if (nav.userAgentData?.mobile === true) return true;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(nav.userAgent);
+}
+
+function subscribeToPhoneWidth(onChange: () => void): () => void {
+  const media = window.matchMedia("(max-width: 767px)");
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+
+function installOfferAvailable(): boolean {
+  return isPhone() && !detectStandaloneApp();
 }
 
 /**
- * Round install button, opposite the back-to-top control.
- * Android phones only, and only while the app is not installed.
- * The click opens the browser's own install dialog.
+ * Text install control under the home title, phones only.
+ * Hidden once the site is already running as the installed app.
+ * Browsers that expose an install dialog open it. Every other browser gets
+ * a short instruction for its own menu.
  */
 export function PwaInstallOffer() {
   const t = useTranslations("PwaInstall");
   const [promptEvent, setPromptEvent] =
     useState<BeforeInstallPromptEvent | null>(null);
+  const [hidden, setHidden] = useState(false);
+  const [hintOpen, setHintOpen] = useState(false);
+  const offer = useSyncExternalStore(
+    subscribeToPhoneWidth,
+    installOfferAvailable,
+    () => false,
+  );
 
   useEffect(() => {
     if (detectStandaloneApp()) return;
 
     const onBeforeInstall = (event: Event) => {
-      if (
-        !isInstallPrompt(event) ||
-        detectStandaloneApp() ||
-        !isAndroidPhone()
-      ) {
+      if (!isInstallPrompt(event) || detectStandaloneApp() || !isPhone()) {
         return;
       }
       event.preventDefault();
@@ -55,6 +75,8 @@ export function PwaInstallOffer() {
 
     const onInstalled = () => {
       setPromptEvent(null);
+      setHintOpen(false);
+      setHidden(true);
     };
 
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
@@ -65,29 +87,41 @@ export function PwaInstallOffer() {
     };
   }, []);
 
-  if (!promptEvent) return null;
+  if (hidden || !offer) return null;
 
   async function install() {
     const event = promptEvent;
-    if (!event) return;
+    if (!event) {
+      setHintOpen((open) => !open);
+      return;
+    }
     setPromptEvent(null);
+    setHintOpen(false);
+    setHidden(true);
     try {
       await event.prompt();
     } catch {
-      // The browser refused the dialog. The button can return on a later visit.
+      setHidden(false);
+      setHintOpen(true);
     }
   }
 
   return (
-    <Button
-      type="button"
-      size="icon"
-      variant="outline"
-      aria-label={t("install")}
-      className="bg-secondary/70 hover:bg-secondary fixed bottom-20 left-4 z-50 size-11 rounded-full shadow-lg md:hidden"
-      onClick={() => void install()}
-    >
-      <Download className="size-5" aria-hidden />
-    </Button>
+    <div className="flex w-full flex-col gap-2 md:hidden">
+      <Button
+        type="button"
+        variant="outline"
+        aria-expanded={promptEvent ? undefined : hintOpen}
+        className="h-auto w-full text-center whitespace-normal"
+        onClick={() => void install()}
+      >
+        {t("install")}
+      </Button>
+      {hintOpen && (
+        <p role="status" className="text-muted-foreground max-w-sm text-sm">
+          {isIos() ? t("iosHint") : t("menuHint")}
+        </p>
+      )}
+    </div>
   );
 }

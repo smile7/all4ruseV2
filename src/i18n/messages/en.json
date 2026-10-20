@@ -907,7 +907,9 @@
     }
   },
   "PwaInstall": {
-    "install": "Install the app"
+    "install": "Install the All4Ruse app here",
+    "menuHint": "Open the browser menu and tap Install.",
+    "iosHint": "Tap Share, then Add to Home Screen."
   },
   "EventPeriodPage": {
     "breadcrumbHome": "Home",
