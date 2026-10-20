@@ -11,7 +11,11 @@ import { EventCard } from "~/components/EventCard";
 import { EventTag } from "~/components/EventTag";
 import { Typography } from "~/components/layout";
 import { Button } from "~/components/ui/button";
-import { DEFAULT_LOCALE, MIN_INDEXABLE_TAG_EVENTS } from "~/constants";
+import {
+  DEFAULT_LOCALE,
+  MIN_INDEXABLE_TAG_EVENTS,
+  OG_IMAGE,
+} from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { Link } from "~/i18n/navigation";
 import { eventsApi, tagsApi } from "~/lib/api";
@@ -119,6 +123,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `${siteUrl}/${locale}/tag/${eventTagSlug(resolved.tag.title)}`,
       siteName: "All4Ruse",
       type: "website",
+      images: [OG_IMAGE],
     },
   };
 }

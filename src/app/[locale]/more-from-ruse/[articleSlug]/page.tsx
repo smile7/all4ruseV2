@@ -5,7 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ArticleCard } from "~/components/ArticleCard";
 import { ArticleView } from "~/components/ArticleDetail";
-import { ARTICLES_RELATED_COUNT, type Locale } from "~/constants";
+import { ARTICLES_RELATED_COUNT, type Locale, OG_IMAGE } from "~/constants";
 import { Link } from "~/i18n/navigation";
 import { articlesApi, eventsApi } from "~/lib/api";
 import { extractArticleEventIds } from "~/lib/article-event-links";
@@ -103,7 +103,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
               alt: article.hero_image_alt ?? article.title,
             },
           ]
-        : [],
+        : [OG_IMAGE],
       locale: openGraphLocaleByRouteLocale[safeLocale],
       alternateLocale: siblings
         .map(
@@ -115,7 +115,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title: article.title,
       description,
-      images: article.hero_image ? [article.hero_image] : [],
+      images: article.hero_image ? [article.hero_image] : [OG_IMAGE.url],
     },
   };
 }

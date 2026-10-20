@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 
 import { ArticleCard } from "~/components/ArticleCard";
 import { Typography } from "~/components/layout";
-import { ARTICLES_PAGE_SIZE } from "~/constants";
+import { ARTICLES_PAGE_SIZE, OG_IMAGE } from "~/constants";
 import { Link } from "~/i18n/navigation";
 import { articlesApi } from "~/lib/api";
 import { buildArticleListJsonLd, serializeJsonLd } from "~/lib/article-jsonld";
@@ -75,6 +75,7 @@ export async function generateMetadata({
       url: indexUrl(locale, page),
       siteName: "All4Ruse",
       type: "website",
+      images: [OG_IMAGE],
     },
   };
 }
