@@ -907,7 +907,7 @@
     }
   },
   "PwaInstall": {
-    "install": "Instalează aplicația All4Ruse aici",
+    "install": "Instalează All4Ruse",
     "menuHint": "Deschide meniul browserului și alege Instalează.",
     "iosHint": "Apasă Partajare, apoi Adaugă la ecranul principal."
   },
