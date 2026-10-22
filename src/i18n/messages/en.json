@@ -359,6 +359,12 @@
     "remindersError": "Something went wrong. Please try again.",
     "remindersPromptDescription": "Turn on reminders and we'll notify you on the day of the event."
   },
+  "EventLikes": {
+    "likeAria": "Like event",
+    "unlikeAria": "Remove like",
+    "countAria": "{count, plural, one {# like} other {# likes}}",
+    "mutationError": "We could not save your like. Please try again."
+  },
   "Profile": {
     "personal": "Personal",
     "personalInformation": "Personal Information",

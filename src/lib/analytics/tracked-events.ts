@@ -26,6 +26,8 @@ export const TRACKED_EVENT_KEYS = [
   "event.save",
   "event.unsave",
   "event.save.guest",
+  "event.like",
+  "event.unlike",
   "event.buy_tickets",
   "event.add_to_calendar",
   "event.share_facebook",

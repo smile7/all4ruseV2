@@ -359,6 +359,12 @@
     "remindersError": "A apărut o eroare. Te rugăm să încerci din nou.",
     "remindersPromptDescription": "Activează reminderele și te vom anunța în ziua evenimentului."
   },
+  "EventLikes": {
+    "likeAria": "Apreciază evenimentul",
+    "unlikeAria": "Elimină aprecierea",
+    "countAria": "{count, plural, one {# apreciere} few {# aprecieri} other {# de aprecieri}}",
+    "mutationError": "Nu am putut salva aprecierea. Te rugăm să încerci din nou."
+  },
   "Profile": {
     "personal": "Personal",
     "personalInformation": "Informații personale",
