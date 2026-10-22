@@ -13,6 +13,7 @@ import { useTranslations } from "next-intl";
 import { Download } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { trackClick } from "~/lib/analytics/track-click";
 import { detectStandaloneApp } from "~/lib/analytics/track-pwa";
 import { cn } from "~/lib/utils";
 
@@ -111,6 +112,7 @@ export function PwaInstallOffer({ children }: PwaInstallOfferProps) {
   const showButton = !hidden && offer;
 
   async function install() {
+    trackClick("home.install_app");
     const event = promptEvent;
     if (!event) {
       setHintOpen((open) => !open);

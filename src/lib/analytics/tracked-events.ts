@@ -36,6 +36,7 @@ export const TRACKED_EVENT_KEYS = [
   "event.organizer",
   "home.view.calendar",
   "home.create_event",
+  "home.install_app",
   "header.create_event",
   "header.featured_article",
   // Family-weekend article: a click that opens another page on this site.
