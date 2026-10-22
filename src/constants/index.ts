@@ -10,6 +10,8 @@ export const ARTICLES_BUCKET = "article-images";
  */
 export const UPLOAD_CACHE_CONTROL = "31536000";
 export const EVENTS_PAGE_SIZE = 12;
+/** Max event ids per GET /api/event-likes request. */
+export const EVENT_LIKE_COUNTS_MAX_IDS = 200;
 export const ARTICLES_PAGE_SIZE = 12;
 export const ARTICLES_TEASER_COUNT = 3;
 export const ARTICLES_RELATED_COUNT = 3;

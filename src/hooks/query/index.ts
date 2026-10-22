@@ -1,3 +1,8 @@
+export {
+  useEventLikeCount,
+  useLikedEventIds,
+  useToggleEventLike,
+} from "./event-likes";
 export { useActiveEvents, useCurrentEvents, usePastEvents } from "./events";
 export {
   useCurrentUserId,

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.12 (cd3cf9e)"
+    PostgrestVersion: "12.2.12"
   }
   public: {
     Tables: {
@@ -187,6 +187,32 @@ export type Database = {
             foreignKeyName: "event_claims_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_like_counts: {
+        Row: {
+          event_id: number
+          like_count: number
+          updated_at: string
+        }
+        Insert: {
+          event_id: number
+          like_count?: number
+          updated_at?: string
+        }
+        Update: {
+          event_id?: number
+          like_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_like_counts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -630,6 +656,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      change_event_like_count: {
+        Args: { p_delta: number; p_event_id: number }
+        Returns: number
+      }
       consume_geocode_call: {
         Args: { p_daily_limit?: number; p_user_id: string }
         Returns: {

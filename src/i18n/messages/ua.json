@@ -359,6 +359,12 @@
     "remindersError": "Виникла помилка. Спробуйте ще раз.",
     "remindersPromptDescription": "Увімкніть нагадування — ми сповістимо вас у день події."
   },
+  "EventLikes": {
+    "likeAria": "Вподобати подію",
+    "unlikeAria": "Прибрати вподобання",
+    "countAria": "{count, plural, one {# вподобання} few {# вподобання} many {# вподобань} other {# вподобання}}",
+    "mutationError": "Не вдалося зберегти вподобання. Спробуйте ще раз."
+  },
   "Profile": {
     "personal": "Дані",
     "personalInformation": "Особиста інформація",

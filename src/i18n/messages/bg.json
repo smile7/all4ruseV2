@@ -356,6 +356,12 @@
     "remindersError": "Възникна грешка. Опитайте отново.",
     "remindersPromptDescription": "Включете напомняния и ще получите известие в деня на събитието."
   },
+  "EventLikes": {
+    "likeAria": "Харесай събитието",
+    "unlikeAria": "Премахни харесването",
+    "countAria": "{count, plural, one {# харесване} other {# харесвания}}",
+    "mutationError": "Не успяхме да запишем харесването. Опитайте отново."
+  },
   "Profile": {
     "personal": "Данни",
     "personalInformation": "Лична информация",

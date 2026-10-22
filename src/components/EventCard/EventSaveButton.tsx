@@ -173,7 +173,7 @@ export function EventSaveButton({
         <button
           type="button"
           className={cn(
-            "bg-background/92 text-foreground hover:bg-background focus-visible:ring-ring absolute right-2.5 bottom-2.5 z-30 flex size-10 cursor-pointer items-center justify-center rounded-full shadow backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+            "bg-background/92 text-foreground hover:bg-background focus-visible:ring-ring absolute bottom-2.5 left-2.5 z-30 flex size-10 cursor-pointer items-center justify-center rounded-full shadow backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
             className,
           )}
           aria-pressed={isSaved}

@@ -32,6 +32,7 @@ import {
 import { cn } from "~/lib/utils";
 import type { Event } from "~/types";
 
+import { EventLikeButton } from "./EventLikeButton";
 import { EventSaveButton } from "./EventSaveButton";
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -244,11 +245,14 @@ export function EventCard({
           )}
 
           {!showManageActions && (
-            <EventSaveButton
-              eventId={event.id}
-              initialSaved={initialSaved}
-              onUnsaveSuccess={onUnsaveSuccess}
-            />
+            <>
+              <EventSaveButton
+                eventId={event.id}
+                initialSaved={initialSaved}
+                onUnsaveSuccess={onUnsaveSuccess}
+              />
+              <EventLikeButton eventId={event.id} />
+            </>
           )}
         </div>
       </ViewTransition>

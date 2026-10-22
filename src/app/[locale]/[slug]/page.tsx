@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { EventArticlePromo } from "~/components/EventArticlePromo";
+import { EventLikeButton } from "~/components/EventCard";
 import { EventTag } from "~/components/EventTag";
 import {
   EventActionButtons,
@@ -343,9 +344,21 @@ export default async function EventDetailPage({ params }: Props) {
         <div className="mx-auto max-w-7xl px-4 pt-5 pb-4 sm:px-6 sm:pt-7 lg:px-8">
           {/* Title + tags */}
           <div className="mb-6 sm:mb-8">
-            <h1 className="mb-3 text-center text-2xl font-bold tracking-tight wrap-break-word sm:text-3xl">
-              {formattedTitle}
-            </h1>
+            <div className="mb-3 flex items-center justify-center gap-3">
+              <h1 className="min-w-0 text-center text-2xl font-bold tracking-tight wrap-break-word sm:text-3xl">
+                {formattedTitle}
+              </h1>
+              <EventLikeButton
+                eventId={event.id}
+                variant="inline"
+                className="hidden md:inline-flex"
+              />
+            </div>
+            <EventLikeButton
+              eventId={event.id}
+              variant="floating"
+              className="md:hidden"
+            />
             {event.isEventCancelled && (
               <p className="text-destructive mb-3 text-center text-base font-bold tracking-[0.22em] uppercase">
                 {t("cancelled")}

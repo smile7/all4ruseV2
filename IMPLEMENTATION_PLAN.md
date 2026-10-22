@@ -278,7 +278,7 @@ Authenticated users can bookmark events; bookmarks persist in the database. Gues
 
 ### 4.3 EventCard — save control ✅
 
-- Save icon bottom-right on `EventCard`; guest → account prompt dialog; authenticated → optimistic toggle via TanStack Query hooks.
+- Save icon bottom-left on `EventCard` (bottom-right is the like heart, see 4.8); guest → account prompt dialog; authenticated → optimistic toggle via TanStack Query hooks.
 
 ### 4.4 Client state and mutations ✅
 
@@ -300,6 +300,13 @@ Authenticated users can bookmark events; bookmarks persist in the database. Gues
 - Authenticated user sees saved events on the Saved page split into upcoming/current and past.
 - Removing from the Saved page updates the page without leaving stale cards.
 - RLS blocks reading, creating, or deleting another user’s saved rows.
+
+### 4.8 Event likes (heart) ✅
+
+- Anyone can like an event, with or without an account. Heart is bottom-right on `EventCard` (save moved to bottom-left) and next to the title on the event page (`EventLikeButton`, `variant="inline"`).
+- DB: `event_like_counts (event_id pk → events.id, like_count)`, public `SELECT`; writes only via `change_event_like_count(event_id, ±1)` (service role). Kept off `events` so likes do not bump `events.updated_at`.
+- There is no per-user like row: the browser keeps its liked ids in `localStorage` (`a4r-liked-events`). Clearing storage or another browser can like again — accepted for an anonymous feature; `/api/event-likes` POST is rate limited per IP.
+- Counts are read live from `GET /api/event-likes?ids=…`, not from the ISR page payload, so they are not hours stale. `src/hooks/query/event-likes.ts` merges all cards’ requests from the same tick into one GET. The count is shown only when it is above 0.
 
 ---
 
