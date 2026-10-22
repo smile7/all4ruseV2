@@ -307,6 +307,7 @@ Authenticated users can bookmark events; bookmarks persist in the database. Gues
 - DB: `event_like_counts (event_id pk → events.id, like_count)`, public `SELECT`; writes only via `change_event_like_count(event_id, ±1)` (service role). Kept off `events` so likes do not bump `events.updated_at`.
 - There is no per-user like row: the browser keeps its liked ids in `localStorage` (`a4r-liked-events`). Clearing storage or another browser can like again — accepted for an anonymous feature; `/api/event-likes` POST is rate limited per IP.
 - Counts are read live from `GET /api/event-likes?ids=…`, not from the ISR page payload, so they are not hours stale. `src/hooks/query/event-likes.ts` merges all cards’ requests from the same tick into one GET. The count is shown only when it is above 0.
+- Sort by likes: “Sort by: Date / Likes” toggle in `FilterContent` (homepage filter panel + mobile drawer), stored as `?sort=likes` in `useFilters`. Sorting happens client-side in `EventsList` (active list only) from the same cached counts — no extra query. Most likes first; ties keep the normal order (premium, then date). Month headings are dropped while sorting by likes, and calendar view switches back to grid. The sort counts in the filter badge and is reset by “Clear”, but not in `hasActiveFilters` (it does not narrow the list, so the page stays indexable with its canonical).
 
 ---
 

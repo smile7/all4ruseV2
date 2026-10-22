@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 
 import { usePathname, useRouter } from "~/i18n/navigation";
 
+export type EventSort = "date" | "likes";
+
 export type FilterValues = {
   search: string;
   tagIds: number[];
@@ -13,6 +15,8 @@ export type FilterValues = {
   isFree: boolean;
   host: string;
   place: string;
+  /** Order only — does not narrow the list, so it is not part of `hasActiveFilters`. */
+  sort: EventSort;
 };
 
 function parseTagIds(raw: string | null): number[] {
@@ -37,6 +41,7 @@ export function useFilters() {
       isFree: searchParams.get("isFree") === "true",
       host: searchParams.get("host") ?? "",
       place: searchParams.get("place") ?? "",
+      sort: searchParams.get("sort") === "likes" ? "likes" : "date",
     }),
     [searchParams],
   );
@@ -57,6 +62,7 @@ export function useFilters() {
     filters.isFree,
     filters.host !== "",
     filters.place !== "",
+    filters.sort !== "date",
   ].filter(Boolean).length;
 
   const buildParams = useCallback(
@@ -71,6 +77,7 @@ export function useFilters() {
       if (merged.isFree) next.set("isFree", "true");
       if (merged.host) next.set("host", merged.host);
       if (merged.place) next.set("place", merged.place);
+      if (merged.sort !== "date") next.set("sort", merged.sort);
 
       return next;
     },

@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import { EVENT_LIKE_COUNTS_MAX_IDS } from "~/constants";
 
@@ -87,6 +92,31 @@ export function useEventLikeCount(eventId: number) {
     queryKey: eventLikesKeys.count(eventId),
     queryFn: () => loadLikeCount(eventId),
     staleTime: 60_000,
+  });
+}
+
+/**
+ * Counts for a whole list, keyed by event id. Shares the cache (and the batched
+ * request) with the per-card `useEventLikeCount`, so it adds no extra fetch.
+ */
+export function useEventLikeCounts(eventIds: number[], enabled = true) {
+  return useQueries({
+    queries: eventIds.map((eventId) => ({
+      queryKey: eventLikesKeys.count(eventId),
+      queryFn: () => loadLikeCount(eventId),
+      staleTime: 60_000,
+      enabled,
+    })),
+    combine: (results) => {
+      const counts = new Map<number, number>();
+      eventIds.forEach((eventId, index) => {
+        counts.set(eventId, results[index]?.data ?? 0);
+      });
+      return {
+        counts,
+        isPending: enabled && results.some((result) => result.isPending),
+      };
+    },
   });
 }
 

@@ -1,5 +1,6 @@
 export {
   useEventLikeCount,
+  useEventLikeCounts,
   useLikedEventIds,
   useToggleEventLike,
 } from "./event-likes";

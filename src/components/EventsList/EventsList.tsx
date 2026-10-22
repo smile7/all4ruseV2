@@ -26,6 +26,7 @@ const EventsCalendarView = dynamic(
 );
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useEventLikeCounts } from "~/hooks/query/event-likes";
 import {
   useActiveEvents,
   useCurrentEvents,
@@ -205,13 +206,31 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
     initialData,
   });
 
-  // When the user applies any filter while in calendar view, switch to grid
-  // automatically — the calendar doesn't filter events visually. Map stays.
+  const sortByLikes = filters.sort === "likes";
+  const { counts: likeCounts, isPending: isLoadingLikes } = useEventLikeCounts(
+    events.map((event) => event.id),
+    sortByLikes,
+  );
+  const eventsByLikes = useMemo(
+    () =>
+      sortByLikes
+        ? [...events].sort(
+            (left, right) =>
+              (likeCounts.get(right.id) ?? 0) -
+                (likeCounts.get(left.id) ?? 0) ||
+              compareUpcomingEvents(left, right),
+          )
+        : events,
+    [events, likeCounts, sortByLikes],
+  );
+
+  // When the user applies any filter or sort while in calendar view, switch to
+  // grid automatically — the calendar doesn't filter or reorder events. Map stays.
   useEffect(() => {
-    if (hasActiveFilters && view === "calendar") {
+    if ((hasActiveFilters || sortByLikes) && view === "calendar") {
       setView("grid");
     }
-  }, [hasActiveFilters, view, setView]);
+  }, [hasActiveFilters, sortByLikes, view, setView]);
 
   // Fill remaining viewport for calendar and map. Lock page scroll so only
   // the slot scrolls internally.
@@ -277,7 +296,9 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
     };
   }, [view]);
 
-  if (isLoading && !events.length) return <EventsGridSkeleton />;
+  if ((isLoading && !events.length) || (sortByLikes && isLoadingLikes)) {
+    return <EventsGridSkeleton />;
+  }
 
   return (
     <div className="mt-4 flex flex-col gap-2">
@@ -347,7 +368,7 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
             onClose={() => setView("grid")}
           />
         ) : (
-          <EventsGrid events={events} groupByMonth />
+          <EventsGrid events={eventsByLikes} groupByMonth={!sortByLikes} />
         )}
       </div>
     </div>
