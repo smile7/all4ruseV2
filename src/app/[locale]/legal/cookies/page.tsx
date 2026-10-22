@@ -1,0 +1,110 @@
+import type { Metadata } from "next";
+
+import { Typography } from "~/components/layout";
+import { DEFAULT_LOCALE } from "~/constants";
+import { buildDefaultLocaleAlternates } from "~/lib/seo";
+
+type Props = {
+  params: Promise<{ locale: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: "Политика за бисквитки",
+    description:
+      "Политика за бисквитките на All4Ruse — необходими, аналитични и маркетингови cookies, управление и съгласие.",
+    ...(locale === DEFAULT_LOCALE
+      ? { alternates: buildDefaultLocaleAlternates("/legal/cookies") }
+      : { robots: { index: false, follow: true } }),
+  };
+}
+
+export default function CookiesPage() {
+  return (
+    <article
+      lang="bg"
+      className="prose prose-slate dark:prose-invert prose-headings:text-balance prose-p:text-pretty prose-ul:list-disc prose-ul:pl-6 prose-a:text-primary max-w-none"
+    >
+      <Typography.H1>ПОЛИТИКА ЗА БИСКВИТКИТЕ (COOKIES POLICY)</Typography.H1>
+      <Typography.P>
+        <strong>Последна актуализация: Юли 2026 г.</strong>
+      </Typography.P>
+      <Typography.P>
+        За да осигурим правилното функциониране на уебсайта All4Ruse и да
+        улесним Вашето сърфиране, ние използваме малки текстови файлове,
+        наречени „бисквитки&quot; (cookies).
+      </Typography.P>
+
+      <Typography.H3>1. КАКВО ПРЕДСТАВЛЯВАТ БИСКВИТКИТЕ?</Typography.H3>
+      <Typography.P>
+        Бисквитките са малки файлове с данни, които се записват на Вашето
+        устройство (компютър, таблет или мобилен телефон), когато посещавате
+        определен уебсайт. Те позволяват на сайта да запомни Вашите действия,
+        езикови предпочитания и състояние на сесията за определен период от
+        време.
+      </Typography.P>
+
+      <Typography.H3>
+        2. ВИДОВЕ БИСКВИТКИ, КОИТО ИЗПОЛЗВА ПЛАТФОРМАТА
+      </Typography.H3>
+      <Typography.P>
+        All4Ruse използва следните категории бисквитки:
+      </Typography.P>
+
+      <Typography.P>
+        <strong>2.1. Строго необходими (Функционални) бисквитки:</strong> Тези
+        бисквитки са критично важни за работата на платформата. Без тях
+        уебсайтът не може да изпълнява базови функции, като например:
+      </Typography.P>
+      <ul className="not-prose mb-6 list-disc pl-6 [li]:mt-1">
+        <li>
+          Поддържане на потребителската сесия вписана (Authorization Tokens).
+        </li>
+        <li>
+          Използване на функционалността за бърз вход чрез Facebook или Google.
+        </li>
+        <li>
+          Запаметяване на избраната от Вас езикова версия (/bg, /en и др.).
+        </li>
+      </ul>
+      <Typography.P>
+        Тези бисквитки не могат да бъдат изключени в нашата система, тъй като
+        сайтът ще спре да работи.
+      </Typography.P>
+
+      <Typography.P>
+        <strong>2.2. Аналитични бисквитки (За производителност):</strong>{" "}
+        Използваме бисквитки на Google Analytics само след Вашето съгласие. Те
+        ни позволяват да преброяваме посещенията и да идентифицираме източниците
+        на трафик, за да измерваме и подобряваме производителността на сайта.
+        Информацията, която тези бисквитки събират, се използва за обобщена
+        статистика.
+      </Typography.P>
+      <Typography.P>
+        <strong>2.3. Маркетингови бисквитки:</strong> При Ваше изрично съгласие
+        използваме Meta Pixel, за да измерваме ефективността на рекламните
+        кампании, да разбираме кои страници са посетени след клик върху реклама
+        и да изграждаме аудитории за бъдещи кампании в Meta платформи.
+      </Typography.P>
+
+      <Typography.H3>3. УПРАВЛЕНИЕ И ИЗТРИВАНЕ НА БИСКВИТКИТЕ</Typography.H3>
+      <Typography.P>
+        Повечето уеб браузъри са настроени да приемат бисквитки по подразбиране.
+        Вие имате възможност по всяко време да промените избора си чрез бутона
+        „Управление на бисквитки“ в сайта, както и чрез настройките на Вашия
+        браузър, за да блокирате бисквитките или да бъдете известявани, когато
+        на Вашето устройство се изпращат такива.
+      </Typography.P>
+      <Typography.P>
+        Моля, имайте предвид, че ако деактивирате или изтриете строго
+        необходимите функционални бисквитки, няма да можете да останете вписани
+        в профила си в All4Ruse и някои части от платформата може да не
+        функционират коректно.
+      </Typography.P>
+      <Typography.P>
+        <strong>Дата на последна актуализация: Юли 2026 г.</strong>
+      </Typography.P>
+    </article>
+  );
+}
