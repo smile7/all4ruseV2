@@ -14,6 +14,7 @@ export const TRACKED_EVENT_KEYS = [
   "filter.free",
   "filter.open",
   "filter.tag",
+  "filter.sort_likes",
   "advertise.cta.discuss_partnership",
   "advertise.cta.see_opportunities",
   "advertise.cta.request_proposal",

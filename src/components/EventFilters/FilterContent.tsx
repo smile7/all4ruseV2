@@ -17,6 +17,7 @@ import { HIDDEN_TAG_KEYS, normalizeEventTagKey } from "~/lib/event-tag-styles";
 
 import { ClearableInput } from "./ClearableInput";
 import { thisWeekRange, todayIso, weekendRange } from "./date-ranges";
+import { EventSortToggle } from "./EventSortToggle";
 import { QuickDateButton } from "./QuickDateButton";
 import { useDebouncedFilterField } from "./useDebouncedFilterField";
 
@@ -58,7 +59,7 @@ export function FilterContent({ hideQuickFilters = false }: Props) {
     setDateRange,
     toggleTag,
     clearFilters,
-    hasActiveFilters,
+    activeCount,
   } = useFilters();
   const { data: tags = [], isLoading: isLoadingTags } = useTags();
 
@@ -121,7 +122,7 @@ export function FilterContent({ hideQuickFilters = false }: Props) {
         {hideQuickFilters && (
           <ClearFiltersButton
             onClear={clearFilters}
-            disabled={!hasActiveFilters}
+            disabled={activeCount === 0}
             label={t("clearFilters")}
           />
         )}
@@ -176,12 +177,17 @@ export function FilterContent({ hideQuickFilters = false }: Props) {
             </label>
             <ClearFiltersButton
               onClear={clearFilters}
-              disabled={!hasActiveFilters}
+              disabled={activeCount === 0}
               label={t("clearFilters")}
             />
           </div>
         </div>
       )}
+
+      {/* In the homepage bar, mobile shows the sort under the filter section instead. */}
+      <EventSortToggle
+        className={hideQuickFilters ? "hidden md:flex" : undefined}
+      />
 
       {isLoadingTags ? (
         <div className="flex flex-wrap gap-2">
