@@ -226,8 +226,9 @@ function buildLocation(input: EventJsonLdInput) {
 
   return {
     "@type": "Place" as const,
-    // Venue name only — Google rejects city names here ("Ruse" is not a venue).
-    ...(place ? { name: place } : {}),
+    // Google flags a Place without `name`; when the venue is unknown the street
+    // address, then the town, is the most specific honest label available.
+    name: place ?? address ?? town,
     address: {
       "@type": "PostalAddress" as const,
       ...(address ? { streetAddress: address } : {}),
