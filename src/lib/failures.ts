@@ -48,6 +48,7 @@ export const FAILURE_STAGES = {
     "image_failed",
     "network_failed",
     "save_failed",
+    "host_assign",
   ],
 } as const;
 

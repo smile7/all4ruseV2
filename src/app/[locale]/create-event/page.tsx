@@ -7,7 +7,7 @@ import {
   type ProfileDefaults,
 } from "~/components/EventForm";
 import { Typography } from "~/components/layout/Typography";
-import { profilesApi } from "~/lib/api";
+import { hostsApi, profilesApi } from "~/lib/api";
 import { eventsApi } from "~/lib/api/events";
 import { tagsApi } from "~/lib/api/tags";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
@@ -35,12 +35,18 @@ export default async function CreateEventPage({ searchParams }: Props) {
   const { editId, duplicateId } = await searchParams;
   const eventId = editId ?? duplicateId;
 
-  const [{ data: profile }, tags, initialData] = await Promise.all([
+  const adminUserId = process.env.ADMIN_USER_ID;
+  const isAdmin = Boolean(adminUserId && user.id === adminUserId);
+
+  const [{ data: profile }, tags, initialData, hosts] = await Promise.all([
     profilesApi.getProfile(supabase, user.id),
     tagsApi.getTags(supabase),
     eventId
       ? eventsApi.getEventById(supabase, Number(eventId))
       : Promise.resolve(null),
+    isAdmin
+      ? hostsApi.listHosts(supabase).catch(() => [])
+      : Promise.resolve(undefined),
   ]);
 
   // Guard: if an ID was provided but the event wasn't found, fall back to create
@@ -81,6 +87,7 @@ export default async function CreateEventPage({ searchParams }: Props) {
         tags={tags}
         profileDefaults={profileDefaults}
         userId={user.id}
+        hosts={hosts}
       />
     </div>
   );

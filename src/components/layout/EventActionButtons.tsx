@@ -18,7 +18,8 @@ type Props = {
   gcalUrl: string;
   fbShareUrl: string;
   createdBy: string | null;
-  hostProfileUsername: string | null | undefined;
+  /** Host page or creator profile path; the button is hidden when null. */
+  organizerHref: string | null;
 };
 
 export async function EventActionButtons({
@@ -29,7 +30,7 @@ export async function EventActionButtons({
   gcalUrl,
   fbShareUrl,
   createdBy,
-  hostProfileUsername,
+  organizerHref,
 }: Props) {
   const t = await getTranslations({ locale, namespace: "SingleEvent" });
 
@@ -90,16 +91,13 @@ export async function EventActionButtons({
           {t("addToCalendar")}
         </TrackedLink>
       </Button>
-      {hostProfileUsername && (
+      {organizerHref && (
         <Button
           variant="secondary"
           asChild
           className="w-full justify-start gap-2"
         >
-          <TrackedLink
-            eventKey="event.organizer"
-            href={`/user/${hostProfileUsername}`}
-          >
+          <TrackedLink eventKey="event.organizer" href={organizerHref}>
             <User className="size-4 shrink-0" />
             {t("organizer")}
           </TrackedLink>

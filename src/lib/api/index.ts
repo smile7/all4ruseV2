@@ -14,6 +14,7 @@ export type { ArticleEventOption } from "./events";
 export { eventsApi } from "./events";
 export type { FailureLogInput } from "./failures";
 export { failuresApi } from "./failures";
+export { hostsApi } from "./hosts";
 export { profilesApi } from "./profiles";
 export type {
   DueReminders,

@@ -6,6 +6,7 @@ import {
   isReservedArticleSlug,
 } from "~/lib/article-slug";
 import { plainTextFromHtml } from "~/lib/event-description-html";
+import { HOST_SLUG_MAX_LENGTH, HOST_SLUG_PATTERN } from "~/lib/host-slug";
 import {
   USERNAME_PATTERN,
   USERNAME_VALIDATION_MESSAGE,
@@ -41,6 +42,8 @@ export type Event = Omit<Tables<"events">, "description"> & {
 export type Profile = Tables<"profiles">;
 export type EventTag = Tables<"event_tags">;
 export type Article = Tables<"articles">;
+/** Admin-managed organizer page — distinct from `Host`, the organizers JSON entry. */
+export type EventHost = Tables<"hosts">;
 
 /** A published translation of the same article, used to build hreflang. */
 export type ArticleSibling = {
@@ -316,6 +319,43 @@ export const advertiseInquiryApiSchema = z.object({
 });
 
 export type AdvertiseInquiryInput = z.infer<typeof advertiseInquiryApiSchema>;
+
+// ─── Hosts (admin-managed organizer pages) ────────────────────────────────────
+
+export const HOST_LIMITS = {
+  name: 120,
+  place: 120,
+  address: 200,
+  website: 300,
+  phone: 40,
+  email: 254,
+} as const;
+
+const optionalHostText = (max: number) =>
+  z.string().trim().max(max).optional().or(z.literal(""));
+
+/** Server-side payload. User-facing messages live in the form schema factory. */
+export const hostApiSchema = z.object({
+  name: z.string().trim().min(1).max(HOST_LIMITS.name),
+  slug: z
+    .string()
+    .trim()
+    .min(1)
+    .max(HOST_SLUG_MAX_LENGTH)
+    .regex(HOST_SLUG_PATTERN),
+  place: optionalHostText(HOST_LIMITS.place),
+  address: optionalHostText(HOST_LIMITS.address),
+  website: optionalHostText(HOST_LIMITS.website).refine(isOptionalWebUrl),
+  phone: optionalHostText(HOST_LIMITS.phone),
+  email: z.email().max(HOST_LIMITS.email).optional().or(z.literal("")),
+});
+
+export type HostInput = z.infer<typeof hostApiSchema>;
+
+export const assignEventHostSchema = z.object({
+  eventIds: z.array(z.number().int().positive()).min(1).max(60),
+  hostId: z.uuid().nullable(),
+});
 
 // ─── Smart Fill ───────────────────────────────────────────────────────────────
 

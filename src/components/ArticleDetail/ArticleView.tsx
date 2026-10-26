@@ -20,10 +20,13 @@ import {
   sanitizeArticleHtml,
 } from "~/lib/article-html";
 import { articleDisplayDate } from "~/lib/articles/display-date";
-import { FEATURED_HEADER_ARTICLE_SLUG } from "~/lib/articles/featured-header";
 import { getIntlLocale } from "~/lib/event-utils";
 import { ARTICLES_PATH } from "~/lib/seo";
 import type { Article, ArticleCategory } from "~/types";
+
+/** Stay metric is for this article only, even when another piece is in the header. */
+const FAMILY_WEEKEND_ARTICLE_SLUG =
+  "kakvo-da-pravim-s-detsata-v-ruse-tozi-uikend";
 
 /** Fewer than this and a table of contents is just noise. */
 const MIN_HEADINGS_FOR_TOC = 3;
@@ -58,7 +61,7 @@ export async function ArticleView({ article, locale, linkedEvents }: Props) {
 
   return (
     <article className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-      {article.slug === FEATURED_HEADER_ARTICLE_SLUG ? (
+      {article.slug === FAMILY_WEEKEND_ARTICLE_SLUG ? (
         <ArticleStayTracker />
       ) : null}
       <nav aria-label="Breadcrumb" className="mb-6">

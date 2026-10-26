@@ -7,8 +7,8 @@ import {
   sanitizeArticleHtml,
 } from "~/lib/article-html";
 import {
-  FEATURED_HEADER_ARTICLE_SLUG,
   FEATURED_HEADER_CACHE_TAG,
+  isFeaturedHeaderArticle,
 } from "~/lib/articles/featured-header";
 import { ARTICLES_PATH } from "~/lib/seo";
 import type { Article, ArticleFormValues } from "~/types";
@@ -81,7 +81,7 @@ export function revalidateArticle(
     revalidatePath(`/${locale}${ARTICLES_PATH}/${slug}`);
   }
   // The header button is rendered from the locale layout on every page.
-  if (slugs.includes(FEATURED_HEADER_ARTICLE_SLUG)) {
+  if (slugs.some(isFeaturedHeaderArticle)) {
     revalidateTag(FEATURED_HEADER_CACHE_TAG, { expire: 0 });
     revalidatePath("/[locale]", "layout");
   }
