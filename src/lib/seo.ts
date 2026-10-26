@@ -212,6 +212,17 @@ export function buildProfileAlternates(username: string) {
   return buildDefaultLocaleAlternates(`/user/${username}`);
 }
 
+export const HOSTS_PATH = "/host";
+
+export function hostPath(slug: string) {
+  return `${HOSTS_PATH}/${slug}`;
+}
+
+/** Host pages are Bulgarian-only content, same as profiles and events. */
+export function buildHostAlternates(slug: string) {
+  return buildDefaultLocaleAlternates(hostPath(slug));
+}
+
 /**
  * Google Event/Article rich results warn on a missing `image`. Skip the UI
  * placeholder and, when nothing representative exists, emit the branded OG

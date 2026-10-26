@@ -295,6 +295,7 @@ export type Database = {
           endDate: string
           endTime: string | null
           fbLink: string | null
+          host_id: string | null
           id: number
           image: string | null
           images: Json | null
@@ -329,6 +330,7 @@ export type Database = {
           endDate: string
           endTime?: string | null
           fbLink?: string | null
+          host_id?: string | null
           id?: number
           image?: string | null
           images?: Json | null
@@ -363,6 +365,7 @@ export type Database = {
           endDate?: string
           endTime?: string | null
           fbLink?: string | null
+          host_id?: string | null
           id?: number
           image?: string | null
           images?: Json | null
@@ -392,6 +395,13 @@ export type Database = {
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "hosts"
             referencedColumns: ["id"]
           },
         ]
@@ -446,6 +456,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      hosts: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          place: string | null
+          profile_id: string | null
+          slug: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          place?: string | null
+          profile_id?: string | null
+          slug: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          place?: string | null
+          profile_id?: string | null
+          slug?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hosts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

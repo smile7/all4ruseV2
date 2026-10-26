@@ -6,7 +6,13 @@ import {
   MIN_INDEXABLE_PERIOD_EVENTS,
   MIN_INDEXABLE_TAG_EVENTS,
 } from "~/constants";
-import { articlesApi, eventsApi, profilesApi, tagsApi } from "~/lib/api";
+import {
+  articlesApi,
+  eventsApi,
+  hostsApi,
+  profilesApi,
+  tagsApi,
+} from "~/lib/api";
 import {
   eventPeriodPath,
   eventPeriodSlugs,
@@ -14,7 +20,7 @@ import {
 } from "~/lib/event-periods";
 import { eventTagSlug } from "~/lib/event-tag-slug";
 import { todayInSofia } from "~/lib/event-utils";
-import { ARTICLES_PATH, LOCALE_TO_HREFLANG } from "~/lib/seo";
+import { ARTICLES_PATH, hostPath, LOCALE_TO_HREFLANG } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://all4ruse.com";
@@ -99,14 +105,21 @@ const BULGARIAN_ONLY_PATHS = [
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const client = createSupabasePublicServerClient();
-  const [slugsWithDates, usernames, articleEntries, tags, upcomingEvents] =
-    await Promise.all([
-      eventsApi.getAllSlugsWithDates(client),
-      profilesApi.getIndexableUsernames(client),
-      articlesApi.getArticleSitemapEntries(client),
-      tagsApi.getTags(client).catch(() => []),
-      eventsApi.getActiveEvents(client).catch(() => []),
-    ]);
+  const [
+    slugsWithDates,
+    usernames,
+    hostEntriesRaw,
+    articleEntries,
+    tags,
+    upcomingEvents,
+  ] = await Promise.all([
+    eventsApi.getAllSlugsWithDates(client),
+    profilesApi.getIndexableUsernames(client),
+    hostsApi.getHostSitemapEntries(client),
+    articlesApi.getArticleSitemapEntries(client),
+    tagsApi.getTags(client).catch(() => []),
+    eventsApi.getActiveEvents(client).catch(() => []),
+  ]);
 
   // Mirrors the noindex rule on the tag page itself.
   const upcomingCountByTagId = new Map<number, number>();
@@ -183,6 +196,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // Bulgarian only like profiles, and only hosts with upcoming events, since a
+  // host page without any renders noindex. They are hubs over several events,
+  // so they rank just above a single event in priority.
+  const hostEntries: MetadataRoute.Sitemap = hostEntriesRaw.map(
+    ({ slug, lastModified }) => ({
+      url: `${siteUrl}/${DEFAULT_LOCALE}${hostPath(slug)}`,
+      lastModified: new Date(lastModified),
+      changeFrequency: "daily" as const,
+      priority: 0.75,
+    }),
+  );
+
   // Date landing pages. Like the tag hubs, a sparse one renders noindex and must
   // stay out of the sitemap, so the event count decides inclusion.
   const periodEntries: MetadataRoute.Sitemap = eventPeriodSlugs().flatMap(
@@ -257,5 +282,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...articleDetailEntries,
     ...eventEntries,
     ...profileEntries,
+    ...hostEntries,
   ];
 }

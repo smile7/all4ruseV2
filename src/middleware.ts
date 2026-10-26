@@ -29,6 +29,8 @@ function loginRedirect(request: NextRequest, pathname: string) {
 
 // Routes that require the user to be authenticated
 const AUTH_REQUIRED = [
+  // Trailing slash: a bare "/admin" prefix would also catch event slugs.
+  "/admin/",
   "/create-article",
   "/create-event",
   "/my-events",

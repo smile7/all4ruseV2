@@ -28,11 +28,12 @@ function revalidateEventSurfaces(slug: string) {
     revalidatePath(`/${locale}/map`);
     // Retired: revalidatePath(`/${locale}/current`) and `/past`.
   }
-  // Period and tag listings are a bounded set (a handful of periods, the tag
-  // vocabulary), so busting the whole route is cheaper than resolving which
-  // ones this event belongs to.
+  // Period, tag and host listings are a bounded set (a handful of periods, the
+  // tag vocabulary, admin-managed hosts), so busting the whole route is cheaper
+  // than resolving which ones this event belongs to.
   revalidatePath("/[locale]/events/[period]", "page");
   revalidatePath("/[locale]/tag/[tagSlug]", "page");
+  revalidatePath("/[locale]/host/[slug]", "page");
   revalidatePath("/sitemap.xml");
   revalidatePath("/feed.xml");
   revalidatePath("/events.ics");

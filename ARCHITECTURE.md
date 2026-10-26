@@ -54,6 +54,8 @@ All pages live inside the `[locale]` segment so next-intl routing works out of t
 | `/[locale]/create-event`                 | Create event                   | Requires auth                                       |
 | `/[locale]/profile`                      | Profile                        | Requires auth                                       |
 | `/[locale]/my-events`                    | My events                      | Requires auth                                       |
+| `/[locale]/host/[slug]`                  | Host (organizer) page          | ISR (1 d); upcoming events only; noindex when empty |
+| `/[locale]/admin/hosts`                  | Manage hosts                   | Admin only — `notFound()` for everyone else         |
 | `/[locale]/admin`                        | Admin dashboard                | Admin role only                                     |
 | `/[locale]/admin/events`                 | Admin event list               | Admin role only                                     |
 | `/[locale]/admin/events/new`             | Create event (admin)           | Admin role only                                     |
@@ -1378,6 +1380,37 @@ Public bucket `article-images`, parallel to `event-images`. The browser never wr
 
 ---
 
+## Hosts (admin-managed organizer pages)
+
+Most events are imported by the admin, so their organizer has no account and no `/user/[username]` page. A **host** is an admin-managed organizer record with its own public page at `/[locale]/host/[slug]`. It is deliberately separate from `profiles`; `hosts.profile_id` is reserved for letting a registered organizer take over the page later and is unused for now.
+
+### Data model
+
+`hosts (id, slug unique, name, place, address, website, phone, email, profile_id, created_at, updated_at)` plus a nullable `events.host_id → hosts.id on delete set null`. One host per event. Public `select` policy only; writes go through admin API routes with the service-role client.
+
+**Snapshot semantics.** Picking a host copies its fields into the event form (organizers[0] name + link, place, address, phone, email). Editing a host later never rewrites existing events, only the host page.
+
+**`host_id` is trigger-protected.** Events are saved from the browser under RLS, so `guard_events_host_id` rejects any `host_id` change made by the `anon`/`authenticated` roles. The event form saves the event as usual, then calls `POST /api/hosts/assign` (admin-checked, service role) to link it, before `notifyEventIndexed` revalidates the event page.
+
+**Slugs are immutable** after creation — there is no redirect table.
+
+### Admin flow
+
+- Event form (`HostPicker`, admin only): a dropdown of hosts that prefills the fields, "Edit" for the selected host, and "Save as new organizer" which prefills a dialog from the current form values.
+- `/[locale]/admin/hosts`: list / create / edit / delete.
+- API: `POST /api/hosts`, `PATCH|DELETE /api/hosts/[id]`, `POST /api/hosts/assign`, all guarded by `requireAdmin` (`src/lib/auth/admin-guard.ts`).
+
+### Public page and SEO
+
+Shows name, place, address, website, phone, email and **upcoming events only** (`eventsApi.getHostUpcomingEvents`). Bulgarian canonical like profiles (`buildHostAlternates`).
+
+- **Metadata:** title `"{name} – програма и предстоящи събития в Русе"` (city dropped when the name already contains it), a description listing the count and the next three events with dates, and the next event's poster as the OG image.
+- **JSON-LD** (`src/lib/host-jsonld.ts`): `Organization` with a stable `@id` (`…/bg/host/[slug]#organization`), `CollectionPage` + `ItemList` of the events, and `BreadcrumbList`. Event pages linked to a host emit the same `@id` as their first `organizer`, so search engines join the events to the host entity.
+- **Internal links:** on the event page both „Виж организатор" and the first organizer name link to the host page (otherwise to the creator's profile as before).
+- **Indexing:** `noindex` and absent from the sitemap while the host has no upcoming events. Sitemap `lastmod` is the later of the host's and its newest event's `updated_at` (`hostsApi.getHostSitemapEntries`). Host edits and event (re)assignments submit the host URL to IndexNow; `/api/seo/notify` busts `/[locale]/host/[slug]` together with the other listing routes.
+
+---
+
 ## Environment Variables
 
 ```bash
@@ -1419,6 +1452,8 @@ GOOGLE_MAPS_GEOCODING_API_KEY=...
 ```
 
 `npm run types` — runs the TypeScript compiler without emitting files. Use this to catch type errors across the whole project without building.
+
+`npm run hosts:link` — one-off backfill that links admin-imported events to hosts by organizer name / place. Dry run by default; `-- --apply` writes, `-- --host=<slug>` limits it to one host.
 
 ---
 

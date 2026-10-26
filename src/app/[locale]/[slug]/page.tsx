@@ -37,7 +37,8 @@ import { Card, CardContent } from "~/components/ui/card";
 import { ObfuscatedEmail } from "~/components/ui/obfuscated-email";
 import { DEFAULT_LOCALE, type Locale, OG_IMAGE } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
-import { articlesApi, eventsApi, profilesApi } from "~/lib/api";
+import { Link } from "~/i18n/navigation";
+import { articlesApi, eventsApi, hostsApi, profilesApi } from "~/lib/api";
 import { buildBreadcrumbJsonLd, serializeJsonLd } from "~/lib/article-jsonld";
 import {
   EVENT_DESCRIPTION_BODY_CLASSES,
@@ -56,11 +57,13 @@ import {
   isLiveNow,
   toSofiaIsoDateTime,
 } from "~/lib/event-utils";
+import { hostCanonicalUrl, hostOrganizationId } from "~/lib/host-jsonld";
 import { isUsernameInvalid } from "~/lib/profile-username";
 import {
   buildEventAlternates,
   buildEventMetaDescription,
   eventDocumentTitle,
+  hostPath,
   sliceUtf16Safe,
 } from "~/lib/seo";
 import { createSupabasePublicServerClient } from "~/lib/supabase/server";
@@ -208,20 +211,25 @@ export default async function EventDetailPage({ params }: Props) {
   const eventTagIds = (event.tags ?? []).map((tag) => tag.id);
 
   // Run all remaining independent fetches in parallel.
-  const [hostProfileResult, relatedEvents, promoArticle] = await Promise.all([
-    event.createdBy && event.createdBy !== adminUserId
-      ? profilesApi
-          .getProfile(publicClient, event.createdBy)
-          .then((r) => r.data)
-          .catch(() => null)
-      : Promise.resolve(null),
-    eventsApi
-      .getRelatedEvents(publicClient, event.id, eventTagIds, event.title)
-      .catch(() => []),
-    articlesApi
-      .getLatestArticleForEventTags(publicClient, eventTagIds, locale)
-      .catch(() => null),
-  ]);
+  // An admin-linked host page wins over the creator's profile.
+  const [linkedHost, hostProfileResult, relatedEvents, promoArticle] =
+    await Promise.all([
+      event.host_id
+        ? hostsApi.getHostById(publicClient, event.host_id).catch(() => null)
+        : Promise.resolve(null),
+      !event.host_id && event.createdBy && event.createdBy !== adminUserId
+        ? profilesApi
+            .getProfile(publicClient, event.createdBy)
+            .then((r) => r.data)
+            .catch(() => null)
+        : Promise.resolve(null),
+      eventsApi
+        .getRelatedEvents(publicClient, event.id, eventTagIds, event.title)
+        .catch(() => []),
+      articlesApi
+        .getLatestArticleForEventTags(publicClient, eventTagIds, locale)
+        .catch(() => null),
+    ]);
 
   const hostProfile = hostProfileResult;
 
@@ -235,6 +243,12 @@ export default async function EventDetailPage({ params }: Props) {
     if (isUsernameInvalid(u)) return null;
     return u;
   })();
+
+  const organizerHref = linkedHost
+    ? hostPath(linkedHost.slug)
+    : hostProfileUsername
+      ? `/user/${hostProfileUsername}`
+      : null;
 
   const formattedTitle = formatEventTitle(event.title);
   const imageUrl = getEventImageUrl(event.image);
@@ -297,6 +311,12 @@ export default async function EventDetailPage({ params }: Props) {
     updatedAt: event.updated_at,
     tags: event.tags,
     hosts,
+    hostPage: linkedHost
+      ? {
+          id: hostOrganizationId(linkedHost.slug),
+          url: hostCanonicalUrl(linkedHost.slug),
+        }
+      : null,
   });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: t("breadcrumbHome"), url: `${siteUrl}/${DEFAULT_LOCALE}` },
@@ -481,7 +501,15 @@ export default async function EventDetailPage({ params }: Props) {
                       >
                         <div className="flex flex-col gap-0.5">
                           {hosts.map((o, i) =>
-                            o.link ? (
+                            i === 0 && linkedHost ? (
+                              <Link
+                                key={i}
+                                href={hostPath(linkedHost.slug)}
+                                className="text-sm font-semibold underline-offset-2 hover:underline"
+                              >
+                                {o.name}
+                              </Link>
+                            ) : o.link ? (
                               <a
                                 key={i}
                                 href={o.link}
@@ -549,7 +577,7 @@ export default async function EventDetailPage({ params }: Props) {
                   gcalUrl={gcalUrl}
                   fbShareUrl={fbShareUrl}
                   createdBy={event.createdBy}
-                  hostProfileUsername={hostProfileUsername}
+                  organizerHref={organizerHref}
                 />
               </div>
 
@@ -620,7 +648,7 @@ export default async function EventDetailPage({ params }: Props) {
                 gcalUrl={gcalUrl}
                 fbShareUrl={fbShareUrl}
                 createdBy={event.createdBy}
-                hostProfileUsername={hostProfileUsername}
+                organizerHref={organizerHref}
               />
               <EventMapAndReport
                 locale={locale}

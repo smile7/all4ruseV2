@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { EventTag } from "~/components/EventTag";
+import { HostPicker } from "~/components/Hosts";
 import { DatePopover } from "~/components/layout/DatePopover";
 import {
   useRegisterUnsavedChanges,
@@ -89,7 +90,7 @@ import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 import { ensureFreshAuthSession } from "~/lib/supabase/ensure-session";
 import { isOptionalWebUrl, normalizeWebUrl } from "~/lib/url-input";
 import { isValidYoutubeUrl } from "~/lib/youtube-url";
-import type { Event, EventDraft, Tag } from "~/types";
+import type { Event, EventDraft, EventHost, Tag } from "~/types";
 
 import { AddressAutocomplete } from "./AddressAutocomplete";
 import { EventDescriptionEditor } from "./EventDescriptionEditor";
@@ -259,6 +260,8 @@ type Props = {
   tags: Tag[];
   profileDefaults?: ProfileDefaults | null;
   userId: string;
+  /** Admin only — enables the host picker. */
+  hosts?: EventHost[];
 };
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -480,6 +483,7 @@ export function EventForm({
   tags,
   profileDefaults,
   userId,
+  hosts,
 }: Props) {
   const t = useTranslations("CreateEvent");
   const locale = useLocale();
@@ -539,6 +543,13 @@ export function EventForm({
     baselineImagesFingerprintRef.current;
   const togglesDirty =
     isFree !== baselineTogglesRef.current.isFree || isRecurring;
+
+  // Duplicates carry the source event's host; the new row is linked on save.
+  const initialHostId = initialData?.host_id ?? null;
+  const [hostOptions, setHostOptions] = useState<EventHost[]>(hosts ?? []);
+  const [hostId, setHostId] = useState<string | null>(initialHostId);
+  const showHostPicker = isAdminUser && hosts !== undefined;
+  const hostDirty = showHostPicker && hostId !== initialHostId;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -630,7 +641,11 @@ export function EventForm({
   }, [startDate, endDate, startTime, form]);
 
   useRegisterUnsavedChanges(
-    form.formState.isDirty || imagesDirty || togglesDirty || coordsDirty,
+    form.formState.isDirty ||
+      imagesDirty ||
+      togglesDirty ||
+      coordsDirty ||
+      hostDirty,
   );
 
   // ── Image upload ──────────────────────────────────────────────────────────
@@ -692,6 +707,67 @@ export function EventForm({
     } else {
       placesCoordsRef.current = null;
       setDraftCoords(EMPTY_COORDS);
+    }
+  }
+
+  // ── Host (admin) ──────────────────────────────────────────────────────────
+  function handleHostSelect(host: EventHost | null) {
+    setHostId(host?.id ?? null);
+    if (!host) return;
+
+    // Overwrite even with blanks: leftovers from a previously picked host
+    // would otherwise end up on the wrong event.
+    const options = { shouldDirty: true } as const;
+    form.setValue("organizers.0.name", host.name, options);
+    form.setValue("organizers.0.link", host.website ?? "", options);
+    form.setValue("place", host.place ?? "", options);
+    form.setValue("address", host.address ?? "", options);
+    form.setValue("phoneNumber", host.phone ?? "", options);
+    form.setValue("email", host.email ?? "", options);
+    clearSessionCoords();
+  }
+
+  function handleHostSaved(host: EventHost) {
+    setHostOptions((prev) =>
+      [...prev.filter((h) => h.id !== host.id), host].sort((a, b) =>
+        a.name.localeCompare(b.name, "bg"),
+      ),
+    );
+  }
+
+  function getHostDraft() {
+    const values = form.getValues();
+    return {
+      name: values.organizers[0]?.name ?? "",
+      website: values.organizers[0]?.link ?? "",
+      place: values.place ?? "",
+      address: values.address,
+      phone: values.phoneNumber ?? "",
+      email: values.email ?? "",
+    };
+  }
+
+  /** The event itself is already saved; a failure here only loses the link. */
+  async function linkEventsToHost(eventIds: number[]) {
+    if (!showHostPicker || eventIds.length === 0) return;
+    const unchanged = mode === "edit" && hostId === initialHostId;
+    if (unchanged || (mode !== "edit" && hostId === null)) return;
+
+    try {
+      const response = await fetch("/api/hosts/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventIds, hostId }),
+      });
+      if (!response.ok) throw new Error(`assign ${response.status}`);
+    } catch (error) {
+      void reportFailure({
+        flow: "event_create",
+        stage: "host_assign",
+        message: getFailureMessage(error),
+        metadata: { mode },
+      });
+      toast.error(t("hostAssignError"));
     }
   }
 
@@ -835,6 +911,7 @@ export function EventForm({
           occurrenceDates,
           seriesId,
         );
+        await linkEventsToHost(created.map((e) => e.id));
         const anyLive = created.some((e) => e.isEventActive);
         for (const event of created) {
           if (event.isEventActive) notifyEventIndexed(event.slug);
@@ -875,6 +952,8 @@ export function EventForm({
           saved.isEventActive ? t("eventCreatedLive") : t("eventCreated"),
         );
       }
+
+      await linkEventsToHost([saved.id]);
 
       const slug = typeof saved.slug === "string" ? saved.slug.trim() : "";
       if (saved.isEventActive && slug !== "") {
@@ -1394,6 +1473,17 @@ export function EventForm({
               </div>
             </CardContent>
           </Card>
+
+          {/* ── Host page link (admin) ──────────────────────────────────── */}
+          {showHostPicker && (
+            <HostPicker
+              hosts={hostOptions}
+              selectedId={hostId}
+              onSelect={handleHostSelect}
+              onHostSaved={handleHostSaved}
+              getDraft={getHostDraft}
+            />
+          )}
 
           {/* ── Location ────────────────────────────────────────────────── */}
           <Card>

@@ -170,6 +170,7 @@ const LIST_COLUMNS = [
   "phoneNumber",
   "email",
   "seriesId",
+  "host_id",
   "isEventActive",
   "isEventCancelled",
   "isEventPremium",
@@ -545,6 +546,23 @@ async function getEventsByIds(client: Client, ids: number[]): Promise<Event[]> {
 
   if (error) throw error;
   return (data ?? []).map(mapEvent);
+}
+
+/** Upcoming events linked to an admin-managed host, soonest first. */
+async function getHostUpcomingEvents(
+  client: Client,
+  hostId: string,
+): Promise<Event[]> {
+  const { data, error } = await executeQuery(
+    baseQuery(client)
+      .eq("host_id", hostId)
+      .gte("endDate", todayStr())
+      .order("startDate", { ascending: true })
+      .order("startTime", { ascending: true }),
+  );
+  if (error) throw error;
+  const now = new Date();
+  return (data ?? []).map(mapEvent).filter((e) => !isEventEnded(e, now));
 }
 
 export type ArticleEventOption = Pick<
@@ -960,6 +978,7 @@ export const eventsApi = {
   getAllSlugsWithDates,
   getMyEvents,
   getEventsByIds,
+  getHostUpcomingEvents,
   getArticleEventOptions,
   createEvent,
   createRecurringEvents,

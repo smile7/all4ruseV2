@@ -64,6 +64,8 @@ export type EventJsonLdInput = {
   updatedAt: string | null;
   tags: { title: string | null }[] | null | undefined;
   hosts: Host[];
+  /** Admin-linked host page; becomes the first organizer's entity. */
+  hostPage?: { id: string; url: string } | null;
 };
 
 /**
@@ -251,10 +253,26 @@ function buildLocation(input: EventJsonLdInput) {
   };
 }
 
-function buildOrganizer(hosts: Host[]) {
+function buildOrganizer(hosts: Host[], hostPage: EventJsonLdInput["hostPage"]) {
   const named = hosts.filter((host): host is Host & { name: string } =>
     Boolean(host.name),
   );
+  const [first, ...rest] = named;
+  if (hostPage && first) {
+    const linked = {
+      "@type": "Organization" as const,
+      "@id": hostPage.id,
+      name: first.name,
+      url: hostPage.url,
+      ...(first.link ? { sameAs: [first.link] } : {}),
+    };
+    const others = rest.map((host) => ({
+      "@type": "Organization" as const,
+      name: host.name,
+      ...(host.link ? { url: host.link } : {}),
+    }));
+    return others.length === 0 ? linked : [linked, ...others];
+  }
   if (named.length === 0) {
     return {
       "@type": "Organization" as const,
@@ -343,7 +361,7 @@ export function buildEventJsonLd(input: EventJsonLdInput) {
     inLanguage: LOCALE_TO_BCP47[input.locale] ?? input.locale,
     isPartOf: { "@id": SITE_WEBSITE_ID },
     location: buildLocation(input),
-    organizer: buildOrganizer(input.hosts),
+    organizer: buildOrganizer(input.hosts, input.hostPage),
     ...(performer ? { performer } : {}),
     ...(keywords ? { keywords } : {}),
     ...(offers ? { offers } : {}),

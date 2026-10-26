@@ -19,6 +19,10 @@ export function eventIndexUrl(slug: string): string {
   return `${SITE_URL}/${DEFAULT_LOCALE}/${slug}`;
 }
 
+export function hostIndexUrl(slug: string): string {
+  return `${SITE_URL}/${DEFAULT_LOCALE}/host/${slug}`;
+}
+
 function indexNowHost(): string {
   try {
     return new URL(SITE_URL).host;
