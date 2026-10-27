@@ -62,9 +62,18 @@ export function HostPicker({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Select
             value={selectedId ?? NONE}
-            onValueChange={(value) =>
-              onSelect(hosts.find((host) => host.id === value) ?? null)
-            }
+            onValueChange={(value) => {
+              // Radix keeps a hidden <select> in the parent form and emits a
+              // change with "" when its options remount (dropdown closes, or
+              // a host was just added). That is not „без страница“.
+              if (!value) return;
+              if (value === NONE) {
+                onSelect(null);
+                return;
+              }
+              const host = hosts.find((item) => item.id === value);
+              if (host) onSelect(host);
+            }}
           >
             <SelectTrigger
               className="w-full sm:max-w-sm"
