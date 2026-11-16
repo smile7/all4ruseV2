@@ -35,6 +35,7 @@ export const TRACKED_EVENT_KEYS = [
   "event.facebook",
   "event.organizer",
   "home.view.calendar",
+  "home.filter.new",
   "home.create_event",
   "home.install_app",
   "header.create_event",
