@@ -63,6 +63,8 @@
     "clear": "Șterge filtrele",
     "events": "evenimente",
     "allEventsSummary": "Toate evenimentele: {count}",
+    "newSinceLastVisit": "{count, plural, one {# eveniment nou} few {# evenimente noi} other {# de evenimente noi}} de la ultima ta vizită",
+    "newEvent": "Nou",
     "refreshEvents": "Reîmprospătează",
     "filteredEventsSummary": "Evenimente filtrate: {filtered}/{total}",
     "viewPublicProfile": "Vezi profilul tău public",

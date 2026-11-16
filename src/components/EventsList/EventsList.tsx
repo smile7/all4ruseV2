@@ -14,6 +14,7 @@ import {
 
 import { EventCard } from "~/components/EventCard";
 import { EventsGridSkeleton } from "~/components/EventCard/EventCardSkeleton";
+import { Badge } from "~/components/ui/badge";
 
 // Loaded only when the user switches to the calendar tab (~615 lines + CSS).
 // Keeping it out of the initial bundle improves first-load JS size.
@@ -33,6 +34,7 @@ import {
   usePastEvents,
 } from "~/hooks/query/events";
 import { useFilters } from "~/hooks/useFilters";
+import { useLastVisit } from "~/hooks/useLastVisit";
 import { useViewPreference } from "~/hooks/useViewPreference";
 import { useRouter } from "~/i18n/navigation";
 import { trackClick } from "~/lib/analytics/track-click";
@@ -78,6 +80,18 @@ function compareUpcomingEvents(left: Event, right: Event): number {
   if (startTimeDiff !== 0) return startTimeDiff;
 
   return left.id - right.id;
+}
+
+function getNewEventIds(events: Event[], lastVisit: number | null): Set<number> {
+  const ids = new Set<number>();
+  if (lastVisit === null) return ids;
+
+  for (const event of events) {
+    if (event.published_at && Date.parse(event.published_at) > lastVisit) {
+      ids.add(event.id);
+    }
+  }
+  return ids;
 }
 
 function groupEventsByMonth(
@@ -224,6 +238,12 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
     [events, likeCounts, sortByLikes],
   );
 
+  const lastVisit = useLastVisit();
+  const newEventIds = useMemo(
+    () => getNewEventIds(events, lastVisit),
+    [events, lastVisit],
+  );
+
   // When the user applies any filter or sort while in calendar view, switch to
   // grid automatically — the calendar doesn't filter or reorder events. Map stays.
   useEffect(() => {
@@ -302,22 +322,29 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
 
   return (
     <div className="mt-4 flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-muted-foreground text-left text-sm">
-          {hasActiveFilters
-            ? t("filteredEventsSummary", {
-                filtered: events.length,
-                total: totalCount ?? events.length,
-              })
-            : t("allEventsSummary", { count: events.length })}
-        </p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-h-8 flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="text-muted-foreground text-left text-sm">
+            {hasActiveFilters
+              ? t("filteredEventsSummary", {
+                  filtered: events.length,
+                  total: totalCount ?? events.length,
+                })
+              : t("allEventsSummary", { count: events.length })}
+          </p>
+          {newEventIds.size > 0 && (
+            <Badge className="whitespace-normal">
+              {t("newSinceLastVisit", { count: newEventIds.size })}
+            </Badge>
+          )}
+        </div>
         <Button
           type="button"
           size="icon"
           variant="outline"
           aria-label={t("refreshEvents")}
           aria-busy={isFetching}
-          className="text-muted-foreground size-8 shrink-0 md:hidden"
+          className="text-muted-foreground size-8 shrink-0 lg:hidden"
           onClick={() => {
             if (isFetching) return;
             void refetch();
@@ -368,7 +395,11 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
             onClose={() => setView("grid")}
           />
         ) : (
-          <EventsGrid events={eventsByLikes} groupByMonth={!sortByLikes} />
+          <EventsGrid
+            events={eventsByLikes}
+            groupByMonth={!sortByLikes}
+            newEventIds={newEventIds}
+          />
         )}
       </div>
     </div>
@@ -398,9 +429,11 @@ function PastEventsList({ initialData }: Omit<Props, "variant">) {
 function EventsGrid({
   events,
   groupByMonth = false,
+  newEventIds,
 }: {
   events: Event[];
   groupByMonth?: boolean;
+  newEventIds?: Set<number>;
 }) {
   const locale = useLocale();
   const monthGroups = useMemo(
@@ -414,7 +447,11 @@ function EventsGrid({
     return (
       <div className="mt-4 grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
         {events.map((event) => (
-          <EventCard key={event.id} event={event} />
+          <EventCard
+            key={event.id}
+            event={event}
+            isNew={newEventIds?.has(event.id)}
+          />
         ))}
       </div>
     );
@@ -431,7 +468,11 @@ function EventsGrid({
           )}
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {group.events.map((event) => (
-              <EventCard key={event.id} event={event} />
+              <EventCard
+                key={event.id}
+                event={event}
+                isNew={newEventIds?.has(event.id)}
+              />
             ))}
           </div>
         </section>

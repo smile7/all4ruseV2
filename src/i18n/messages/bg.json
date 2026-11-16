@@ -63,6 +63,8 @@
     "clear": "Изчисти филтрите",
     "events": "събития",
     "allEventsSummary": "Всички събития: {count}",
+    "newSinceLastVisit": "{count, plural, one {# ново събитие} other {# нови събития}} от последното ти посещение",
+    "newEvent": "Ново",
     "refreshEvents": "Обнови",
     "filteredEventsSummary": "Филтрирани събития: {filtered}/{total}",
     "viewPublicProfile": "Виж публичния си профил",

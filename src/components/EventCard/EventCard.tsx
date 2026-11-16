@@ -17,6 +17,7 @@ import {
 import { CancelledStamp } from "~/components/CancelledStamp";
 import { EventTag } from "~/components/EventTag";
 import { PremiumBadge } from "~/components/PremiumBadge";
+import { Badge } from "~/components/ui/badge";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { Link, useRouter } from "~/i18n/navigation";
 import { HIDDEN_TAG_KEYS, normalizeEventTagKey } from "~/lib/event-tag-styles";
@@ -54,6 +55,8 @@ type Props = {
   showManageActions?: boolean;
   initialSaved?: boolean;
   onUnsaveSuccess?: (eventId: number) => void;
+  /** Published since the visitor's previous session. */
+  isNew?: boolean;
 };
 
 export function EventCard({
@@ -61,6 +64,7 @@ export function EventCard({
   showManageActions = false,
   initialSaved = false,
   onUnsaveSuccess,
+  isNew = false,
 }: Props) {
   const messages = useMessages() as { EventTags?: Record<string, string> };
   const eventTagLabels = messages.EventTags;
@@ -192,9 +196,14 @@ export function EventCard({
             </div>
           ) : (
             !showManageActions &&
-            event.isEventPremium && (
-              <div className="absolute top-2.5 right-2.5 z-20">
-                <PremiumBadge label={t("premium")} />
+            (event.isEventPremium || isNew) && (
+              <div className="absolute top-2.5 right-2.5 z-20 flex flex-col items-end gap-1.5">
+                {event.isEventPremium && <PremiumBadge label={t("premium")} />}
+                {isNew && (
+                  <Badge className="rounded-full px-3 py-1 font-semibold shadow-md">
+                    {tHome("newEvent")}
+                  </Badge>
+                )}
               </div>
             )
           )}

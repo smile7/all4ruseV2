@@ -63,6 +63,8 @@
     "clear": "Clear Filters",
     "events": "events",
     "allEventsSummary": "All events: {count}",
+    "newSinceLastVisit": "{count, plural, one {# new event} other {# new events}} since your last visit",
+    "newEvent": "New",
     "refreshEvents": "Refresh",
     "filteredEventsSummary": "Filtered events: {filtered}/{total}",
     "viewPublicProfile": "View your public profile",

@@ -1411,6 +1411,16 @@ Shows name, place, address, website, phone, email and **upcoming events only** (
 
 ---
 
+## "New since your last visit" (homepage)
+
+The homepage summary line shows a badge („12 нови събития от последното ти посещение") and marks each such card with „Ново". Entirely client-side, so the cached SSR HTML stays identical for everyone.
+
+- **`events.published_at`** is the moment an event first became active. `created_at` is not used because events from unconfirmed creators are approved later, after visits that never saw them. The `events_set_published_at` trigger stamps it once and discards any client-sent value; deactivating and reactivating keeps the original time.
+- **`useLastVisit`** (`src/hooks/useLastVisit.ts`) keeps the previous visit in `localStorage` (`home-last-visit`) and freezes it per browser session in `sessionStorage` (`home-visit-baseline`), so refreshes within a session keep the same count. A first visit shows nothing.
+- The count reflects the currently displayed list, so with filters active it counts only matching new events. The calendar view does not mark new events.
+
+---
+
 ## Environment Variables
 
 ```bash
