@@ -9,13 +9,13 @@ import {
   Calendar,
   CalendarDays,
   LayoutGrid,
+  ListFilter,
   RefreshCw,
+  X,
 } from "lucide-react";
 
 import { EventCard } from "~/components/EventCard";
 import { EventsGridSkeleton } from "~/components/EventCard/EventCardSkeleton";
-import { Badge } from "~/components/ui/badge";
-
 // Loaded only when the user switches to the calendar tab (~615 lines + CSS).
 // Keeping it out of the initial bundle improves first-load JS size.
 const EventsCalendarView = dynamic(
@@ -39,6 +39,7 @@ import { useViewPreference } from "~/hooks/useViewPreference";
 import { useRouter } from "~/i18n/navigation";
 import { trackClick } from "~/lib/analytics/track-click";
 import { formatEventMonthHeading, parseLocalDate } from "~/lib/event-utils";
+import { cn } from "~/lib/utils";
 import type { Event } from "~/types";
 
 type Variant = "active" | "current" | "past";
@@ -82,7 +83,10 @@ function compareUpcomingEvents(left: Event, right: Event): number {
   return left.id - right.id;
 }
 
-function getNewEventIds(events: Event[], lastVisit: number | null): Set<number> {
+function getNewEventIds(
+  events: Event[],
+  lastVisit: number | null,
+): Set<number> {
   const ids = new Set<number>();
   if (lastVisit === null) return ids;
 
@@ -243,14 +247,27 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
     () => getNewEventIds(events, lastVisit),
     [events, lastVisit],
   );
+  // Local state, not a URL param: the "new" set is per browser, so a shared
+  // link would show someone else a different list.
+  const [showOnlyNew, setShowOnlyNew] = useState(false);
+  // Falls back to the full list if other filters leave nothing new to show,
+  // since the badge (the only way to turn this off) disappears with it.
+  const onlyNew = showOnlyNew && newEventIds.size > 0;
+  const visibleEvents = useMemo(
+    () =>
+      onlyNew
+        ? eventsByLikes.filter((event) => newEventIds.has(event.id))
+        : eventsByLikes,
+    [eventsByLikes, newEventIds, onlyNew],
+  );
 
   // When the user applies any filter or sort while in calendar view, switch to
   // grid automatically — the calendar doesn't filter or reorder events. Map stays.
   useEffect(() => {
-    if ((hasActiveFilters || sortByLikes) && view === "calendar") {
+    if ((hasActiveFilters || sortByLikes || onlyNew) && view === "calendar") {
       setView("grid");
     }
-  }, [hasActiveFilters, sortByLikes, view, setView]);
+  }, [hasActiveFilters, sortByLikes, onlyNew, view, setView]);
 
   // Fill remaining viewport for calendar and map. Lock page scroll so only
   // the slot scrolls internally.
@@ -322,29 +339,50 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
 
   return (
     <div className="mt-4 flex flex-col gap-2">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-h-8 flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="text-muted-foreground text-left text-sm">
-            {hasActiveFilters
-              ? t("filteredEventsSummary", {
-                  filtered: events.length,
-                  total: totalCount ?? events.length,
-                })
-              : t("allEventsSummary", { count: events.length })}
-          </p>
-          {newEventIds.size > 0 && (
-            <Badge className="whitespace-normal">
-              {t("newSinceLastVisit", { count: newEventIds.size })}
-            </Badge>
-          )}
-        </div>
+      {/* Mobile: count + refresh on one line, the "new" button full width below.
+          md+: count, button, refresh in a single row. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-muted-foreground order-1 text-left text-sm">
+          {hasActiveFilters || onlyNew
+            ? t("filteredEventsSummary", {
+                filtered: visibleEvents.length,
+                total: hasActiveFilters
+                  ? (totalCount ?? events.length)
+                  : events.length,
+              })
+            : t("allEventsSummary", { count: events.length })}
+        </p>
+        {newEventIds.size > 0 && (
+          <Button
+            type="button"
+            size="sm"
+            variant={onlyNew ? "outline" : "default"}
+            aria-pressed={onlyNew}
+            className={cn(
+              "order-3 min-h-8 w-full gap-1.5 rounded-full px-3 py-1 text-center text-xs whitespace-normal shadow-sm md:order-2 md:w-auto md:text-left",
+              onlyNew &&
+                "border-primary text-primary bg-primary/10 hover:bg-primary/15 hover:text-primary",
+            )}
+            onClick={() => {
+              if (!onlyNew) trackClick("home.filter.new");
+              setShowOnlyNew(!onlyNew);
+            }}
+          >
+            {onlyNew ? (
+              <X className="size-3.5 shrink-0" aria-hidden />
+            ) : (
+              <ListFilter className="size-3.5 shrink-0" aria-hidden />
+            )}
+            {t("newSinceLastVisit", { count: newEventIds.size })}
+          </Button>
+        )}
         <Button
           type="button"
           size="icon"
           variant="outline"
           aria-label={t("refreshEvents")}
           aria-busy={isFetching}
-          className="text-muted-foreground size-8 shrink-0 lg:hidden"
+          className="text-muted-foreground order-2 ml-auto size-8 shrink-0 md:order-3 lg:hidden"
           onClick={() => {
             if (isFetching) return;
             void refetch();
@@ -396,7 +434,7 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
           />
         ) : (
           <EventsGrid
-            events={eventsByLikes}
+            events={visibleEvents}
             groupByMonth={!sortByLikes}
             newEventIds={newEventIds}
           />
