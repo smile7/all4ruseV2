@@ -146,6 +146,7 @@ const LIST_COLUMNS = [
   "id",
   "created_at",
   "updated_at",
+  "published_at",
   "createdBy",
   "created_by_full_name",
   "title",

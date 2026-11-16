@@ -195,16 +195,19 @@ export type Database = {
       event_like_counts: {
         Row: {
           event_id: number
+          event_name: string | null
           like_count: number
           updated_at: string
         }
         Insert: {
           event_id: number
+          event_name?: string | null
           like_count?: number
           updated_at?: string
         }
         Update: {
           event_id?: number
+          event_name?: string | null
           like_count?: number
           updated_at?: string
         }
@@ -309,6 +312,7 @@ export type Database = {
           phoneNumber: string | null
           place: string | null
           price: string | null
+          published_at: string | null
           seriesId: string | null
           slug: string | null
           startDate: string
@@ -344,6 +348,7 @@ export type Database = {
           phoneNumber?: string | null
           place?: string | null
           price?: string | null
+          published_at?: string | null
           seriesId?: string | null
           slug?: string | null
           startDate: string
@@ -379,6 +384,7 @@ export type Database = {
           phoneNumber?: string | null
           place?: string | null
           price?: string | null
+          published_at?: string | null
           seriesId?: string | null
           slug?: string | null
           startDate?: string
@@ -713,7 +719,23 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      event_like_counts_with_event_name: {
+        Row: {
+          event_id: number | null
+          event_name: string | null
+          like_count: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_like_counts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       change_event_like_count: {

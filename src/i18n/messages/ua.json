@@ -63,6 +63,8 @@
     "clear": "Очистити фільтри",
     "events": "події",
     "allEventsSummary": "Усі події: {count}",
+    "newSinceLastVisit": "{count, plural, one {# нова подія} few {# нові події} many {# нових подій} other {# нових подій}} з твого останнього візиту",
+    "newEvent": "Нове",
     "refreshEvents": "Оновити",
     "filteredEventsSummary": "Відібрані події: {filtered}/{total}",
     "viewPublicProfile": "Переглянути свій публічний профіль",
