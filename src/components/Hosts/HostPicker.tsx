@@ -31,6 +31,8 @@ type Props = {
   onHostSaved: (host: EventHost) => void;
   /** Current event-form values, used to prefill „Запази като нов организатор“. */
   getDraft: () => Partial<HostFormValues>;
+  /** Admin-only: create/edit hosts and open /admin/hosts. */
+  manageHosts?: boolean;
 };
 
 /** Admin-only: link the event to a host page and prefill its details. */
@@ -40,6 +42,7 @@ export function HostPicker({
   onSelect,
   onHostSaved,
   getDraft,
+  manageHosts = true,
 }: Props) {
   const t = useTranslations("Hosts");
   const [dialog, setDialog] = useState<
@@ -94,15 +97,17 @@ export function HostPicker({
           <div className="flex flex-wrap gap-2">
             {selected && (
               <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setDialog({ mode: "edit", host: selected })}
-                >
-                  <Pencil className="mr-1 size-4" />
-                  {t("edit")}
-                </Button>
+                {manageHosts && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDialog({ mode: "edit", host: selected })}
+                  >
+                    <Pencil className="mr-1 size-4" />
+                    {t("edit")}
+                  </Button>
+                )}
                 <Button type="button" variant="ghost" size="sm" asChild>
                   <Link href={hostPath(selected.slug)} target="_blank">
                     <ExternalLink className="mr-1 size-4" />
@@ -111,26 +116,30 @@ export function HostPicker({
                 </Button>
               </>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setDialog({ mode: "create", draft: getDraft() })}
-            >
-              <Plus className="mr-1 size-4" />
-              {t("saveAsNew")}
-            </Button>
+            {manageHosts && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDialog({ mode: "create", draft: getDraft() })}
+              >
+                <Plus className="mr-1 size-4" />
+                {t("saveAsNew")}
+              </Button>
+            )}
           </div>
         </div>
 
         <p className="text-muted-foreground text-sm">{t("pickerHint")}</p>
-        <Link
-          href="/admin/hosts"
-          target="_blank"
-          className="text-muted-foreground hover:text-foreground text-xs underline"
-        >
-          {t("manageAll")}
-        </Link>
+        {manageHosts && (
+          <Link
+            href="/admin/hosts"
+            target="_blank"
+            className="text-muted-foreground hover:text-foreground text-xs underline"
+          >
+            {t("manageAll")}
+          </Link>
+        )}
       </CardContent>
 
       <HostFormDialog

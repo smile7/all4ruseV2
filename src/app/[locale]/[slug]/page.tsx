@@ -40,6 +40,7 @@ import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { Link } from "~/i18n/navigation";
 import { articlesApi, eventsApi, hostsApi, profilesApi } from "~/lib/api";
 import { buildBreadcrumbJsonLd, serializeJsonLd } from "~/lib/article-jsonld";
+import { isOrganizerProxyUserId } from "~/lib/auth/event-bot";
 import {
   EVENT_DESCRIPTION_BODY_CLASSES,
   plainTextFromHtml,
@@ -217,7 +218,9 @@ export default async function EventDetailPage({ params }: Props) {
       event.host_id
         ? hostsApi.getHostById(publicClient, event.host_id).catch(() => null)
         : Promise.resolve(null),
-      !event.host_id && event.createdBy && event.createdBy !== adminUserId
+      !event.host_id &&
+      event.createdBy &&
+      !isOrganizerProxyUserId(event.createdBy, adminUserId)
         ? profilesApi
             .getProfile(publicClient, event.createdBy)
             .then((r) => r.data)

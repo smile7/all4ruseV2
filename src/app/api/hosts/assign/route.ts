@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { hostsApi } from "~/lib/api";
-import { requireAdmin } from "~/lib/auth/admin-guard";
+import { requireAdminOrEventBot } from "~/lib/auth/admin-guard";
 import { notifyHostsIndexNow, revalidateHosts } from "~/lib/hosts/payload";
 import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 import { assignEventHostSchema } from "~/types";
@@ -12,7 +12,7 @@ import { assignEventHostSchema } from "~/types";
  * The caller revalidates the event pages afterwards (notifyEventIndexed).
  */
 export async function POST(request: Request) {
-  const guard = await requireAdmin();
+  const guard = await requireAdminOrEventBot();
   if ("response" in guard) return guard.response;
 
   const parsed = assignEventHostSchema.safeParse(
