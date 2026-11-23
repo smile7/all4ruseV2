@@ -8,6 +8,7 @@ import {
   ArrowUpToLineIcon,
   Calendar,
   CalendarDays,
+  ChevronRight,
   LayoutGrid,
   ListFilter,
   RefreshCw,
@@ -373,7 +374,12 @@ function ActiveEventsList({ initialData, totalCount }: Omit<Props, "variant">) {
             ) : (
               <ListFilter className="size-3.5 shrink-0" aria-hidden />
             )}
-            {t("newSinceLastVisit", { count: newEventIds.size })}
+            <span className="underline underline-offset-2">
+              {t("newSinceLastVisit", { count: newEventIds.size })}
+            </span>
+            {!onlyNew && (
+              <ChevronRight className="size-3.5 shrink-0" aria-hidden />
+            )}
           </Button>
         )}
         <Button
