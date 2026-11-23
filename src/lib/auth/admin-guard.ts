@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import type { User } from "@supabase/supabase-js";
 
+import { canAssignEventHost } from "~/lib/auth/event-bot";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 /**
@@ -24,6 +25,30 @@ export async function requireAdmin(): Promise<
 
   const adminUserId = process.env.ADMIN_USER_ID;
   if (!adminUserId || user.id !== adminUserId) {
+    return {
+      response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+    };
+  }
+
+  return { user };
+}
+
+/** Admin or the automated event-entry bot (host assign only). */
+export async function requireAdminOrEventBot(): Promise<
+  { user: User } | { response: NextResponse }
+> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+
+  if (!canAssignEventHost(user.id)) {
     return {
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     };

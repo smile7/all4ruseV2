@@ -66,6 +66,7 @@ import { EVENTS_BUCKET, UPLOAD_CACHE_CONTROL } from "~/constants";
 import { localizedEventTagTitle } from "~/i18n/event-tag-label";
 import { useRouter } from "~/i18n/navigation";
 import { eventsApi } from "~/lib/api/events";
+import { isEventBotUserId } from "~/lib/auth/event-bot";
 import { plainTextFromHtml } from "~/lib/event-description-html";
 import {
   classifyEventSaveError,
@@ -493,6 +494,8 @@ export function EventForm({
   const navigateGuarded = useUnsavedChangesNavigate();
 
   const isAdminUser = userId === process.env.NEXT_PUBLIC_ADMIN_USER_ID;
+  const isEventBotUser = isEventBotUserId(userId);
+  const canPickEventHost = isAdminUser || isEventBotUser;
 
   const formSchema = useMemo(() => makeFormSchema(t), [t]);
 
@@ -548,7 +551,7 @@ export function EventForm({
   const initialHostId = initialData?.host_id ?? null;
   const [hostOptions, setHostOptions] = useState<EventHost[]>(hosts ?? []);
   const [hostId, setHostId] = useState<string | null>(initialHostId);
-  const showHostPicker = isAdminUser && hosts !== undefined;
+  const showHostPicker = canPickEventHost && hosts !== undefined;
   const hostDirty = showHostPicker && hostId !== initialHostId;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -569,7 +572,7 @@ export function EventForm({
       mode,
       initialData,
       profileDefaults,
-      isAdminUser && mode === "create",
+      canPickEventHost && mode === "create",
     ),
   });
 
@@ -1482,6 +1485,7 @@ export function EventForm({
               onSelect={handleHostSelect}
               onHostSaved={handleHostSaved}
               getDraft={getHostDraft}
+              manageHosts={isAdminUser}
             />
           )}
 
