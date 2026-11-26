@@ -8,15 +8,13 @@ import { Gem } from "lucide-react";
 import { TrackedLink } from "~/components/TrackedLink";
 import { Button } from "~/components/ui/button";
 import { usePathname } from "~/i18n/navigation";
-import { type FeaturedHeaderArticle } from "~/lib/articles/featured-header";
+import { FEATURED_HEADER_ARTICLE_SLUG } from "~/lib/articles/featured-header";
 import { todayInSofia } from "~/lib/event-utils";
 import { ARTICLES_PATH } from "~/lib/seo";
 import { cn } from "~/lib/utils";
 
 type Props = {
   variant?: "mobile" | "desktop";
-  slug: FeaturedHeaderArticle["slug"];
-  titleKey: FeaturedHeaderArticle["titleKey"];
   /** Last Sofia day the promo runs, YYYY-MM-DD. */
   expiresOn?: string | null;
 };
@@ -24,13 +22,11 @@ type Props = {
 const neverChanges = () => () => {};
 
 /**
- * Header entry point to one featured article.
+ * Header entry point to the featured article.
  * The parent only mounts this while that article's promo is on and unexpired.
  */
 export function HeaderMoreFromRuseLink({
   variant = "desktop",
-  slug,
-  titleKey,
   expiresOn = null,
 }: Props) {
   const t = useTranslations("HomePage");
@@ -47,7 +43,7 @@ export function HeaderMoreFromRuseLink({
   const expired =
     hydrated && expiresOn !== null && expiresOn.slice(0, 10) < todayInSofia();
 
-  const href = `${ARTICLES_PATH}/${slug}`;
+  const href = `${ARTICLES_PATH}/${FEATURED_HEADER_ARTICLE_SLUG}`;
   if (expired || pathname === href) return null;
 
   const isMobile = variant === "mobile";
@@ -58,13 +54,13 @@ export function HeaderMoreFromRuseLink({
       variant="default"
       className={cn(
         "h-9 min-h-9 rounded-full px-4 text-xs font-medium tracking-wider whitespace-nowrap uppercase",
-        isMobile ? "w-full" : "w-max shrink-0 px-5",
+        isMobile ? "w-full" : "w-max shrink-0 px-6",
       )}
     >
       {/* The article is BG-only, so always open the Bulgarian version. */}
       <TrackedLink eventKey="header.featured_article" href={href} locale="bg">
         <Gem className="size-4" />
-        {t(titleKey)}
+        {t("featuredArticleWeekendTitle")}
       </TrackedLink>
     </Button>
   );

@@ -1,9 +1,5 @@
 import { isEventTagPromoLive } from "~/lib/api/articles";
-import { pickVisibleHeaderPromos } from "~/lib/articles/featured-header";
-import {
-  type FeaturedHeaderPromo,
-  getFeaturedHeaderPromos,
-} from "~/lib/articles/featured-header-promo";
+import { getFeaturedHeaderPromo } from "~/lib/articles/featured-header-promo";
 import { todayInSofia } from "~/lib/event-utils";
 
 import { HeaderAuthButton } from "./HeaderAuthButton";
@@ -16,7 +12,7 @@ import { MobileCreateEventButton } from "./MobileCreateEventButton";
 import { ThemeToggle } from "./ThemeToggle";
 
 export async function Header() {
-  const featuredPromos = await liveFeaturedHeaderPromos();
+  const featuredPromo = await liveFeaturedHeaderPromo();
 
   return (
     <header className="border-border/60 bg-secondary/85 sticky top-0 z-50 w-full backdrop-blur-md">
@@ -37,19 +33,12 @@ export async function Header() {
           </div>
         </div>
 
-        {/* Row 2: featured articles, stacked */}
-        {featuredPromos.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            {featuredPromos.map((promo) => (
-              <HeaderMoreFromRuseLink
-                key={promo.slug}
-                variant="mobile"
-                slug={promo.slug}
-                titleKey={promo.titleKey}
-                expiresOn={promo.event_tag_expires_on}
-              />
-            ))}
-          </div>
+        {/* Row 2: full-width link to the featured article */}
+        {featuredPromo ? (
+          <HeaderMoreFromRuseLink
+            variant="mobile"
+            expiresOn={featuredPromo.event_tag_expires_on}
+          />
         ) : null}
       </div>
 
@@ -60,16 +49,13 @@ export async function Header() {
           <Logo />
         </div>
 
-        {/* Center — featured articles, side by side */}
-        <div className="flex items-center justify-center gap-2">
-          {featuredPromos.map((promo) => (
+        {/* Center — featured article, exactly centered */}
+        <div className="flex items-center justify-center">
+          {featuredPromo ? (
             <HeaderMoreFromRuseLink
-              key={promo.slug}
-              slug={promo.slug}
-              titleKey={promo.titleKey}
-              expiresOn={promo.event_tag_expires_on}
+              expiresOn={featuredPromo.event_tag_expires_on}
             />
-          ))}
+          ) : null}
         </div>
 
         {/* Right — controls */}
@@ -84,19 +70,15 @@ export async function Header() {
   );
 }
 
-/**
- * Drops an article when it is unpublished, paused, or past its last day.
- * The expiry is re-checked in the browser so a long-lived cached page still
- * drops that button on the right Sofia day.
- */
-async function liveFeaturedHeaderPromos(): Promise<FeaturedHeaderPromo[]> {
+/** Hidden when the featured article is unpublished, paused, or past its last day. */
+async function liveFeaturedHeaderPromo() {
   try {
-    const promos = await getFeaturedHeaderPromos();
-    const today = todayInSofia();
-    const live = promos.filter((promo) => isEventTagPromoLive(promo, today));
-    return pickVisibleHeaderPromos(live);
+    const promo = await getFeaturedHeaderPromo();
+    if (!promo) return null;
+    if (!isEventTagPromoLive(promo, todayInSofia())) return null;
+    return promo;
   } catch (error) {
-    console.error("Failed to load featured header articles", error);
-    return [];
+    console.error("Failed to load featured header article", error);
+    return null;
   }
 }
