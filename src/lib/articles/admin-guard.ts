@@ -1,1 +1,1 @@
-export { requireAdmin as requireArticleAdmin } from "~/lib/auth/admin-guard";
+export { requireAdminOrEventBot as requireArticleAdmin } from "~/lib/auth/admin-guard";

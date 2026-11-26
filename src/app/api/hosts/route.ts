@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 
 import { hostsApi } from "~/lib/api";
-import { requireAdmin } from "~/lib/auth/admin-guard";
+import { requireAdminOrEventBot } from "~/lib/auth/admin-guard";
 import { buildHostFields, revalidateHosts } from "~/lib/hosts/payload";
 import { createSupabaseAdminClient } from "~/lib/supabase/admin";
 import { hostApiSchema } from "~/types";
 
 export async function POST(request: Request) {
-  const guard = await requireAdmin();
+  const guard = await requireAdminOrEventBot();
   if ("response" in guard) return guard.response;
 
   const parsed = hostApiSchema.safeParse(

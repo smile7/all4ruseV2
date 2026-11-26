@@ -30,8 +30,17 @@ export function isOrganizerProxyUserId(
   return isEventBotUserId(userId);
 }
 
-export function canAssignEventHost(userId: string): boolean {
+/** Admin or the automated entry bot (events, hosts, articles). */
+export function isAdminOrEventBotUserId(userId: string): boolean {
   const adminUserId = process.env.ADMIN_USER_ID?.trim() ?? "";
   if (adminUserId !== "" && userId === adminUserId) return true;
   return isEventBotUserId(userId);
+}
+
+export function canAssignEventHost(userId: string): boolean {
+  return isAdminOrEventBotUserId(userId);
+}
+
+export function canManageArticles(userId: string): boolean {
+  return isAdminOrEventBotUserId(userId);
 }

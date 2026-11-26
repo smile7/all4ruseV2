@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { hostsApi } from "~/lib/api";
-import { requireAdmin } from "~/lib/auth/admin-guard";
+import { requireAdmin, requireAdminOrEventBot } from "~/lib/auth/admin-guard";
 import {
   buildHostFields,
   notifyHostsIndexNow,
@@ -17,7 +17,7 @@ type Params = { params: Promise<{ id: string }> };
 const idSchema = z.uuid();
 
 export async function PATCH(request: Request, { params }: Params) {
-  const guard = await requireAdmin();
+  const guard = await requireAdminOrEventBot();
   if ("response" in guard) return guard.response;
 
   const id = idSchema.safeParse((await params).id);

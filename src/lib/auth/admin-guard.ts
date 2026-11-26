@@ -33,7 +33,7 @@ export async function requireAdmin(): Promise<
   return { user };
 }
 
-/** Admin or the automated event-entry bot (host assign only). */
+/** Admin or the automated entry bot (host assign/create, articles). */
 export async function requireAdminOrEventBot(): Promise<
   { user: User } | { response: NextResponse }
 > {
