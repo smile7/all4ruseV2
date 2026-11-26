@@ -8,8 +8,10 @@ import {
 } from "~/lib/article-html";
 import {
   FEATURED_HEADER_CACHE_TAG,
+  featuredHeaderPromoExpiryDay,
   isFeaturedHeaderArticle,
 } from "~/lib/articles/featured-header";
+import { todayInSofia } from "~/lib/event-utils";
 import { ARTICLES_PATH } from "~/lib/seo";
 import type { Article, ArticleFormValues } from "~/types";
 import type { TablesInsert } from "~/types/database";
@@ -34,10 +36,29 @@ export function buildArticleRow(
     ? (existing?.published_at ?? new Date().toISOString())
     : null;
 
+  const slug = values.slug.trim().toLowerCase();
+  const promoActive = values.event_tag_id
+    ? values.event_tag_is_active
+    : true;
+  let eventTagExpiresOn: string | null = values.event_tag_id
+    ? nullify(values.event_tag_expires_on)
+    : null;
+
+  // Weekly column: an expired end date hides the header button even when promo is on.
+  if (
+    isFeaturedHeaderArticle(slug) &&
+    publishing &&
+    promoActive &&
+    (!eventTagExpiresOn ||
+      eventTagExpiresOn.slice(0, 10) < todayInSofia())
+  ) {
+    eventTagExpiresOn = featuredHeaderPromoExpiryDay();
+  }
+
   return {
     locale: values.locale,
     ...(values.group_id ? { group_id: values.group_id } : {}),
-    slug: values.slug.trim().toLowerCase(),
+    slug,
     title: values.title.trim(),
     excerpt: values.excerpt.trim(),
     meta_description: nullify(values.meta_description),
@@ -46,12 +67,8 @@ export function buildArticleRow(
     hero_image_alt: nullify(values.hero_image_alt),
     category: nullify(values.category),
     event_tag_id: values.event_tag_id,
-    event_tag_is_active: values.event_tag_id
-      ? values.event_tag_is_active
-      : true,
-    event_tag_expires_on: values.event_tag_id
-      ? nullify(values.event_tag_expires_on)
-      : null,
+    event_tag_is_active: promoActive,
+    event_tag_expires_on: eventTagExpiresOn,
     author_name: nullify(values.author_name),
     is_sponsored: values.is_sponsored,
     sponsor_name: values.is_sponsored ? nullify(values.sponsor_name) : null,
