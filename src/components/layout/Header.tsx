@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+
 import { isEventTagPromoLive } from "~/lib/api/articles";
 import { getFeaturedHeaderPromo } from "~/lib/articles/featured-header-promo";
 import { todayInSofia } from "~/lib/event-utils";
@@ -12,6 +14,8 @@ import { MobileCreateEventButton } from "./MobileCreateEventButton";
 import { ThemeToggle } from "./ThemeToggle";
 
 export async function Header() {
+  // Fresh header promo on every request; avoids stale data cache on prod.
+  await connection();
   const featuredPromo = await liveFeaturedHeaderPromo();
 
   return (
