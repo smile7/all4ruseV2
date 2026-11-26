@@ -6,6 +6,7 @@ import { Pencil } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { useAuth } from "~/contexts/AuthContext";
+import { isEventBotUserId } from "~/lib/auth/event-bot";
 
 const ADMIN_USER_ID = process.env.NEXT_PUBLIC_ADMIN_USER_ID ?? "";
 
@@ -23,7 +24,8 @@ export function EventEditButton({ locale, eventId, createdBy }: Props) {
   const canEdit =
     Boolean(userId) &&
     (userId === createdBy ||
-      (ADMIN_USER_ID !== "" && userId === ADMIN_USER_ID));
+      (ADMIN_USER_ID !== "" && userId === ADMIN_USER_ID) ||
+      isEventBotUserId(userId));
 
   if (!canEdit) return null;
 

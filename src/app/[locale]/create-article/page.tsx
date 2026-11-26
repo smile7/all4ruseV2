@@ -5,6 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { ArticleAdminList, ArticleForm } from "~/components/ArticleForm";
 import { Typography } from "~/components/layout";
 import { articlesApi, eventsApi, tagsApi } from "~/lib/api";
+import { canManageArticles } from "~/lib/auth/event-bot";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 type Props = {
@@ -21,9 +22,8 @@ export default async function CreateArticlePage({ searchParams }: Props) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // notFound() rather than redirect(): a non-admin should not learn the route exists.
-  const adminUserId = process.env.ADMIN_USER_ID;
-  if (!user || !adminUserId || user.id !== adminUserId) notFound();
+  // notFound() rather than redirect(): unauthorized users should not learn the route exists.
+  if (!user || !canManageArticles(user.id)) notFound();
 
   const { editId } = await searchParams;
 

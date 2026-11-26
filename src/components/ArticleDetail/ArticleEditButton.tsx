@@ -7,6 +7,7 @@ import { Pencil } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Link } from "~/i18n/navigation";
+import { isEventBotUserId } from "~/lib/auth/event-bot";
 import { getSupabaseBrowserClient } from "~/lib/supabase/client";
 
 type Props = {
@@ -27,7 +28,12 @@ export function ArticleEditButton({ articleId }: Props) {
 
     const supabase = getSupabaseBrowserClient();
     void supabase.auth.getUser().then(({ data }) => {
-      setIsAdmin(data.user?.id === adminUserId);
+      const userId = data.user?.id;
+      if (!userId) return;
+      setIsAdmin(
+        (adminUserId !== "" && userId === adminUserId) ||
+          isEventBotUserId(userId),
+      );
     });
   }, []);
 

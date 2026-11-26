@@ -406,6 +406,28 @@ function forceDateToCurrentYear(dateStr: string): string {
   return format(new Date(currentYear, month, day), "yyyy-MM-dd");
 }
 
+/** Keep month/day, but if the series crosses 1 Jan the end stays in the next year. */
+function alignRangeToCurrentYear(
+  startDate: string,
+  endDate: string,
+): { startDate: string; endDate: string } {
+  const start = forceDateToCurrentYear(startDate);
+  let end = forceDateToCurrentYear(endDate || startDate);
+  if (start && end && end < start) {
+    const parsedEnd = parseISO(end);
+    if (isValid(parsedEnd)) {
+      const nextYear = parsedEnd.getFullYear() + 1;
+      const month = parsedEnd.getMonth();
+      const day = Math.min(
+        parsedEnd.getDate(),
+        new Date(nextYear, month + 1, 0).getDate(),
+      );
+      end = format(new Date(nextYear, month, day), "yyyy-MM-dd");
+    }
+  }
+  return { startDate: start, endDate: end };
+}
+
 function buildDefaultValues(
   mode: EventFormMode,
   initialData: Event | null | undefined,
@@ -825,14 +847,22 @@ export function EventForm({
         return;
       }
       const shouldForceCurrentYear = mode !== "edit";
+      const alignedEventDates = alignRangeToCurrentYear(
+        values.startDate,
+        values.endDate || values.startDate,
+      );
+      const alignedSeries = alignRangeToCurrentYear(
+        values.startDate,
+        recurrencePeriodEnd,
+      );
       const startDate = shouldForceCurrentYear
-        ? forceDateToCurrentYear(values.startDate)
+        ? alignedEventDates.startDate
         : values.startDate;
       const endDate = shouldForceCurrentYear
-        ? forceDateToCurrentYear(values.endDate || values.startDate)
+        ? alignedEventDates.endDate
         : values.endDate || values.startDate;
       const recurrenceEnd = shouldForceCurrentYear
-        ? forceDateToCurrentYear(recurrencePeriodEnd)
+        ? alignedSeries.endDate
         : recurrencePeriodEnd;
 
       // Upload new files; keep existing stored paths as-is
@@ -896,7 +926,7 @@ export function EventForm({
           return;
         }
         const occurrenceDates = generateOccurrenceDates(
-          startDate,
+          shouldForceCurrentYear ? alignedSeries.startDate : startDate,
           recurrencePattern,
           recurrenceEnd,
           recurrenceWeekdays,
@@ -1401,10 +1431,14 @@ export function EventForm({
                   {/* Occurrence count preview */}
                   {(() => {
                     if (!startDate || !recurrencePeriodEnd) return null;
-                    const dates = generateOccurrenceDates(
+                    const aligned = alignRangeToCurrentYear(
                       startDate,
-                      recurrencePattern,
                       recurrencePeriodEnd,
+                    );
+                    const dates = generateOccurrenceDates(
+                      aligned.startDate,
+                      recurrencePattern,
+                      aligned.endDate,
                       recurrenceWeekdays,
                     );
                     if (dates.length === 0) {
@@ -1485,7 +1519,7 @@ export function EventForm({
               onSelect={handleHostSelect}
               onHostSaved={handleHostSaved}
               getDraft={getHostDraft}
-              manageHosts={isAdminUser}
+              manageHosts={canPickEventHost}
             />
           )}
 

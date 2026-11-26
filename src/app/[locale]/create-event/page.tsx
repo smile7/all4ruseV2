@@ -10,7 +10,7 @@ import { Typography } from "~/components/layout/Typography";
 import { hostsApi, profilesApi } from "~/lib/api";
 import { eventsApi } from "~/lib/api/events";
 import { tagsApi } from "~/lib/api/tags";
-import { getEventBotUserId } from "~/lib/auth/event-bot";
+import { isAdminOrEventBotUserId } from "~/lib/auth/event-bot";
 import { createSupabaseServerClient } from "~/lib/supabase/server";
 
 type SearchParams = Promise<{
@@ -36,11 +36,7 @@ export default async function CreateEventPage({ searchParams }: Props) {
   const { editId, duplicateId } = await searchParams;
   const eventId = editId ?? duplicateId;
 
-  const adminUserId = process.env.ADMIN_USER_ID;
-  const eventBotUserId = getEventBotUserId();
-  const isAdmin = Boolean(adminUserId && user.id === adminUserId);
-  const canPickHost =
-    isAdmin || Boolean(eventBotUserId && user.id === eventBotUserId);
+  const canPickHost = isAdminOrEventBotUserId(user.id);
 
   const [{ data: profile }, tags, initialData, hosts] = await Promise.all([
     profilesApi.getProfile(supabase, user.id),
